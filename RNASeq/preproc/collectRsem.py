@@ -165,6 +165,7 @@ if (COLLECT_QC_SUMMARIES and not(args.skip_collecting_qc)):
 	print "finished collecting qc summaries... writing qc table..."
 	numpy.savetxt(os.path.join(args.output_folder, 'qc_table.txt'), qcTable, delimiter="\t", fmt="%g");
 
+
 print "writing cell list..."
 
 #write the ordered cell list file...
@@ -185,7 +186,38 @@ COLLECT_DUP_GENES = True;
 if (COLLECT_DUP_GENES and not(args.skip_collecting_dup_genes)):
 	cellsWithDupGenesErrors = [];
 
-	
+	#note that I use object and not string, because numpy string array will by default be of size 1 byte (and they're of constant length anyway) so the string may get truncated
+	dupTable = numpy.empty((NUM_RSEM_GENES, NUM_CELLS), dtype="object");
+
+	print "starting to collect dup reads per gene..."
+	for cell_ind in xrange(NUM_CELLS):
+		d = subDirectoryList[cell_ind];
+		fullDirPath = os.path.join(args.diretoryToProcess, d);
+		print "Operating on single cell directory: " + fullDirPath;
+
+		dupReadsPerGeneFile = os.path.join(fullDirPath, 'rsem_output/picard_output/dup.txt.genes.txt');
+		if(os.path.exists(dupReadsPerGeneFile)):
+			with open(dupReadsPerGeneFile) as fin:
+				rows = ( line.split('\t') for line in fin )
+				#I assume that the gene list in the dup.txt.genes.txt (file with dup reads per gene file) is the same as in the rsem dictionary - this is how I built it when Nir and I programmed it
+				#take from each line the number of dups  and the total number of reads and put them in a string in the format "%f/%f" - this way one file contains both numbers and the ratio can be easily computed
+				dupReadsPerGeneTable = [("%s/%s" % (row[1], row[2])) for row in rows];
+
+			dupTable[:, cell_ind] = dupReadsPerGeneTable;
+		else:
+			#the rsem dup reads per gene file for this folder does not exist for some reason
+
+			#the values were initialized to NaN so seemingly no reason to overwrite again, but I do this just to be on the safe side
+			dupTable[:, cell_ind] = ("%f/%f" % (numpy.NAN, numpy.NAN));
+
+			cellsWithDupGenesErrors.append(dupReadsPerGeneFile);
+
+
+	#now, write the collected QC results into a file
+	print "finished collecting duplicate reads per gene files... writing summary table..."
+	numpy.savetxt(os.path.join(args.output_folder, 'dup_reads_per_gene_table.txt'), dupTable, delimiter="\t", fmt="%s");
+
+
 
 
 
