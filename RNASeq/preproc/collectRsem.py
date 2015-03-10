@@ -22,6 +22,8 @@ parser.add_argument('--skip_collecting_expression', action='store_true',
 	help="don't collect and overwrite the gene expression matrices")                 
 parser.add_argument('--skip_collecting_qc', action='store_true',
 	help="don't collect and overwrite the qc summary files")
+parser.add_argument('--skip_collecting_dup_genes', action='store_true',
+	help="don't collect and overwrite the dup genes summary files")
           
 args = parser.parse_args();
 
@@ -176,6 +178,17 @@ print "writing gene dictionary..."
 
 shutil.copyfile(rsemDictionaryFile, os.path.join(args.output_folder, 'gene_list.txt'));
 
+
+
+#Added 3/9/2015 for the BRAIN project qc assessment:
+COLLECT_DUP_GENES = True;
+if (COLLECT_DUP_GENES and not(args.skip_collecting_dup_genes)):
+	cellsWithDupGenesErrors = [];
+
+	
+
+
+
 print "done collecting all data!"
 
 if (COLLECT_GENE_EXPRESSION and not(args.skip_collecting_expression)):
@@ -193,6 +206,15 @@ if (COLLECT_QC_SUMMARIES and not(args.skip_collecting_qc)):
 	else:
 		print "the following cells had errors while collecting their qc:";
 		for x in cellsWithQCErrors:
+			print x;
+
+
+if (COLLECT_DUP_GENES and not(args.skip_collecting_dup_genes)):
+	if(not(cellsWithDupGenesErrors)):
+		print "no cells had errors while collecting their dup genes";
+	else:
+		print "the following cells had errors while collecting their dup genes:";
+		for x in cellsWithDupGenesErrors:
 			print x;
 
 
