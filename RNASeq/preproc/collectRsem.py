@@ -4,6 +4,18 @@
 # Nir Yosef's lab, UC Berkeley
 # Jan 2015
 
+#pipeline todo:
+# 1. collapse gene variants in rsem's collect output (as Bo recommended)
+# 2. Better handling of multiple alignments:
+# a. RSEM currently randomizes one location to which the read is mapped from the posterior distribution of the reads, it's better to use that probability
+# throughout the computation for counting reads, duplicates etc.
+# b. In cufflinks the output includes multiple reads per gene and the number of reads and number aligned reads will be wrong (there is a warning about this in the output)
+# 3. update the list of protein coding genes (cox2 is not there currently, as Michael pointed out)
+# 4. The problem Michael pointed to --- rRNA and VDJ have no exons and so gffread will not put them in the gtf it produces, which means they are not in rsem's dictionary and no reads can map to them
+# 5. Fix the bug in countdup - it doesn't work on the Ngai single end for some reason
+# 6. debug the ribosomal % index - is it ok? Do we see so few rRNAs because we use RefSeq that has much fewer rRNAs than GenCode, or is there a bug in the index?
+# 7. make a better threshold for trimmomatic min read length - 80% of the actual read length (that is constant across an experiment, so you can simply read the first read in the fastq file)
+
 from collections import namedtuple;
 import argparse;
 import os;

@@ -10,6 +10,7 @@ import argparse
 import os;
 import doQC;
 import sys;
+import shutil;
 
 
 parser = argparse.ArgumentParser(description="Process one single cell sample")
@@ -284,6 +285,14 @@ if(RUN_CUFFLINKS_PIPELINE and not(args.skip_tophat)):
 	returnCode = subprocess.call(tophatCommand, shell=True);
 	if(returnCode != 0):
 		raise Exception("tophat failed");
+
+	print("**********************************************************");
+	print("**********************************************************");
+	print("WARNING: In this step multiple alignments per read should be collapsed into one, but this is not implemented yet for tophat (only for rsme)");
+	print("As a result, the number of reads and the number of aligned reads in the QC will be wrong");
+	shutil.copyfile(os.path.join(args.output_folder, "tophat_output/accepted_hits.bam"),
+					os.path.join(args.output_folder, "tophat_output/accepted_hits_noMultiple.bam"));
+
 	
 	print("**********************************************************");
 	print("**********************************************************");
@@ -292,7 +301,7 @@ if(RUN_CUFFLINKS_PIPELINE and not(args.skip_tophat)):
 		os.makedirs(picardDir);
 		
 	print("Sort SAM");
-	sortSamCommand = Template("picard SortSam TMP_DIR=$OUTPUT_FOLDER/temp I=$OUTPUT_FOLDER/tophat_output/accepted_hits.bam O=$OUTPUT_FOLDER/tophat_output/picard_output/sorted.bam SO=coordinate").substitute(OUTPUT_FOLDER=args.output_folder);
+	sortSamCommand = Template("picard SortSam TMP_DIR=$OUTPUT_FOLDER/temp I=$OUTPUT_FOLDER/tophat_output/accepted_hits_noMultiple.bam O=$OUTPUT_FOLDER/tophat_output/picard_output/sorted.bam SO=coordinate").substitute(OUTPUT_FOLDER=args.output_folder);
 	print(sortSamCommand)
 	sys.stdout.flush();
 	returnCode = subprocess.call(sortSamCommand, shell=True);
