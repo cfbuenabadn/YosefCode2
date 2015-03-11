@@ -288,7 +288,7 @@ if(RUN_CUFFLINKS_PIPELINE and not(args.skip_tophat)):
 
 	print("**********************************************************");
 	print("**********************************************************");
-	print("WARNING: In this step multiple alignments per read should be collapsed into one, but this is not implemented yet for tophat (only for rsme)");
+	print("WARNING: In this step multiple alignments per read should be collapsed into one, but this is not implemented yet for tophat (only for rsem)");
 	print("As a result, the number of reads and the number of aligned reads in the QC will be wrong");
 	shutil.copyfile(os.path.join(args.output_folder, "tophat_output/accepted_hits.bam"),
 					os.path.join(args.output_folder, "tophat_output/accepted_hits_noMultiple.bam"));
