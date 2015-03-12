@@ -226,7 +226,7 @@ if(DO_TRIMMOMATIC and not(args.skip_trimmomatic and args.do_not_rely_on_previous
 
 
 		trimMinLen = min(50, int(0.8 * read_length));#16; #36
-		trimCrop = "CROP:50";
+		trimCrop = ""; #"CROP:50"; --> do not do trimCrop
 		trimMinPhred = 15;
 
 			
