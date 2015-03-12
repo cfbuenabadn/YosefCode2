@@ -11,7 +11,7 @@ import os;
 import doQC;
 import sys;
 import shutil;
-
+import rnaSeqPipelineUtils;
 
 parser = argparse.ArgumentParser(description="Process one single cell sample")
 parser.add_argument("--paired_end", action="store_true",
@@ -56,6 +56,7 @@ if(args.reference == "mm10"):
 	BOWTIE2_INDEX = "/data/yosef/index_files/mm10_4brain/index/GRCm38.p3_4brain";
 	TOPHAT2_TRANSCRIPTOME_INDEX = "/data/yosef/index_files/mm10_4brain/index/tophat_transcriptome_data/GRCm38.p3_refseq_annot";
 	TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/mm10_4brain/index/GRCm38.p3.gff";
+	RSEM_TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/mm10_4brain/index/rsem_index/combinedGTF_4brain.gtf";
 	RSEM_INDEX = "/data/yosef/index_files/mm10_4brain/index/rsem_index/GRCm38.p3_4brain_rsem";
 	#REF_FLAT_INDEX = "/data/yosef/index_files/mm10_4brain/index/refFlat/GRCm38.p3.refFlat";
 	#REF_FLAT_INDEX = "/data/yosef/index_files/mm10_4brain/index/refFlat2/refFlat.txt";
@@ -64,7 +65,7 @@ if(args.reference == "mm10"):
 	#RIBOSOMAL_INTERVALS_INDEX = "/data/yosef/index_files/mm10_4brain/index/gencode/gencode.vM4.rRNA.interval_list_allonEdited";
 	RIBOSOMAL_INTERVALS_INDEX = "/data/yosef/index_files/mm10_4brain/index/gencode/mm10_4BRAIN_rRNA_interval_list_allonEdited.txt";
 	RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM = "/data/yosef/index_files/mm10_4brain/index/gencode/mm10_4BRAIN_rRNA_interval_list_allonEdited_forRSEM.txt";
-		
+	RSEM_DICTIONARY = "/data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt";
 		
 	#settings for mm10 with ERCC spike-ins
 	#BOWTIE2_INDEX = "/data/yosef/index_files/mm10_withERCC/GRCm38.p3_withERCC";
@@ -96,16 +97,18 @@ elif(args.reference == "hg38"):
 	#RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM = "null";
 	
 	BOWTIE2_INDEX = "/data/yosef/index_files/hg38/index/GRCh38";
-	TOPHAT2_TRANSCRIPTOME_INDEX ="/data/yosef/index_files/hg38/index/tophat_transcriptome_data/GRCh38";
+	TOPHAT2_TRANSCRIPTOME_INDEX = "/data/yosef/index_files/hg38/index/tophat_transcriptome_data/GRCh38";
+	RSEM_TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/hg38/rsem_index/GRCh38.gtf";
 	TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/hg38/index/GRCh38.gtf";
 	RSEM_INDEX ="/data/yosef/index_files/hg38/index/rsem_index/GRCh38_rsem";
 	REF_FLAT_INDEX ="/data/yosef/index_files/hg38/index/refFlat/refFlat.txt";
 	RIBOSOMAL_INTERVALS_INDEX ="/data/yosef/index_files/hg38/index/gencode/rRNA.interval";
 	RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM ="/data/yosef/index_files/hg38/index/gencode/rRNA.rsem.interval";
-
+	RSEM_DICTIONARY = "/data/yosef/index_files/hg38/index/rsem_dict.txt";
 		
 else:
 	raise Exception("should not happen - unsupported reference genome");
+
 
 
 #sample file names should not have the '.gz' extension --> remove it if it is  present
@@ -115,7 +118,17 @@ if(args.sampleFile1[-3:] == '.gz'):
 if(args.paired_end and args.sampleFile2[-3:] == '.gz'):
 	print("Truncating the .gz extension from sample file 2's name");
 	args.sampleFile2 = args.sampleFile2[0:-3];
-	
+
+
+if(args.sampleFile1[-6:] != ".fastq") or (args.paired_end and args.sampleFile2[-6:] != ".fastq"):
+	print "Input file names are" + args.sampleFile1 + (args.sampleFile2 if args.paired_end else "");
+	raise Exception("Error: The input file names indicate these are not fastq files, but only this format is supported at present")
+
+args.sampleFile1 = os.path.expanduser(args.sampleFile1);
+if(args.paired_end):
+	args.sampleFile2 = os.path.expanduser(args.sampleFile2);
+
+
 #debug code:
 #subprocess.call("rm aaa*", shell=True);
 #subprocess.call("rm bbb*", shell=True);
@@ -201,11 +214,20 @@ if(DO_TRIMMOMATIC and not(args.skip_trimmomatic and args.do_not_rely_on_previous
 		
 		if not os.path.exists(args.output_folder + "/trimmomatic_output"):
 			os.makedirs(args.output_folder + "/trimmomatic_output");
-		
-		trimMinLen = 16; #36
+
+		#infer the length of reads in the sample by looking at the length of the first read and assuming that all reads are of the same length
+		read_length = len(rnaSeqPipelineUtils.GetFirstReadInFastqFile(args.sampleFile1));
+		print "Inferred read length in sample is: " + str(read_length);
+		if(args.paired_end):
+			read_length_otherSide = len(rnaSeqPipelineUtils.GetFirstReadInFastqFile(args.sampleFile2));
+			print "Inferred read length of the other end in the paired-end sample is: " + str(read_length_otherSide);
+			if read_length != read_length_otherSide:
+				raise Exception("Trimmomatic step failed: it seems that the two ends of the paired-end experiment have different read lengths?");
+
+
+		trimMinLen = min(50, int(0.8 * read_length));#16; #36
 		trimCrop = "CROP:50";
 		trimMinPhred = 15;
-
 
 			
 		trimCmd = Template("java -jar /opt/pkg/Trimmomatic-0.32/trimmomatic-0.32.jar $TRIM_IS_PAIRED -threads $NUM_THREADS -phred33 -trimlog $OUTPUT_FOLDER/trimmomatic_output/trimmomatic_log.txt $TRIM_INPUT1 $TRIM_INPUT2 $TRIM_OUTPUT LEADING:$TRIM_MIN_PHRED TRAILING:$TRIM_MIN_PHRED SLIDINGWINDOW:4:$TRIM_MIN_PHRED MINLEN:$TRIM_MINLEN $TRIM_CROP").substitute(TRIM_IS_PAIRED=trimIsPaired, OUTPUT_FOLDER=args.output_folder, TRIM_INPUT1=trimInput1, TRIM_INPUT2=trimInput2, TRIM_OUTPUT=trimOutput, TRIM_MINLEN=trimMinLen, TRIM_MIN_PHRED=trimMinPhred, TRIM_CROP=trimCrop, NUM_THREADS=args.num_threads);
@@ -266,7 +288,8 @@ if(RUN_CUFFLINKS_PIPELINE and not(args.skip_tophat)):
 	print("**********************************************************");
 	print("**********************************************************");
 	print("starting cufflinks pipeline");
-	print("TODO (3/3/15): the tophat pipeline will output wrong number of reads and ratio of aligned reads in the summary,txt - this is the same problem that was in the rsem pipeline, the accepted_hits.bam will include multiple reads and they have to be filtered out before counting");
+	print("TODO (Mar. 15): WARNING: the tophat pipeline will output wrong number of reads and ratio of aligned reads in the summary,txt - this is the same problem that was in the rsem pipeline, the accepted_hits.bam will include multiple reads and they have to be filtered out before counting");
+	print("TODO (Mar. 15): WARNING: the script count_dup_per_gene.pl relies on some rsem-specific dictionary and needs to be modified...");
 	sys.stdout.flush();
 	
 	if not os.path.exists(args.output_folder + "/tophat_output"):
@@ -450,7 +473,8 @@ if(RUN_QC and not(args.skip_qc)):
 	if(RUN_QC_TOPHAT and not(args.skip_tophat_qc)):
 		sortedBamFile = args.output_folder + "/tophat_output/picard_output/sorted.bam";
 		tophatOutputFolder = args.output_folder + "/tophat_output";
-		tophat_qc_metrics = doQC.CollectData(sortedBamFile, tophatOutputFolder, REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX, args.paired_end);
+		print "Warning: the cufflinks pipleline still doesn't have the two dictionary required for the collect dup perl... this part will be skipped..."
+		tophat_qc_metrics = doQC.CollectData(sortedBamFile, tophatOutputFolder, REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX, args.paired_end, "", "");
 		doQC.WriteQCMetrics(tophatOutputFolder, commonMetrics, tophat_qc_metrics);
 	
 	RUN_QC_RSEM = True;
@@ -463,7 +487,7 @@ if(RUN_QC and not(args.skip_qc)):
 		#sortedBamFile = args.output_folder + "/rsem_output/rsem_output.genome.sorted.bam";
 		#use only aligned reads for qc
 		sortedBamFile = args.output_folder + "/rsem_output/picard_output/sorted.bam";
-		rsem_qc_metrics = doQC.CollectData(sortedBamFile, rsemOutputFolder, REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM, args.paired_end);
+		rsem_qc_metrics = doQC.CollectData(sortedBamFile, rsemOutputFolder, REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM, args.paired_end, RSEM_DICTIONARY, RSEM_TRANSCRIPT_ANNOTATION);
 		doQC.WriteQCMetrics(rsemOutputFolder, commonMetrics, rsem_qc_metrics);
 	
 	

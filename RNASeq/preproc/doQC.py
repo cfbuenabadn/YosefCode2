@@ -28,7 +28,7 @@ def CheckContam(sampleFile, outputFolder, sample_end):
 		raise Exception("CheckContam failed");
 
 
-def CollectData(bamFile, outputFolder, refFlatAnnotationsFile, ribosomalIntervalsFile, isPairedEnd):
+def CollectData(bamFile, outputFolder, refFlatAnnotationsFile, ribosomalIntervalsFile, isPairedEnd, transcriptAnnotationFile, transcriptDictionaryFile):
 	rnaMetricsFileName = outputFolder + '/picard_output/rna_metrics.txt';
 	cmd = Template("picard CollectRnaSeqMetrics TMP_DIR=$OUTPUT_FOLDER/temp INPUT=$BAM_FILE OUTPUT=$OUTPUT_FILE CHART=$OUTPUT_FOLDER/picard_output/rna_coverage.pdf REF_FLAT=$refFlatFile STRAND=NONE RIBOSOMAL_INTERVALS=$ribosomalIntervalsFile").substitute(BAM_FILE=bamFile, OUTPUT_FOLDER=outputFolder, OUTPUT_FILE=rnaMetricsFileName, refFlatFile=refFlatAnnotationsFile, ribosomalIntervalsFile=ribosomalIntervalsFile);
 	print(cmd)
@@ -49,15 +49,18 @@ def CollectData(bamFile, outputFolder, refFlatAnnotationsFile, ribosomalInterval
 	returnCode = subprocess.call(cmd, shell=True);
 	if(returnCode != 0):
 		raise Exception("CollectData failed");
-	
-	dupFileName = outputFolder + '/picard_output/dup.txt';
-	#cmd = Template("perl /project/eecs/yosef/singleCell/allon_script/preproc/count_dup.pl $BAM_FILE $OUTPUT_FILE").substitute(BAM_FILE=bamFile, OUTPUT_FILE=dupFileName);
-	#updated script that in addition to total dup counting, also counts them per gene: It creates the dup.txt file as before and also a new file with a postfix of .genes.txt that includes: <gene name> <#dup reads> <tot reads> <ratio> Note that this is a read-level analysis, not fragment.
-	cmd = Template("perl /project/eecs/yosef/singleCell/allon_script/preproc/count_dup_per_gene.pl $BAM_FILE $OUTPUT_FILE").substitute(BAM_FILE=bamFile, OUTPUT_FILE=dupFileName);
-	print(cmd)
-	returnCode = subprocess.call(cmd, shell=True);
-	if(returnCode != 0):
-		raise Exception("CollectData failed");
+
+	if(not(transcriptAnnotationFile) or not(transcriptDictionaryFile)):
+		print "the index file required to run the count dup logic were not supplied... skipping this part and not creating dup.txt and dup.txt.genes.txt"
+	else:
+		dupFileName = outputFolder + '/picard_output/dup.txt';
+		#cmd = Template("perl /project/eecs/yosef/singleCell/allon_script/preproc/count_dup.pl $BAM_FILE $OUTPUT_FILE").substitute(BAM_FILE=bamFile, OUTPUT_FILE=dupFileName);
+		#updated script that in addition to total dup counting, also counts them per gene: It creates the dup.txt file as before and also a new file with a postfix of .genes.txt that includes: <gene name> <#dup reads> <tot reads> <ratio> Note that this is a read-level analysis, not fragment.
+		cmd = Template("perl /project/eecs/yosef/singleCell/allon_script/preproc/count_dup_per_gene.pl $BAM_FILE $OUTPUT_FILE $TRANSCRIPT_ANNOTATION $TRANSCRIPT_DICTIONARY").substitute(BAM_FILE=bamFile, OUTPUT_FILE=dupFileName, TRANSCRIPT_ANNOTATION=transcriptAnnotationFile, TRANSCRIPT_DICTIONARY=transcriptDictionaryFile);
+		print(cmd)
+		returnCode = subprocess.call(cmd, shell=True);
+		if(returnCode != 0):
+			raise Exception("CollectData failed");
 
 		
     #system("/opt/genomics/bin/CollectRnaSeqMetrics TMP_DIR=$OUTPUT_FOLDER/temp INPUT=$OUTPUT_FOLDER/picard_output/sorted.bam OUTPUT=$OUTPUT_FOLDER/picard_output/rna_metrics.txt CHART=$OUTPUT_FOLDER/picard_output/rna_coverage.pdf REF_FLAT=$refFlatFile STRAND=NONE RIBOSOMAL_INTERVALS=$ribosomalIntervalsFile\n");
@@ -139,21 +142,28 @@ def CollectData(bamFile, outputFolder, refFlatAnnotationsFile, ribosomalInterval
 		
 	qc_metrics["insert_sz_avg"] = insert_sz_avg;
 	qc_metrics["insert_sz_std"] = insert_sz_std;
-		
-	#  % of unique alignments (complexity) 
-	with open(dupFileName) as fin:
-		line = fin.next().split('\t');
-	left_right = float(line[0]);
-	dupf = float(line[1]); #dup ratio for fragments (pair end)
-	if(dupf == -1):
-		#this is what count_dup.pl outputs when fcounter = 0
-		dupf = float('NaN');
-	complexity = 1.0 - dupf;
-	dupr = float(line[4]); #dup ratio for reads (one end)
-	if(dupr == -1):
-		dupr = float('NaN');
-	ndupr = 1 - dupr; #for compatability with complexity, I output the 1-complement of the dup read ratio, i.e., the non-dup read ratio, or the ratio of unique reads
-	
+
+	if(not(transcriptAnnotationFile) or not(transcriptDictionaryFile)):
+		print "the index file required to run the count dup logic were not supplied... skipping this part and not creating or reading data from dup.txt and dup.txt.genes.txt --> these values will be NaN"
+		complexity = float('NaN');
+		ndupr = float('NaN');
+		left_right = float('NaN');
+	else:
+		#  % of unique alignments (complexity)
+		with open(dupFileName) as fin:
+			line = fin.next().split('\t');
+		left_right = float(line[0]);
+		dupf = float(line[1]); #dup ratio for fragments (pair end)
+
+		if(dupf == -1):
+			#this is what count_dup.pl outputs when fcounter = 0
+			dupf = float('NaN');
+		complexity = 1.0 - dupf;
+		dupr = float(line[4]); #dup ratio for reads (one end)
+		if(dupr == -1):
+			dupr = float('NaN');
+		ndupr = 1 - dupr; #for compatability with complexity, I output the 1-complement of the dup read ratio, i.e., the non-dup read ratio, or the ratio of unique reads
+
 	qc_metrics["complexity"] = complexity;
 	qc_metrics["ndupr"] = ndupr;
 	qc_metrics["left_right"] = left_right;

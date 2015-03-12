@@ -14,7 +14,7 @@
 # 4. The problem Michael pointed to --- rRNA and VDJ have no exons and so gffread will not put them in the gtf it produces, which means they are not in rsem's dictionary and no reads can map to them
 # 5. Fix the bug in countdup - it doesn't work on the Ngai single end for some reason
 # 6. debug the ribosomal % index - is it ok? Do we see so few rRNAs because we use RefSeq that has much fewer rRNAs than GenCode, or is there a bug in the index?
-# 7. make a better threshold for trimmomatic min read length - 80% of the actual read length (that is constant across an experiment, so you can simply read the first read in the fastq file)
+# 7. add a capability to count_dup_per_gene for cufflinks (currently it relies on rsem indices...)
 
 from collections import namedtuple;
 import argparse;

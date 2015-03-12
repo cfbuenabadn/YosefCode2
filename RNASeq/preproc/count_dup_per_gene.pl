@@ -1,5 +1,5 @@
 use strict;
-my($inp,$out)=@ARGV;
+my($inp,$out,$rsemGTFFile,$rsemDictionary)=@ARGV;
 ## "$inp" is bam filename
 ## "$out" is output text file
 
@@ -17,7 +17,7 @@ my $GRID=10;
 my $LOAD_GENES_IN_ADVANCE=1;my $N=0;
 my %genes=();my $N1=0;my %gcntr=();
 
-open FD,"/data/yosef/index_files/mm10_4brain/index/rsem_index/combinedGTF_4brain.gtf";
+open FD,$rsemGTFFile;
 #NC_000067.6     Gnomon  exon    3670552 3671742 .       -       .       transcript_id "rna0"; gene_id "gene0"; gene_name "Xkr4";
 
 while (<FD>){
@@ -118,7 +118,7 @@ print h_out "$posnegrat\t$dupf\t$dfcounter\t$fcounter\t$dupr\t$drcounter\t$rcoun
 close h_out;
 
 open h_out,">$out\.genes.txt";$N=0;
-open FD,"/data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt";
+open FD,$rsemDictionary;
 while(<FD>){
 	if (/^#/) {next;}
 	chomp;my ($id,@rest)=split(/\t/);
