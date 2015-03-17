@@ -15,6 +15,7 @@
 # 5. Fix the bug in countdup - it doesn't work on the Ngai single end for some reason
 # 6. debug the ribosomal % index - is it ok? Do we see so few rRNAs because we use RefSeq that has much fewer rRNAs than GenCode, or is there a bug in the index?
 # 7. add a capability to count_dup_per_gene for cufflinks (currently it relies on rsem indices...)
+# 8. Input unaligned BAM file as Nir requested
 
 from collections import namedtuple;
 import argparse;

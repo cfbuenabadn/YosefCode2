@@ -21,16 +21,8 @@ python ~/project/singleCell/allon_script/preproc/processSingleSample.py --skip_t
 echo "" > /var/mail/allonwag; rm -f *zen*.OU; rm -f *zen*.ER; python ~/project/singleCell/allon_script/preproc/processFolder.py -N tryRnaPipe -r mm10 -o ~/archive/TFH/pipeout_single ~/data/BRAIN/sources/olfactory/truncated_GBC_L01
 
 
-s121 (change -q to yosef_test and add a restriction to only this machine
-python ~/project/singleCell/allon_script/preproc/processFolder.py -p 20 -N tryRnaPipe -r mm10 -p 20 -o ~/archive/TFH/pipeout_single_s121 ~/data/BRAIN/sources/olfactory/truncated_GBC_L01_2
-s122
-python ~/project/singleCell/allon_script/preproc/processFolder.py -N tryRnaPipe -r mm10 -p 20 -o ~/archive/TFH/pipeout_single_s122 ~/data/BRAIN/sources/olfactory/truncated_GBC_L01_2
-s123
-python ~/project/singleCell/allon_script/preproc/processFolder.py -N tryRnaPipe -r mm10 -p 20 -o ~/archive/TFH/pipeout_single_s123 ~/data/BRAIN/sources/olfactory/truncated_GBC_L01_2
-s124
-python ~/project/singleCell/allon_script/preproc/processFolder.py -N tryRnaPipe -r mm10 -p 20 -o ~/archive/TFH/pipeout_single_s124 ~/data/BRAIN/sources/olfactory/truncated_GBC_L01_2
 
-all fine except for s122 which I restarted
+
 
 on queue yosef:
 python ~/project/singleCell/allon_script/preproc/processFolder.py -N tryGBC_L01 -r mm10 -o ~/archive/TFH/pipeout_GBC_L01 ~/data/BRAIN/sources/olfactory/GBC_L01

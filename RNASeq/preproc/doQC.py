@@ -54,9 +54,15 @@ def CollectData(bamFile, outputFolder, refFlatAnnotationsFile, ribosomalInterval
 		print "the index file required to run the count dup logic were not supplied... skipping this part and not creating dup.txt and dup.txt.genes.txt"
 	else:
 		dupFileName = outputFolder + '/picard_output/dup.txt';
+
+		if(isPairedEnd):
+			dupScriptToRun = "count_dup_per_gene.pl"
+		else:
+			dupScriptToRun = "count_dup_per_gene_single_end.pl"
+
 		#cmd = Template("perl /project/eecs/yosef/singleCell/allon_script/preproc/count_dup.pl $BAM_FILE $OUTPUT_FILE").substitute(BAM_FILE=bamFile, OUTPUT_FILE=dupFileName);
 		#updated script that in addition to total dup counting, also counts them per gene: It creates the dup.txt file as before and also a new file with a postfix of .genes.txt that includes: <gene name> <#dup reads> <tot reads> <ratio> Note that this is a read-level analysis, not fragment.
-		cmd = Template("perl /project/eecs/yosef/singleCell/allon_script/preproc/count_dup_per_gene.pl $BAM_FILE $OUTPUT_FILE $TRANSCRIPT_ANNOTATION $TRANSCRIPT_DICTIONARY").substitute(BAM_FILE=bamFile, OUTPUT_FILE=dupFileName, TRANSCRIPT_ANNOTATION=transcriptAnnotationFile, TRANSCRIPT_DICTIONARY=transcriptDictionaryFile);
+		cmd = Template("perl /project/eecs/yosef/singleCell/allon_script/preproc/$DUP_SCRIPT_TO_RUN $BAM_FILE $OUTPUT_FILE $TRANSCRIPT_ANNOTATION $TRANSCRIPT_DICTIONARY").substitute(BAM_FILE=bamFile, OUTPUT_FILE=dupFileName, TRANSCRIPT_ANNOTATION=transcriptAnnotationFile, TRANSCRIPT_DICTIONARY=transcriptDictionaryFile, DUP_SCRIPT_TO_RUN=dupScriptToRun);
 		print(cmd)
 		returnCode = subprocess.call(cmd, shell=True);
 		if(returnCode != 0):
