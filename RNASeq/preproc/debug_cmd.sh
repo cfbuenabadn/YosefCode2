@@ -40,15 +40,16 @@ python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_tophat 
 python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_tophat --skip_tophat_qc -N brainL02 -r mm10 -p 2 -o /home/eecs/allonwag/data/BRAIN/processed2/GBC_L02 /home/eecs/allonwag/data/BRAIN/sources/olfactory/GBC_L02
 python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_trimmomatic --skip_tophat --skip_rsem --rsem_bowtie_maxins 3000 --paired_end -N brainPaired -r mm10 -p 1 -o /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai
 python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_trimmomatic --skip_tophat --skip_rsem --rsem_bowtie_maxins 3000 -N brainPairedAsSingle -r mm10 -p 1 -o /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai_AsSingle /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai
-python ~/project/singleCell/allon_script/preproc/processFolder.py --rsem_bowtie_maxins 3000 --paired_end -N brain96_192 -r mm10 -p 4 -o /home/eecs/allonwag/data/BRAIN/processed3/2015_3_13/150309_HS3A/Project_Ngai /home/eecs/allonwag/data/BRAIN/sources/2015_3_13/150309_HS3A/Project_Ngai 
+python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_trimmomatic --skip_tophat --skip_rsem --rsem_bowtie_maxins 3000 --paired_end -N brain96_192 -r mm10 -p 4 -o /home/eecs/allonwag/data/BRAIN/processed3/2015_3_13/150309_HS3A/Project_Ngai /home/eecs/allonwag/data/BRAIN/sources/2015_3_13/150309_HS3A/Project_Ngai 
 
 
 python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed2/GBC_L01/rsem /home/eecs/allonwag/data/BRAIN/processed2/GBC_L01
 python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed2/GBC_L02/rsem /home/eecs/allonwag/data/BRAIN/processed2/GBC_L02
 python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed2/GBC_P02-P03/rsem /home/eecs/allonwag/data/BRAIN/processed2/GBC_P02-P03
-python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed2/150202_HS2A/Project_Ngai/rsem /home/eecs/allonwag/data/BRAIN/processed2/150202_HS2A/Project_Ngai
-python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed2/150202_HS2A/Project_Ngai_AsSingle/rsem /home/eecs/allonwag/data/BRAIN/processed2/150202_HS2A/Project_Ngai_AsSingle
-python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed2/150202_HS2A/Project_Ngai_AsSingle/rsem /home/eecs/allonwag/data/BRAIN/processed2/2015_3_13/150309_HS3A/Project_Ngai
+python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai/rsem /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai
+python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai_AsSingle/rsem /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai_AsSingle
+python ~/project/singleCell/allon_script/preproc/collectRsem.py -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed3/2015_3_13/150309_HS3A/Project_Ngai/rsem  /home/eecs/allonwag/data/BRAIN/processed3/2015_3_13/150309_HS3A/Project_Ngai
+
 
 /150202_HS2A/Project_Ngai
 

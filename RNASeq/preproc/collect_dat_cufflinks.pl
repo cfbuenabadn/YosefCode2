@@ -22,6 +22,8 @@ my ($WORK_FOLDER,$dict_file,$include_raw_read)=@ARGV;
 #$dict_file="/data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt";
 #$include_raw_read=0;
 #perl collect_dat_cufflinks.pl /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai/
+#with include raw read:
+#perl collect_dat_cufflinks.pl /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai/
 
 my $cntr=0;my %fpkm=();
 my %read_count=();my %read_dup=();my %read_count_unique=();
