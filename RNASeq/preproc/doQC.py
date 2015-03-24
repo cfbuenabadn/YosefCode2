@@ -62,11 +62,18 @@ def CollectData(bamFile, outputFolder, refFlatAnnotationsFile, ribosomalInterval
 
 		#cmd = Template("perl /project/eecs/yosef/singleCell/allon_script/preproc/count_dup.pl $BAM_FILE $OUTPUT_FILE").substitute(BAM_FILE=bamFile, OUTPUT_FILE=dupFileName);
 		#updated script that in addition to total dup counting, also counts them per gene: It creates the dup.txt file as before and also a new file with a postfix of .genes.txt that includes: <gene name> <#dup reads> <tot reads> <ratio> Note that this is a read-level analysis, not fragment.
-		cmd = Template("perl /project/eecs/yosef/singleCell/allon_script/preproc/$DUP_SCRIPT_TO_RUN $BAM_FILE $OUTPUT_FILE $TRANSCRIPT_ANNOTATION $TRANSCRIPT_DICTIONARY").substitute(BAM_FILE=bamFile, OUTPUT_FILE=dupFileName, TRANSCRIPT_ANNOTATION=transcriptAnnotationFile, TRANSCRIPT_DICTIONARY=transcriptDictionaryFile, DUP_SCRIPT_TO_RUN=dupScriptToRun);
+		cmd = Template("perl /project/eecs/yosef/singleCell/allon_script/preproc/$DUP_SCRIPT_TO_RUN $BAM_FILE $OUTPUT_FILE $TRANSCRIPT_ANNOTATION $TRANSCRIPT_DICTIONARY 0").substitute(BAM_FILE=bamFile, OUTPUT_FILE=dupFileName, TRANSCRIPT_ANNOTATION=transcriptAnnotationFile, TRANSCRIPT_DICTIONARY=transcriptDictionaryFile, DUP_SCRIPT_TO_RUN=dupScriptToRun);
 		print(cmd)
 		returnCode = subprocess.call(cmd, shell=True);
 		if(returnCode != 0):
-			raise Exception("CollectData failed");
+			raise Exception("count dups failed");
+
+		dupUniqueFileName = outputFolder + '/picard_output/dup_unique.txt';
+		cmd = Template("perl /project/eecs/yosef/singleCell/allon_script/preproc/$DUP_SCRIPT_TO_RUN $BAM_FILE $OUTPUT_FILE $TRANSCRIPT_ANNOTATION $TRANSCRIPT_DICTIONARY 1").substitute(BAM_FILE=bamFile, OUTPUT_FILE=dupUniqueFileName, TRANSCRIPT_ANNOTATION=transcriptAnnotationFile, TRANSCRIPT_DICTIONARY=transcriptDictionaryFile, DUP_SCRIPT_TO_RUN=dupScriptToRun);
+		print(cmd)
+		returnCode = subprocess.call(cmd, shell=True);
+		if(returnCode != 0):
+			raise Exception("count dups unique failed");
 
 		
     #system("/opt/genomics/bin/CollectRnaSeqMetrics TMP_DIR=$OUTPUT_FOLDER/temp INPUT=$OUTPUT_FOLDER/picard_output/sorted.bam OUTPUT=$OUTPUT_FOLDER/picard_output/rna_metrics.txt CHART=$OUTPUT_FOLDER/picard_output/rna_coverage.pdf REF_FLAT=$refFlatFile STRAND=NONE RIBOSOMAL_INTERVALS=$ribosomalIntervalsFile\n");

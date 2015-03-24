@@ -6,15 +6,6 @@ python ~/project/singleCell/allon_script/preproc/normalizeBrainFastaInput.py /ho
 #!/bin/sh
 
 python ~/project/singleCell/allon_script/preproc/processSingleSample.py --skip_tophat --skip_tophat_qc -p 16 -r mm10 -o ~/archive/TFH/script/output_single  ~/archive/TFH/script/gbc.fastq.gz
-python ~/project/singleCell/allon_script/preproc/processSingleSample.py --skip_trimmomatic --skip_rsem --skip_tophat --skip_tophat_qc -p 16 -r mm10 -o ~/archive/TFH/script/output_single  ~/archive/TFH/script/gbc.fastq.gz
-python ~/project/singleCell/allon_script/preproc/processSingleSample.py --skip_trimmomatic --do_not_rely_on_previous_trimmomatic --skip_tophat --skip_tophat_qc -p 16 -r mm10 -o ~/archive/TFH/script/output_single_bla  ~/archive/TFH/script/gbc.fastq.gz
-
-python ~/project/singleCell/allon_script/preproc/processSingleSample.py --skip_tophat --skip_tophat_qc -p 16 --paired_end -r mm10 -o ~/archive/TFH/script/output_paired  ~/archive/TFH/script/tfh1.fastq.gz ~/archive/TFH/script/tfh2.fastq.gz
-
-
-python ~/project/singleCell/allon_script/preproc/processSingleSample.py --skip_tophat --skip_tophat_qc -p 16 --paired_end -r mm10 -o ~/archive/TFH/script/output_paired  ~/archive/TFH/script/tfh1.fastq.gz ~/archive/TFH/script/tfh2.fastq.gz
-python ~/project/singleCell/allon_script/preproc/processSingleSample.py --skip_trimmomatic --skip_rsem --skip_tophat --skip_tophat_qc -p 16 --paired_end -r mm10 -o ~/archive/TFH/script/output_paired  ~/archive/TFH/script/tfh1.fastq.gz ~/archive/TFH/script/tfh2.fastq.gz
-python ~/project/singleCell/allon_script/preproc/processSingleSample.py --skip_trimmomatic --do_not_rely_on_previous_trimmomatic --skip_tophat --skip_tophat_qc -p 16 --paired_end -r mm10 -o ~/archive/TFH/script/output_paired_bla  ~/archive/TFH/script/tfh1.fastq.gz ~/archive/TFH/script/tfh2.fastq.gz
 
 #python ~/project/singleCell/allon_script/preproc/processSingleSample.py --skip_tophat --skip_tophat_qc -p 16 --paired_end -r mm10 -o ~/archive/TFH/script/output_paired  ~/archive/TFH/script/tfh1.fastq.gz ~/archive/TFH/script/tfh2.fastq.gz
 
@@ -40,14 +31,16 @@ python ~/project/singleCell/allon_script/preproc/processFolder.py -N try4JimB --
 python ~/project/singleCell/allon_script/preproc/processFolder.py -N try4JimB --skip_tophat --skip_tophat_qc -r mm10 -p 2 -o /data/yosef/CD8_effector_diff/data/Single_Cell_RNAseq/LCMV_Pilot/LCMV_Plates3_d30_Clone/processed2 /data/yosef/CD8_effector_diff/data/Single_Cell_RNAseq/LCMV_Pilot/LCMV_Plates3_d30_Clone/raw_data
 python ~/project/singleCell/allon_script/preproc/processFolder.py -N try4JimB --skip_tophat --skip_tophat_qc -r mm10 -p 2 -o /data/yosef/CD8_effector_diff/data/Single_Cell_RNAseq/LCMV_Pilot/LCMV_Plates4_d7_Arm/processed2 /data/yosef/CD8_effector_diff/data/Single_Cell_RNAseq/LCMV_Pilot/LCMV_Plates4_d7_Arm/raw_data
 
+python ~/project/singleCell/allon_script/preproc/processSingleSample.py --paired_end --skip_trimmomatic --skip_tophat --skip_rsem --rsem_bowtie_maxins 3000 -r mm10 -p 4 -o /home/eecs/allonwag/data/BRAIN/processed_debug/OEP02_N712_S508_GTAGAGGA-CTAAGCCT_L002_R1_combined /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai/Sample_OEP02_N712_S508/OEP02_N712_S508_GTAGAGGA-CTAAGCCT_L002_R1_combined.fastq.gz /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai/Sample_OEP02_N712_S508/OEP02_N712_S508_GTAGAGGA-CTAAGCCT_L002_R2_combined.fastq.gz
+python ~/project/singleCell/allon_script/preproc/processSingleSample.py --skip_trimmomatic --skip_tophat --skip_rsem --rsem_bowtie_maxins 3000 -r mm10 -p 4 -o /home/eecs/allonwag/data/BRAIN/processed_debug_single/OEP02_N712_S508_GTAGAGGA-CTAAGCCT_L002_R1_combined /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai/Sample_OEP02_N712_S508/OEP02_N712_S508_GTAGAGGA-CTAAGCCT_L002_R1_combined.fastq.gz
 
 
 python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_tophat --skip_tophat_qc -N brainP02P03 -r mm10 -p 2 -o /home/eecs/allonwag/data/BRAIN/processed2/GBC_P02-P03 /home/eecs/allonwag/data/BRAIN/sources/olfactory/GBC_P02-P03
 python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_tophat --skip_tophat_qc -N brainL01 -r mm10 -p 2 -o /home/eecs/allonwag/data/BRAIN/processed2/GBC_L01 /home/eecs/allonwag/data/BRAIN/sources/olfactory/GBC_L01
 python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_tophat --skip_tophat_qc -N brainL02 -r mm10 -p 2 -o /home/eecs/allonwag/data/BRAIN/processed2/GBC_L02 /home/eecs/allonwag/data/BRAIN/sources/olfactory/GBC_L02
-python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_trimmomatic --skip_rsem --skip_tophat --skip_tophat_qc --paired_end -N brainPaired -r mm10 -p 2 -o /home/eecs/allonwag/data/BRAIN/processed2/150202_HS2A/Project_Ngai /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai
-python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_trimmomatic --skip_rsem --skip_tophat --skip_tophat_qc -N brainPairedAsSingle -r mm10 -p 2 -o /home/eecs/allonwag/data/BRAIN/processed2/150202_HS2A/Project_Ngai_AsSingle /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai
-python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_tophat --skip_tophat_qc --paired_end -N brain96_192 -r mm10 -p 2 -o /home/eecs/allonwag/data/BRAIN/processed2/2015_3_13/150309_HS3A/Project_Ngai /home/eecs/allonwag/data/BRAIN/sources/2015_3_13/150309_HS3A/Project_Ngai 
+python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_trimmomatic --skip_tophat --skip_rsem --rsem_bowtie_maxins 3000 --paired_end -N brainPaired -r mm10 -p 1 -o /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai
+python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_trimmomatic --skip_tophat --skip_rsem --rsem_bowtie_maxins 3000 -N brainPairedAsSingle -r mm10 -p 1 -o /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai_AsSingle /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai
+python ~/project/singleCell/allon_script/preproc/processFolder.py --rsem_bowtie_maxins 3000 --paired_end -N brain96_192 -r mm10 -p 4 -o /home/eecs/allonwag/data/BRAIN/processed3/2015_3_13/150309_HS3A/Project_Ngai /home/eecs/allonwag/data/BRAIN/sources/2015_3_13/150309_HS3A/Project_Ngai 
 
 
 python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed2/GBC_L01/rsem /home/eecs/allonwag/data/BRAIN/processed2/GBC_L01
@@ -55,6 +48,7 @@ python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /hom
 python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed2/GBC_P02-P03/rsem /home/eecs/allonwag/data/BRAIN/processed2/GBC_P02-P03
 python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed2/150202_HS2A/Project_Ngai/rsem /home/eecs/allonwag/data/BRAIN/processed2/150202_HS2A/Project_Ngai
 python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed2/150202_HS2A/Project_Ngai_AsSingle/rsem /home/eecs/allonwag/data/BRAIN/processed2/150202_HS2A/Project_Ngai_AsSingle
+python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed2/150202_HS2A/Project_Ngai_AsSingle/rsem /home/eecs/allonwag/data/BRAIN/processed2/2015_3_13/150309_HS3A/Project_Ngai
 
 /150202_HS2A/Project_Ngai
 

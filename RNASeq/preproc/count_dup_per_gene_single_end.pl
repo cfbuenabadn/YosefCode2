@@ -1,11 +1,11 @@
 use strict;
-my($inp,$out,$rsemGTFFile,$rsemDictionary)=@ARGV;
+my($inp,$out,$rsemGTFFile,$rsemDictionary,$only_uniquely_alligned)=@ARGV;
 ## "$inp" is bam filename
 ## "$out" is output text file
 
 
-$rsemGTFFile="/data/yosef/index_files/mm10_4brain/index/rsem_index/combinedGTF_4brain.gtf";
-$rsemDictionary="/data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt";
+#$rsemGTFFile="/data/yosef/index_files/mm10_4brain/index/rsem_index/combinedGTF_4brain.gtf";
+#$rsemDictionary="/data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt";
 #perl count_dup_per_gene_single_end.pl /data/yosef/BRAIN/processed2/150202_HS2A/Project_Ngai_AsSingle/OEP01_N710_S501_CGAGGCTG-TAGATCGC_L001_R1_combined/rsem_output/picard_output/sorted.bam b_test_count_dup.txt
 
 my $GRID=10;
@@ -39,9 +39,16 @@ open (FD_sam, "samtools view -h $inp |");
 
 
 while(<FD_sam>){
-        if(/^\@/){next;}
-	chomp;my ($nm,$bitmap,$chrom,$pos,$mapq,$cigar,$rnext,$pnext,@rest)=split(/\t/);
-        if(!($chrom=~/\*/ || $bitmap&0x200 || $bitmap&0x4 )){
+        if(/^\@/){next;}chomp;my $l=$_;
+	my ($nm,$bitmap,$chrom,$pos,$mapq,$cigar,$rnext,$pnext,@rest)=split(/\t/,$l);
+	if(0 && $only_uniquely_alligned){ #Disabled since the flag is mimssing (for some reason) from Bowtie output
+		my $my_score=0;if ($l=~/AS\:i\:(\d+)/){
+			$my_score=$1;my $other_score=0;
+			if ($l=~/XS\:i\:(\d+)/){if ($my_score<=$1) {next;}}
+		}
+	}
+	
+        if(!($chrom=~/\*/ || $bitmap&0x200 || $bitmap&0x4 || ($only_uniquely_alligned && ($bitmap&0x100)))){
                 if($prv_chrom ne $chrom && $prv_chrom ne "" && $chrom!~/\*/){
 			my $drcounter1=0;foreach my $k(keys %uread){$drcounter1+=$uread{$k}-1;}
 			print STDERR "In $prv_chrom :: Found $drcounter1 duplicates from ".scalar(keys %uread)." unique reads and ".scalar(keys %read)." total reads\n";

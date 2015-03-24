@@ -28,7 +28,9 @@ parser.add_argument("-N", "--job_name", action="store", default='RnaSeq_preproc_
 parser.add_argument('folder', action='store',
                    help='the folder to read')
 parser.add_argument("-p", "--num_threads", action="store", required=False, default=6,
-                    help="The number of allocated threads, to be passed to trimmomatic, tophat, cufflinks, and rsem.");    
+                    help="The number of allocated threads, to be passed to trimmomatic, tophat, cufflinks, and rsem.");  
+parser.add_argument('--do_not_send_to_cluster', action='store_true',
+	help="just write the directory structure, but do not call the cluster to execute the jobs (used for debug)")
 parser.add_argument('--skip_trimmomatic', action='store_true',
                    help="don't run trimmomatic before running on the samples")
 parser.add_argument('--do_not_rely_on_previous_trimmomatic', action='store_true',
@@ -43,6 +45,8 @@ parser.add_argument('--skip_tophat_qc', action='store_true',
                    help="skip the qc part of the pipeline only for tophat (ignored if the --skip_qc flag is given, in which case qc is not run in the first place)")                 
 parser.add_argument('--skip_rsem_qc', action='store_true',
                    help="skip the qc part of the pipeline only for rsem (ignored if the --skip_qc flag is given, in which case qc is not run in the first place)")                 
+parser.add_argument('--rsem_bowtie_maxins', action='store', default=1000,
+                   help="For paired-end data only (ignored if --paired_end is not set): the maximum fragment length (this is the value of the --fragment-length-max in rsem and -X/--maxins in bowtie2). Defaults to 1000, which is the rsem default")                 
 
        
                   
@@ -57,7 +61,7 @@ if(args.folder[-1] == '/'):
 	args.folder = args.folder[:-1];
 
 
-if(socket.gethostname() != "zen"):
+if(socket.gethostname() != "zen" and not(args.do_not_send_to_cluster)):
 	raise Exception("This script must be run from the zen machine that supports the  queue");
 
 
@@ -90,7 +94,7 @@ for sample1 in sampleList:
 	if not os.path.exists(sampleOutputFolder):
 		os.makedirs(sampleOutputFolder);
 		
-	cmd = Template("python /project/eecs/yosef/singleCell/allon_script/preproc/processSingleSample.py $IS_PAIRED_END -r $REFERENCE -p $NUM_THREADS -o $OUTPUT_FOLDER $SKIP_TRIMMOMATIC $DO_NOT_RELY_ON_PREVIOUS_TRIMMOMATIC $SKIP_TOPHAT $SKIP_RSEM $SKIP_QC $SKIP_TOPHAT_QC $SKIP_RSEM_QC  $SAMPLE1 $SAMPLE2").substitute( \
+	cmd = Template("python /project/eecs/yosef/singleCell/allon_script/preproc/processSingleSample.py $IS_PAIRED_END -r $REFERENCE -p $NUM_THREADS -o $OUTPUT_FOLDER $SKIP_TRIMMOMATIC $DO_NOT_RELY_ON_PREVIOUS_TRIMMOMATIC $SKIP_TOPHAT $SKIP_RSEM $SKIP_QC $SKIP_TOPHAT_QC $SKIP_RSEM_QC $RSEM_BOWTIE_MAXINS $SAMPLE1 $SAMPLE2").substitute( \
 		IS_PAIRED_END=("--paired_end" if args.paired_end else ""), \
 		REFERENCE=args.reference, \
 		NUM_THREADS=args.num_threads, \
@@ -103,8 +107,8 @@ for sample1 in sampleList:
 		SKIP_RSEM="--skip_rsem" if args.skip_rsem else "", \
 		SKIP_QC="--skip_qc" if args.skip_qc else "", \
 		SKIP_TOPHAT_QC="--skip_tophat_qc" if args.skip_tophat_qc else "", \
-		SKIP_RSEM_QC="--skip_rsem_qc" if args.skip_rsem_qc else "");
-		
+		SKIP_RSEM_QC="--skip_rsem_qc" if args.skip_rsem_qc else "", \
+		RSEM_BOWTIE_MAXINS=("--rsem_bowtie_maxins %s" % args.rsem_bowtie_maxins) if args.paired_end else "")
 	
 	print "sending cmd to queue: " + cmd;
 
@@ -187,12 +191,14 @@ for sample1 in sampleList:
 	os.chmod(queueScriptFileName, st.st_mode | stat.S_IEXEC);
 	print("added run permissions to PBS script\n");
 
-	print("sending PBS script to queue\n");
-	queueCmd = Template("qsub $RUN_FILE").substitute(RUN_FILE=queueScriptFileName);
-	print(queueCmd);
-	returnCode = subprocess.call(queueCmd, shell=True);
-	if(returnCode != 0):
-		raise Exception("invoking qsub failed")
+	if(not(args.do_not_send_to_cluster)):
+		#actually execute the job by sending to cluster
+		print("sending PBS script to queue\n");
+		queueCmd = Template("qsub $RUN_FILE").substitute(RUN_FILE=queueScriptFileName);
+		print(queueCmd);
+		returnCode = subprocess.call(queueCmd, shell=True);
+		if(returnCode != 0):
+			raise Exception("invoking qsub failed")
 	
 	
 		#queueCmd = Template("qsub -o $OUTPUT_DIR/queueLog.txt -e $OUTPUT_DIR/queueErr.txt \

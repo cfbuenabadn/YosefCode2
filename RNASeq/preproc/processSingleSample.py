@@ -18,11 +18,11 @@ parser.add_argument("--paired_end", action="store_true",
                     help="The sample is paired-end (if this flag is not given, single end is assumed)")
 parser.add_argument("-r", "--reference", action="store", required=True,
 		    choices=["mm10", "hg38", "hg19"],
-                    help="The referernce genome against which to align. Currently supported: mm10 = mm10, with ERCC spike-ins, RefSeq annotations, compiled by Allon.\nhg38 = human, compiled by Michael")                
+                    help="The referernce genome against which to align. Currently supported: mm10 = mm10, with ERCC spike-ins, RefSeq annotations, compiled by Allon.\nhg38 = human, compiled by Michael")
 parser.add_argument("-o", "--output_folder", action="store", required=True,
-                    help="The directory to which output is written.")    
+                    help="The directory to which output is written.")
 parser.add_argument("-p", "--num_threads", action="store", required=False, default=6,
-                    help="The number of allocated threads, to be passed to trimmomatic, tophat, cufflinks, and rsem.")    
+                    help="The number of allocated threads, to be passed to trimmomatic, tophat, cufflinks, and rsem.")
 parser.add_argument('sampleFile1', action='store',
                    help='the first reads file')
 parser.add_argument('sampleFile2', action='store', nargs = '?', default='',
@@ -38,11 +38,14 @@ parser.add_argument('--skip_rsem', action='store_true',
 parser.add_argument('--skip_qc', action='store_true',
                    help="skip the qc part of the pipeline")
 parser.add_argument('--skip_tophat_qc', action='store_true',
-                   help="skip the qc part of the pipeline only for tophat (ignored if the --skip_qc flag is given, in which case qc is not run in the first place)")                 
+                   help="skip the qc part of the pipeline only for tophat (ignored if the --skip_qc flag is given, in which case qc is not run in the first place)")
 parser.add_argument('--skip_rsem_qc', action='store_true',
-                   help="skip the qc part of the pipeline only for rsem (ignored if the --skip_qc flag is given, in which case qc is not run in the first place)")                 
-                   
-                                  
+                   help="skip the qc part of the pipeline only for rsem (ignored if the --skip_qc flag is given, in which case qc is not run in the first place)")
+parser.add_argument('--rsem_bowtie_maxins', action='store', default=1000,
+                   help="For paired-end data only (ignored if --paired_end is not set): the maximum fragment length (this is the value of the --fragment-length-max in rsem and -X/--maxins in bowtie2). Defaults to 1000, which is the rsem default")
+
+
+
 args = parser.parse_args()
 
 if(not(args.paired_end) and args.sampleFile2 != ''):
@@ -66,13 +69,13 @@ if(args.reference == "mm10"):
 	RIBOSOMAL_INTERVALS_INDEX = "/data/yosef/index_files/mm10_4brain/index/gencode/mm10_4BRAIN_rRNA_interval_list_allonEdited.txt";
 	RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM = "/data/yosef/index_files/mm10_4brain/index/gencode/mm10_4BRAIN_rRNA_interval_list_allonEdited_forRSEM.txt";
 	RSEM_DICTIONARY = "/data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt";
-		
+
 	#settings for mm10 with ERCC spike-ins
 	#BOWTIE2_INDEX = "/data/yosef/index_files/mm10_withERCC/GRCm38.p3_withERCC";
 	#TOPHAT2_TRANSCRIPTOME_INDEX = "/data/yosef/index_files/mm10_withERCC/tophat_transcriptome_data/GRCm38.p3_refseq_annot";
 	#TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/mm10_withERCC/GRCm38.p3.gff";
 	#RSEM_INDEX = "/data/yosef/index_files/mm10_withERCC/rsem_index/GRCm38.p3_withERCC_rsem";
-	
+
 #hg19 was deprecated - then restored at Michael's request
 elif(args.reference == "hg19"):
 	#settings for hg19 with and other additions required by the HIV project (tba)
@@ -84,7 +87,7 @@ elif(args.reference == "hg19"):
 	REF_FLAT_INDEX = "/data/yosef/index_files/hg19_HIV/index/refFlat/refFlat.txt";
 	RIBOSOMAL_INTERVALS_INDEX = "null";
 	RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM = "null";
-	
+
 elif(args.reference == "hg38"):
 	#settings for hg38
 	#Compiled by Michael, Feb 2015
@@ -95,7 +98,7 @@ elif(args.reference == "hg38"):
 	#REF_FLAT_INDEX = "/data/yosef/index_files/hg38/index/refFlat/refFlat.txt";
 	#RIBOSOMAL_INTERVALS_INDEX = "null";
 	#RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM = "null";
-	
+
 	BOWTIE2_INDEX = "/data/yosef/index_files/hg38/index/GRCh38";
 	TOPHAT2_TRANSCRIPTOME_INDEX = "/data/yosef/index_files/hg38/index/tophat_transcriptome_data/GRCh38";
 	RSEM_TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/hg38/rsem_index/GRCh38.gtf";
@@ -105,7 +108,7 @@ elif(args.reference == "hg38"):
 	RIBOSOMAL_INTERVALS_INDEX ="/data/yosef/index_files/hg38/index/gencode/rRNA.interval";
 	RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM ="/data/yosef/index_files/hg38/index/gencode/rRNA.rsem.interval";
 	RSEM_DICTIONARY = "/data/yosef/index_files/hg38/index/rsem_dict.txt";
-		
+
 else:
 	raise Exception("should not happen - unsupported reference genome");
 
@@ -141,7 +144,7 @@ print(gunzipCommand)
 returnCode = subprocess.call(gunzipCommand, shell=True);
 if(returnCode != 0):
 	raise Exception("gunzip of sampleFile1 failed");
-	
+
 if(args.paired_end):
 	#debug code:
 	#subprocess.call("cp TFH-H9_S93_L001_R1_001.fastq.gz aaa.fastq.gz", shell=True);
@@ -149,13 +152,13 @@ if(args.paired_end):
 	#gunzip without deleting the original file
 	#subprocess.call("gunzip -c aaa.fastq.gz > aaa.fastq", shell=True);
 	#subprocess.call("gunzip -c bbb.fastq.gz > bbb.fastq", shell=True);
-	
+
 	gunzipCommand = Template("gunzip -c $SAMPLE_FILE2.gz > $SAMPLE_FILE2").substitute(SAMPLE_FILE2=args.sampleFile2);
 	print(gunzipCommand)
 	returnCode = subprocess.call(gunzipCommand, shell=True);
 	if(returnCode != 0):
 		raise Exception("gunzip of sampleFile2 failed");
-	
+
 #else:
 	#debug code:
 	#subprocess.call("cp GBCP03_N712_S508_GTAGAGGA-CTAAGCCT_L008_R1_001.fastq.gz aaa.fastq.gz", shell=True);
@@ -163,18 +166,18 @@ if(args.paired_end):
 
 if not os.path.exists(args.output_folder):
         os.makedirs(args.output_folder);
-        
+
 #gunzipped files to clear at the end of the run
 filesToClear = [args.sampleFile1];
 if(args.paired_end):
 	filesToClear = filesToClear + [args.sampleFile2]
-        
+
 DO_TRIMMOMATIC = True;
 #enter only if the user didn't select --skip_trimmomatic OR he did, but he did not mark the --do_not_rely_on_previous_trimmomatic (which means he does want to rely on previous output)
 if(DO_TRIMMOMATIC and not(args.skip_trimmomatic and args.do_not_rely_on_previous_trimmomatic)):
 	print("**********************************************************");
 	print("**********************************************************");
-	
+
 	trimInput1 = args.sampleFile1;
 	if(args.paired_end):
 		trimIsPaired = "PE";
@@ -191,27 +194,27 @@ if(DO_TRIMMOMATIC and not(args.skip_trimmomatic and args.do_not_rely_on_previous
 
 	if(args.skip_trimmomatic):
 		#if we reached this point, the user wants to rely on a previous trimmomatic run, rather than recompute trimmomatic
-	
+
 		print("relying on a previous Trimmomatic run");
 		print("guzipping previous Trimmomatic results...");
 		for trimFile in trimOutputParts:
 			print trimFile;
 			print trimOutputParts;
 			print args.output_folder;
-		
+
 			gunzipCommand = Template("gunzip -c $INFILE.gz > $INFILE").substitute(INFILE=trimFile);
 			print(gunzipCommand)
 			returnCode = subprocess.call(gunzipCommand, shell=True);
 			if(returnCode != 0):
 				raise Exception("gunzip of trimmomatic output file failed");
-		
+
 		filesToClear = filesToClear + trimOutputParts;
 	else:
 		#if we reached this point, the user wants to run trimmomatic...
-	
+
 		print("doing Trimmomatic");
 		sys.stdout.flush();
-		
+
 		if not os.path.exists(args.output_folder + "/trimmomatic_output"):
 			os.makedirs(args.output_folder + "/trimmomatic_output");
 
@@ -229,14 +232,14 @@ if(DO_TRIMMOMATIC and not(args.skip_trimmomatic and args.do_not_rely_on_previous
 		trimCrop = ""; #"CROP:50"; --> do not do trimCrop
 		trimMinPhred = 15;
 
-			
+
 		trimCmd = Template("java -jar /opt/pkg/Trimmomatic-0.32/trimmomatic-0.32.jar $TRIM_IS_PAIRED -threads $NUM_THREADS -phred33 -trimlog $OUTPUT_FOLDER/trimmomatic_output/trimmomatic_log.txt $TRIM_INPUT1 $TRIM_INPUT2 $TRIM_OUTPUT LEADING:$TRIM_MIN_PHRED TRAILING:$TRIM_MIN_PHRED SLIDINGWINDOW:4:$TRIM_MIN_PHRED MINLEN:$TRIM_MINLEN $TRIM_CROP").substitute(TRIM_IS_PAIRED=trimIsPaired, OUTPUT_FOLDER=args.output_folder, TRIM_INPUT1=trimInput1, TRIM_INPUT2=trimInput2, TRIM_OUTPUT=trimOutput, TRIM_MINLEN=trimMinLen, TRIM_MIN_PHRED=trimMinPhred, TRIM_CROP=trimCrop, NUM_THREADS=args.num_threads);
 		print(trimCmd)
 		sys.stdout.flush();
 		returnCode = subprocess.call(trimCmd, shell=True);
 		if(returnCode != 0):
 			raise Exception("trimmomatic failed");
-			
+
 		print("**********************************************************");
 		print("**********************************************************");
 		print("gzipping Trimmomatic results to back them up...");
@@ -244,43 +247,43 @@ if(DO_TRIMMOMATIC and not(args.skip_trimmomatic and args.do_not_rely_on_previous
 			print trimFile;
 			print trimOutputParts;
 			print args.output_folder;
-		
+
 			gzipCommand = Template("gzip -c $INFILE > $INFILE.gz").substitute(INFILE=trimFile);
 			print(gzipCommand)
 			returnCode = subprocess.call(gzipCommand, shell=True);
 			if(returnCode != 0):
 				raise Exception("gzip of trimmomatic output file failed");
-		
+
 		filesToClear = filesToClear + trimOutputParts;
-		
-	
+
+
 	print("**********************************************************");
 	print("**********************************************************");
 	print("Trimmomatic succeeded, overriding original input files");
-	
+
 	#replaced the original inputs with the trimmed files
 	if(args.paired_end):
 		args.sampleFile1 = Template("$OUTPUT_FOLDER/trimmomatic_output/1.Ptrim.fastq").substitute(OUTPUT_FOLDER=args.output_folder);
 		args.sampleFile2 = Template("$OUTPUT_FOLDER/trimmomatic_output/2.Ptrim.fastq").substitute(OUTPUT_FOLDER=args.output_folder);
 	else:
 		args.sampleFile1 = trimOutput;
-	
-	
+
+
 
 	print("**********************************************************");
-	print("**********************************************************");	
+	print("**********************************************************");
 	print("checking that Trimmomatic output is not empty...");
-        
+
         if(os.stat(args.sampleFile1).st_size == 0):
 		print "Danger, Will Robinson, sample file 1 was left empty after running trimmomatic!"
 	if(args.paired_end and (os.stat(args.sampleFile1).st_size == 0)):
 		print "Danger, Will Robinson, sample file 2 was left empty after running trimmomatic!"
-        	
+
         print("**********************************************************");
-	print("**********************************************************");	
+	print("**********************************************************");
 	print("trimmomatic done!");
-        
-        	
+
+
 #I use the terms "cufflinks pipeline" and "tophat pipeline" interchangeably
 RUN_CUFFLINKS_PIPELINE = True;
 if(RUN_CUFFLINKS_PIPELINE and not(args.skip_tophat)):
@@ -291,7 +294,7 @@ if(RUN_CUFFLINKS_PIPELINE and not(args.skip_tophat)):
 	print("TODO (Mar. 15): WARNING: the tophat pipeline will output wrong number of reads and ratio of aligned reads in the summary,txt - this is the same problem that was in the rsem pipeline, the accepted_hits.bam will include multiple reads and they have to be filtered out before counting");
 	print("TODO (Mar. 15): WARNING: the script count_dup_per_gene.pl relies on some rsem-specific dictionary and needs to be modified...");
 	sys.stdout.flush();
-	
+
 	if not os.path.exists(args.output_folder + "/tophat_output"):
 		os.makedirs(args.output_folder + "/tophat_output");
 
@@ -316,13 +319,13 @@ if(RUN_CUFFLINKS_PIPELINE and not(args.skip_tophat)):
 	shutil.copyfile(os.path.join(args.output_folder, "tophat_output/accepted_hits.bam"),
 					os.path.join(args.output_folder, "tophat_output/accepted_hits_noMultiple.bam"));
 
-	
+
 	print("**********************************************************");
 	print("**********************************************************");
 	picardDir = Template("$OUTPUT_FOLDER/tophat_output/picard_output").substitute(OUTPUT_FOLDER=args.output_folder);
 	if not(os.path.exists(picardDir)):
 		os.makedirs(picardDir);
-		
+
 	print("Sort SAM");
 	sortSamCommand = Template("picard SortSam TMP_DIR=$OUTPUT_FOLDER/temp I=$OUTPUT_FOLDER/tophat_output/accepted_hits_noMultiple.bam O=$OUTPUT_FOLDER/tophat_output/picard_output/sorted.bam SO=coordinate").substitute(OUTPUT_FOLDER=args.output_folder);
 	print(sortSamCommand)
@@ -330,9 +333,9 @@ if(RUN_CUFFLINKS_PIPELINE and not(args.skip_tophat)):
 	returnCode = subprocess.call(sortSamCommand, shell=True);
 	if(returnCode != 0):
 		raise Exception("sortSam failed");
-		
 
-		
+
+
 	print("**********************************************************");
 	print("**********************************************************");
 	print("Index SAM");
@@ -352,47 +355,86 @@ if(RUN_CUFFLINKS_PIPELINE and not(args.skip_tophat)):
 	returnCode = subprocess.call(cufflinksComand, shell=True);
 	if(returnCode != 0):
 		raise Exception("cufflinks failed");
-	
+
 	print("**********************************************************");
-	print("**********************************************************");	
+	print("**********************************************************");
 	print("cufflinks pipeline done!");
-				
-		
+
+
 RUN_RSEM_PIPELINE = True;
-if(RUN_RSEM_PIPELINE and not(args.skip_rsem)):	
+if(RUN_RSEM_PIPELINE and not(args.skip_rsem)):
 
 	print("**********************************************************");
 	print("**********************************************************");
 	print("starting rsem pipeline");
-	
+
 	if not os.path.exists(args.output_folder + "/rsem_output/picard_output"):
 		os.makedirs(args.output_folder + "/rsem_output/picard_output");
-	 
+
 	print("**********************************************************");
 	print("**********************************************************");
 
+	## previous code: since then I have chosen to run bowtie2 manually
+	# print("Running rsem");
+	# #Note that in rsem I use the --output-genome-bam flag to generate a genome bam (in addition to the transcriptome bam that is always created) - rsem will also sort this bam. This is necessary for the QC later.
+	# if(args.paired_end):
+	# 	rsemComand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --bowtie2 --estimate-rspd --output-genome-bam --sampling-for-bam --paired-end --fragment-length-max $RSEM_BOWTIE_MAXINS $SAMPLE_FILE1 $SAMPLE_FILE2 $RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder, RSEM_INDEX=RSEM_INDEX, SAMPLE_FILE1=args.sampleFile1, SAMPLE_FILE2=args.sampleFile2, NUM_THREADS=args.num_threads, RSEM_BOWTIE_MAXINS=args.rsem_bowtie_maxins);
+	# else:
+	# 	rsemComand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --bowtie2 --estimate-rspd --output-genome-bam --sampling-for-bam $SAMPLE_FILE1 $RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder, RSEM_INDEX=RSEM_INDEX, SAMPLE_FILE1=args.sampleFile1, NUM_THREADS=args.num_threads);
+    #
+	# print(rsemComand)
+	# sys.stdout.flush();
+	# returnCode = subprocess.call(rsemComand, shell=True);
+	# if(returnCode != 0):
+	# 	raise Exception("rsem failed");
+
+	#I am running bowtie manually and then giving the output to rsem because sometimes the bowtie parameters need to be tweaked and rsem does not support changes of many of the parameters at present
+	print("Running bowtie for rsem")
+	#this are the params that rsem delivers to bowtie2 by default
+	bowtieParams = Template("-q --phred33 --sensitive --dpad 0 --gbar 99999999 --mp 1,1 --np 1 --score-min L,0,-0.1 " +
+							"-x $RSEM_INDEX -p $NUM_THREADS -k 200").substitute(RSEM_INDEX=RSEM_INDEX, NUM_THREADS=args.num_threads)
+
+	if(args.paired_end):
+		#additional params that are specific to paired-end
+		bowtieParams += Template(" --no-mixed --no-discordant -I 1 -X $RSEM_BOWTIE_MAXINS").substitute(RSEM_BOWTIE_MAXINS=args.rsem_bowtie_maxins)
+		bowtieInput = Template("-1 $SAMPLE_FILE1 -2 $SAMPLE_FILE2").substitute(SAMPLE_FILE1=args.sampleFile1, SAMPLE_FILE2=args.sampleFile2)
+	else:
+			bowtieInput = Template("-U $SAMPLE_FILE1").substitute(SAMPLE_FILE1=args.sampleFile1)
+
+	bowtieForRsemCmd = Template("/opt/genomics/bin/bowtie2 $BOWTIE_PARAMS $BOWTIE_INPUT | samtools view -S -b -o $OUTPUT_FOLDER/rsem_output/aligned_by_bowtie2.bam -").substitute(BOWTIE_INPUT=bowtieInput, BOWTIE_PARAMS=bowtieParams, OUTPUT_FOLDER=args.output_folder)
+	print(bowtieForRsemCmd)
+	sys.stdout.flush();
+	returnCode = subprocess.call(bowtieForRsemCmd, shell=True);
+	if(returnCode != 0):
+		raise Exception("bowtie2 for rsem failed");
+
 	#--sampling-for-bam: rsem outputs a bam with multiple possible alignments per read plus their posterior probabilities, which means that the read counts are disrupted
 	#this flag tells it to sample one read per the distribution, assign it a MAPQ=100 value (also tag ZW:f:1) and the rest are 0 value (and tag ZW:f:0)
-	
+
 	print("Running rsem");
+	#params that are relevant only in paired_end run
+	rsemParamsOnlyForPairedEnd = Template("--fragment-length-max $RSEM_BOWTIE_MAXINS").substitute(RSEM_BOWTIE_MAXINS=args.rsem_bowtie_maxins) if args.paired_end else ""
 	#Note that in rsem I use the --output-genome-bam flag to generate a genome bam (in addition to the transcriptome bam that is always created) - rsem will also sort this bam. This is necessary for the QC later.
-	if(args.paired_end):
-		rsemComand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --bowtie2 --estimate-rspd --output-genome-bam --sampling-for-bam --paired-end $SAMPLE_FILE1 $SAMPLE_FILE2 $RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder, RSEM_INDEX=RSEM_INDEX, SAMPLE_FILE1=args.sampleFile1, SAMPLE_FILE2=args.sampleFile2, NUM_THREADS=args.num_threads);
-	else:
-		rsemComand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --bowtie2 --estimate-rspd --output-genome-bam --sampling-for-bam $SAMPLE_FILE1 $RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder, RSEM_INDEX=RSEM_INDEX, SAMPLE_FILE1=args.sampleFile1, NUM_THREADS=args.num_threads);
-		
+	rsemComand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --estimate-rspd " +
+							"$RSEM_PARAMS_ONLY_FOR_PAIRED_END --output-genome-bam --sampling-for-bam --bam $IS_PAIRED_END $OUTPUT_FOLDER/rsem_output/aligned_by_bowtie2.bam " +
+							"$RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder,
+																									   RSEM_INDEX=RSEM_INDEX,
+																									   NUM_THREADS=args.num_threads,
+																									   RSEM_PARAMS_ONLY_FOR_PAIRED_END=rsemParamsOnlyForPairedEnd,
+																									   IS_PAIRED_END="--paired-end" if args.paired_end else "");
+
 	print(rsemComand)
 	sys.stdout.flush();
 	returnCode = subprocess.call(rsemComand, shell=True);
 	if(returnCode != 0):
 		raise Exception("rsem failed");
-		
-	
-		
+
+
+
 	print("**********************************************************");
 	print("**********************************************************");
 	#to conform with the tophat pipeline, I split the reads into aligned and unaligned, and the QC will run only on the aligned ones.
-	
+
 	print("splitting rsem's output to aligned and unaligned reads...");
 	splitCmd1 = Template("samtools view -b -F 4 $OUTPUT_FOLDER/rsem_output/rsem_output.genome.sorted.bam > $OUTPUT_FOLDER/rsem_output/accepted_hits.bam").substitute(OUTPUT_FOLDER=args.output_folder);
 	print(splitCmd1)
@@ -400,7 +442,7 @@ if(RUN_RSEM_PIPELINE and not(args.skip_rsem)):
 	returnCode = subprocess.call(splitCmd1, shell=True);
 	if(returnCode != 0):
 		raise Exception("split failed");
-		
+
 
 	splitCmd2 = Template("samtools view -b -f 4 $OUTPUT_FOLDER/rsem_output/rsem_output.genome.sorted.bam > $OUTPUT_FOLDER/rsem_output/unmapped.bam").substitute(OUTPUT_FOLDER=args.output_folder);
 	print(splitCmd2)
@@ -408,19 +450,19 @@ if(RUN_RSEM_PIPELINE and not(args.skip_rsem)):
 	returnCode = subprocess.call(splitCmd2, shell=True);
 	if(returnCode != 0):
 		raise Exception("split failed");
-		
-		
-		
+
+
+
 	print("removing the multiple-posterior alignments from rsem's aligned output reads...");
-	#with the --output-genome-bam flag set, rsem outputs a bam in which the MAPQ are either 1 (chosen) or 0 (not chosen) 
+	#with the --output-genome-bam flag set, rsem outputs a bam in which the MAPQ are either 1 (chosen) or 0 (not chosen)
 	filterCmd = Template("samtools view -b -q 100 $OUTPUT_FOLDER/rsem_output/accepted_hits.bam > $OUTPUT_FOLDER/rsem_output/accepted_hits_noMultiple.bam").substitute(OUTPUT_FOLDER=args.output_folder);
 	print(filterCmd)
 	sys.stdout.flush();
 	returnCode = subprocess.call(filterCmd, shell=True);
 	if(returnCode != 0):
 		raise Exception("filtering failed");
-		
-	
+
+
 	print("Sort SAM");
 	sortSamCommand = Template("picard SortSam TMP_DIR=$OUTPUT_FOLDER/temp I=$OUTPUT_FOLDER/rsem_output/accepted_hits_noMultiple.bam O=$OUTPUT_FOLDER/rsem_output/picard_output/sorted.bam SO=coordinate").substitute(OUTPUT_FOLDER=args.output_folder);
 	print(sortSamCommand)
@@ -428,7 +470,7 @@ if(RUN_RSEM_PIPELINE and not(args.skip_rsem)):
 	returnCode = subprocess.call(sortSamCommand, shell=True);
 	if(returnCode != 0):
 		raise Exception("sortSam failed");
-		
+
 	print("**********************************************************");
 	print("**********************************************************");
 	print("Index SAM");
@@ -438,13 +480,13 @@ if(RUN_RSEM_PIPELINE and not(args.skip_rsem)):
 	returnCode = subprocess.call(indexSamCommand, shell=True);
 	if(returnCode != 0):
 		raise Exception("indexSam failed");
-	 
-  
-   
+
+
+
 	print("**********************************************************");
 	print("**********************************************************");
 	print("rsem pipeline done!");
-	
+
 
 RUN_QC = True;
 if(RUN_QC and not(args.skip_qc)):
@@ -453,59 +495,59 @@ if(RUN_QC and not(args.skip_qc)):
 	qcOutputDir = Template("$OUTPUT_FOLDER/fastqc_output").substitute(OUTPUT_FOLDER=args.output_folder);
 	if not(os.path.exists(qcOutputDir)):
 		os.makedirs(qcOutputDir);
-	
+
 	print("Running QC script");
 	#note that the output folder dir argument that I give is without the "/fastqc_output" suffix because the qc script expects it that way
 	print("Running on " + args.sampleFile1);
 	doQC.RunFastQC(args.sampleFile1, args.output_folder);
 	doQC.CheckContam(args.sampleFile1, args.output_folder, "1");
-	
+
 	if(args.paired_end):
 		print("Running on " + args.sampleFile2);
 		doQC.RunFastQC(args.sampleFile2, args.output_folder);
 		doQC.CheckContam(args.sampleFile2, args.output_folder, "2");
-	
-	#for consistency with doQC.RunFastQC I give the output folder without the "/fastqc_output" suffix 
+
+	#for consistency with doQC.RunFastQC I give the output folder without the "/fastqc_output" suffix
 	commonMetrics = doQC.CollectFastQcData(args.output_folder, args.paired_end);
 	#commonMetrics - common to both the rsem and tophat pipelines
-	
+
 	RUN_QC_TOPHAT = True;
 	if(RUN_QC_TOPHAT and not(args.skip_tophat_qc)):
 		sortedBamFile = args.output_folder + "/tophat_output/picard_output/sorted.bam";
 		tophatOutputFolder = args.output_folder + "/tophat_output";
 		print "Warning: the cufflinks pipleline still doesn't have the two dictionary required for the collect dup perl... this part will be skipped..."
-		tophat_qc_metrics = doQC.CollectData(sortedBamFile, tophatOutputFolder, REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX, args.paired_end, "", "");
+		tophat_qc_metrics = doQC.CollectData(sortedBamFile, tophatOutputFolder, REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX, args.paired_end, RSEM_TRANSCRIPT_ANNOTATION, RSEM_DICTIONARY); #patch - use the same dictionaries for tophat and rsem for Nir's count dups
 		doQC.WriteQCMetrics(tophatOutputFolder, commonMetrics, tophat_qc_metrics);
-	
+
 	RUN_QC_RSEM = True;
 	if(RUN_QC_RSEM and not(args.skip_rsem_qc)):
 		rsemPicardDir = args.output_folder + "/rsem_output/picard_output/";
 		rsemOutputFolder = args.output_folder + "/rsem_output";
 		if not(os.path.exists(rsemPicardDir)):
 			os.makedirs(rsemPicardDir);
-		
+
 		#sortedBamFile = args.output_folder + "/rsem_output/rsem_output.genome.sorted.bam";
 		#use only aligned reads for qc
 		sortedBamFile = args.output_folder + "/rsem_output/picard_output/sorted.bam";
-		rsem_qc_metrics = doQC.CollectData(sortedBamFile, rsemOutputFolder, REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM, args.paired_end, RSEM_DICTIONARY, RSEM_TRANSCRIPT_ANNOTATION);
+		rsem_qc_metrics = doQC.CollectData(sortedBamFile, rsemOutputFolder, REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM, args.paired_end, RSEM_TRANSCRIPT_ANNOTATION, RSEM_DICTIONARY);
 		doQC.WriteQCMetrics(rsemOutputFolder, commonMetrics, rsem_qc_metrics);
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
 	#if(args.paired_end):
 	#	qcComand = Template("perl /project/eecs/yosef/singleCell/allon_script/preproc/qc.pl $QC_OUTPUT_DIR  $REF_FLAT_FILE $RIBOSOMAL_INTERVALS_INDEX $SAMPLE_FILE1 $SAMPLE_FILE2").substitute(QC_OUTPUT_DIR=args.output_folder, SAMPLE_FILE1=args.sampleFile1, SAMPLE_FILE2=args.sampleFile2, REF_FLAT_FILE=REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX=RIBOSOMAL_INTERVALS_INDEX);
 	#else:
 	#	qcComand = Template("perl /project/eecs/yosef/singleCell/allon_script/preproc/qc.pl $QC_OUTPUT_DIR  $REF_FLAT_FILE $RIBOSOMAL_INTERVALS_INDEX $SAMPLE_FILE1").substitute(QC_OUTPUT_DIR=args.output_folder, SAMPLE_FILE1=args.sampleFile1, REF_FLAT_FILE=REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX=RIBOSOMAL_INTERVALS_INDEX);
-		
-		
+
+
 	#print(qcComand)
 	#returnCode = subprocess.call(qcComand, shell=True);
 	#if(returnCode != 0):
 	#	raise Exception("qc failed");
-	
+
 	print("**********************************************************");
 	print("**********************************************************");
 	print("QC done!");
@@ -521,7 +563,7 @@ for remFile in filesToClear:
 	returnCode = subprocess.call(rmCommand, shell=True);
 	if(returnCode != 0):
 		raise Exception("rm of file to clear failed");
-	
+
 
 #print("**********************************************************");
 #print("**********************************************************");
@@ -538,8 +580,8 @@ for remFile in filesToClear:
 #	#returnCode = subprocess.call(rmCommand, shell=True);
 #	if(returnCode != 0):
 #		raise Exception("rm of sampleFile2 failed");
-	
-		
+
+
 print("**********************************************************");
-print("**********************************************************");		
+print("**********************************************************");
 print "processing complete"

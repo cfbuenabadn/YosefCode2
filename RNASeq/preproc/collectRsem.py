@@ -23,6 +23,38 @@ import os;
 import numpy;
 import shutil;
 
+def CollectDupGenesTable(dup_filename, NUM_RSEM_GENES, NUM_CELLS, subDirectoryList):
+	cellsWithDupGenesErrors = [];
+
+	#note that I use object and not string, because numpy string array will by default be of size 1 byte (and they're of constant length anyway) so the string may get truncated
+	dupTable = numpy.empty((NUM_RSEM_GENES, NUM_CELLS), dtype="object");
+
+	print ("starting to collect dup reads (%s) per gene..." % dup_filename)
+	for cell_ind in xrange(NUM_CELLS):
+		d = subDirectoryList[cell_ind];
+		fullDirPath = os.path.join(args.diretoryToProcess, d);
+		print "Operating on single cell directory: " + fullDirPath;
+
+		dupReadsPerGeneFile = os.path.join(fullDirPath, 'rsem_output/picard_output/%s.txt.genes.txt' % dup_filename);
+		if(os.path.exists(dupReadsPerGeneFile)):
+			with open(dupReadsPerGeneFile) as fin:
+				rows = ( line.split('\t') for line in fin )
+				#I assume that the gene list in the dup.txt.genes.txt (file with dup reads per gene file) is the same as in the rsem dictionary - this is how I built it when Nir and I programmed it
+				#take from each line the number of dups  and the total number of reads and put them in a string in the format "%f/%f" - this way one file contains both numbers and the ratio can be easily computed
+				dupReadsPerGeneTable = [("%s/%s" % (row[1], row[2])) for row in rows];
+
+			dupTable[:, cell_ind] = dupReadsPerGeneTable;
+		else:
+			#the rsem dup reads per gene file for this folder does not exist for some reason
+
+			#the values were initialized to NaN so seemingly no reason to overwrite again, but I do this just to be on the safe side
+			dupTable[:, cell_ind] = ("%f/%f" % (numpy.NAN, numpy.NAN));
+
+			cellsWithDupGenesErrors.append(dupReadsPerGeneFile);
+
+	return dupTable, cellsWithDupGenesErrors
+
+
 parser = argparse.ArgumentParser(description="Collect RSEM output")
 parser.add_argument("diretoryToProcess", action="store",
                     help="The folder to read (assumes the folder is a batch, with subdirectories for every cell)")
@@ -197,39 +229,14 @@ shutil.copyfile(rsemDictionaryFile, os.path.join(args.output_folder, 'gene_list.
 #Added 3/9/2015 for the BRAIN project qc assessment:
 COLLECT_DUP_GENES = True;
 if (COLLECT_DUP_GENES and not(args.skip_collecting_dup_genes)):
-	cellsWithDupGenesErrors = [];
 
-	#note that I use object and not string, because numpy string array will by default be of size 1 byte (and they're of constant length anyway) so the string may get truncated
-	dupTable = numpy.empty((NUM_RSEM_GENES, NUM_CELLS), dtype="object");
-
-	print "starting to collect dup reads per gene..."
-	for cell_ind in xrange(NUM_CELLS):
-		d = subDirectoryList[cell_ind];
-		fullDirPath = os.path.join(args.diretoryToProcess, d);
-		print "Operating on single cell directory: " + fullDirPath;
-
-		dupReadsPerGeneFile = os.path.join(fullDirPath, 'rsem_output/picard_output/dup.txt.genes.txt');
-		if(os.path.exists(dupReadsPerGeneFile)):
-			with open(dupReadsPerGeneFile) as fin:
-				rows = ( line.split('\t') for line in fin )
-				#I assume that the gene list in the dup.txt.genes.txt (file with dup reads per gene file) is the same as in the rsem dictionary - this is how I built it when Nir and I programmed it
-				#take from each line the number of dups  and the total number of reads and put them in a string in the format "%f/%f" - this way one file contains both numbers and the ratio can be easily computed
-				dupReadsPerGeneTable = [("%s/%s" % (row[1], row[2])) for row in rows];
-
-			dupTable[:, cell_ind] = dupReadsPerGeneTable;
-		else:
-			#the rsem dup reads per gene file for this folder does not exist for some reason
-
-			#the values were initialized to NaN so seemingly no reason to overwrite again, but I do this just to be on the safe side
-			dupTable[:, cell_ind] = ("%f/%f" % (numpy.NAN, numpy.NAN));
-
-			cellsWithDupGenesErrors.append(dupReadsPerGeneFile);
-
+	dupTable, cellsWithDupGenesErrors = CollectDupGenesTable('dup', NUM_RSEM_GENES, NUM_CELLS, subDirectoryList)
+	dupUniqueTable, cellsWithUniqueDupGenesErrors = CollectDupGenesTable('dup_unique', NUM_RSEM_GENES, NUM_CELLS, subDirectoryList)
 
 	#now, write the collected QC results into a file
 	print "finished collecting duplicate reads per gene files... writing summary table..."
 	numpy.savetxt(os.path.join(args.output_folder, 'dup_reads_per_gene_table.txt'), dupTable, delimiter="\t", fmt="%s");
-
+	numpy.savetxt(os.path.join(args.output_folder, 'dup_reads_per_gene_onlyUnique_table.txt'), dupTable, delimiter="\t", fmt="%s");
 
 
 
@@ -260,6 +267,10 @@ if (COLLECT_DUP_GENES and not(args.skip_collecting_dup_genes)):
 	else:
 		print "the following cells had errors while collecting their dup genes:";
 		for x in cellsWithDupGenesErrors:
+			print x;
+
+		print "the following cells had errors while collecting their dup genes (only unique reads):";
+		for x in cellsWithUniqueDupGenesErrors:
 			print x;
 
 

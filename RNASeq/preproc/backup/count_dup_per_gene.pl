@@ -1,13 +1,20 @@
 use strict;
-my($inp,$out,$rsemGTFFile,$rsemDictionary,$only_uniquely_alligned)=@ARGV;
+my($inp,$out,$rsemGTFFile,$rsemDictionary)=@ARGV;
 ## "$inp" is bam filename
 ## "$out" is output text file
 
-#$rsemGTFFile="/data/yosef/index_files/mm10_4brain/index/rsem_index/combinedGTF_4brain.gtf";
-#$rsemDictionary="/data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt";
-#perl count_dup_per_gene.pl /data/yosef/BRAIN/processed2/150202_HS2A/Project_Ngai_AsSingle/OEP01_N710_S501_CGAGGCTG-TAGATCGC_L001_R1_combined/rsem_output/picard_output/sorted.bam b_test_count_dup.txt -1 -1 1
+#$inp = "/data/yosef/BRAIN/processed/150202_HS2A/Project_Ngai/OEP01_N710_S501_CGAGGCTG-TAGATCGC_L001_R1_combined/rsem_outputWithSampling/rsem_output.genome.sorted.bam test_count_dup.txt";
+#$out = "/project/eecs/archive/temp/bla.txt";
 
-#description of rsem output: http://deweylab.biostat.wisc.edu/rsem/rsem-calculate-expression.html
+#perl count_dup_per_gene.pl /data/yosef/BRAIN/processed/150202_HS2A/Project_Ngai/OEP01_N710_S501_CGAGGCTG-TAGATCGC_L001_R1_combined/rsem_outputWithSampling/rsem_output.genome.sorted.bam b_test_count_dup.txt
+#perl count_dup_per_gene.pl /home/eecs/allonwag/data/BRAIN/processed2/150202_HS2A/Project_Ngai/OEP02_N712_S508_GTAGAGGA-CTAAGCCT_L002_R1_combined/rsem_output/rsem_output.genome.sorted.bam test_count_dup.txt
+
+#corrected:
+#perl /project/eecs/yosef/singleCell/allon_script/preproc/count_dup_per_gene.pl /data/yosef/BRAIN/processed2/150202_HS2A/Project_Ngai/OEP01_N710_S501_CGAGGCTG-TAGATCGC_L001_R1_combined/rsem_output/picard_output/sorted.bam b_test_count_dup.txt
+
+#perl /project/eecs/yosef/singleCell/allon_script/preproc/count_dup_per_gene.pl /data/yosef/BRAIN/processed2/150202_HS2A/Project_Ngai_AsSingle/OEP01_N710_S501_CGAGGCTG-TAGATCGC_L001_R1_combined/rsem_output/picard_output/sorted.bam b_test_count_dup.txt
+
+#Project_Ngai_AsSingle
 
 my $GRID=10;
 my $LOAD_GENES_IN_ADVANCE=1;my $N=0;
@@ -36,24 +43,17 @@ print STDERR  "\nRead ".scalar(keys %genes). " loci and ".scalar(keys %gcntr)." 
 my $prv_chrom="";
 my %ufrag=();my %frag=();my %ufrag_no_strand=();
 my %uread=();my %read=();my %uread_no_strand=();
-my %gene_dup_reads=();my %gene_tot_reads=();
-my %gene_dup_frags=();my %gene_tot_frags=();
-
 my $counter=0;my $dfcounter=0;my $fcounter=0;my $npos_strand=0;my $rcounter=0;my $drcounter=0;
 
+my %gene_dup_reads=();my %gene_tot_reads=();
+my %gene_dup_frags=();my %gene_tot_frags=();
 open (FD_sam, "samtools view -h $inp |");
 
+
 while(<FD_sam>){
-        if(/^\@/){next;}chomp;my $l=$_;
-	my ($nm,$bitmap,$chrom,$pos,$mapq,$cigar,$rnext,$pnext,$tlen,$Seq,$qual,@rest)=split(/\t/,$l);
-	if(0 && $only_uniquely_alligned){ #Disabled since the flag is mimssing (for some reason) from Bowtie output
-		my $my_score=0;if ($l=~/AS\:i\:(\d+)/){
-			$my_score=$1;my $other_score=0;
-			if ($l=~/XS\:i\:(\d+)/){if ($my_score<=$1) {next;}}
-		}
-	}
-		
-        if(!($chrom=~/\*/ || $bitmap&0x200 || $bitmap&0x4 || $bitmap&0x8 || ($only_uniquely_alligned && ($bitmap&0x100)))){
+        if(/^\@/){next;}
+	chomp;my ($nm,$bitmap,$chrom,$pos,$mapq,$cigar,$rnext,$pnext,@rest)=split(/\t/);
+        if(!($chrom=~/\*/ || $bitmap&0x200 || $bitmap&0x4 || $bitmap&0x8)){
                 if($prv_chrom ne $chrom && $prv_chrom ne "" && $chrom!~/\*/){
 		
 			my $dfcounter1=0;foreach my $k(keys %ufrag){$dfcounter1+=$ufrag{$k}-1;}
@@ -104,6 +104,7 @@ while(<FD_sam>){
         }
 }
 close FD_sam;
+
 
 
 my $posnegrat=$npos_strand/$counter;
