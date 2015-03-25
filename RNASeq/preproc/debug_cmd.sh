@@ -1,7 +1,7 @@
 
 https://www.broadinstitute.org/~picard/picard_metric_definitions.html
 
-python ~/project/singleCell/allon_script/preproc/normalizeBrainFastaInput.py /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai
+python ~/project/singleCell/allon_script/preproc/normalizeBrainFastaInput.py /home/eecs/allonwag/data/BRAIN/sources/150309_HS1A
 
 #!/bin/sh
 
@@ -41,7 +41,7 @@ python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_tophat 
 python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_trimmomatic --skip_tophat --skip_rsem --rsem_bowtie_maxins 3000 --paired_end -N brainPaired -r mm10 -p 1 -o /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai
 python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_trimmomatic --skip_tophat --skip_rsem --rsem_bowtie_maxins 3000 -N brainPairedAsSingle -r mm10 -p 1 -o /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai_AsSingle /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai
 python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_trimmomatic --skip_tophat --skip_rsem --rsem_bowtie_maxins 3000 --paired_end -N brain96_192 -r mm10 -p 4 -o /home/eecs/allonwag/data/BRAIN/processed3/2015_3_13/150309_HS3A/Project_Ngai /home/eecs/allonwag/data/BRAIN/sources/2015_3_13/150309_HS3A/Project_Ngai 
-
+python ~/project/singleCell/allon_script/preproc/processFolder.py --rsem_bowtie_maxins 3000 -N firstDavidBatch -r mm10 -p 2 -o /data/yosef/BRAIN/processed2/150309_HS1A /data/yosef/BRAIN/sources/150309_HS1A
 
 python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed2/GBC_L01/rsem /home/eecs/allonwag/data/BRAIN/processed2/GBC_L01
 python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed2/GBC_L02/rsem /home/eecs/allonwag/data/BRAIN/processed2/GBC_L02
@@ -49,6 +49,16 @@ python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /hom
 python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai/rsem /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai
 python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai_AsSingle/rsem /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai_AsSingle
 python ~/project/singleCell/allon_script/preproc/collectRsem.py -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed3/2015_3_13/150309_HS3A/Project_Ngai/rsem  /home/eecs/allonwag/data/BRAIN/processed3/2015_3_13/150309_HS3A/Project_Ngai
+
+
+%shows that the parameter that controls the insert size works, but it simply does not increase above 200
+python ~/project/singleCell/allon_script/preproc/processSingleSample.py --paired_end --rsem_bowtie_maxins 100 -p 8 -r mm10 --skip_tophat --skip_tophat_qc -o /home/eecs/allonwag/data/BRAIN/processed_debug/rsemMaxIns100 ~/data/BRAIN/sources_debug/100/R1.fastq.gz   ~/data/BRAIN/sources_debug/100/R2.fastq.gz
+python ~/project/singleCell/allon_script/preproc/processSingleSample.py --paired_end --rsem_bowtie_maxins 200 -p 8 -r mm10 --skip_tophat --skip_tophat_qc -o /home/eecs/allonwag/data/BRAIN/processed_debug/rsemMaxIns200 ~/data/BRAIN/sources_debug/200/R1.fastq.gz   ~/data/BRAIN/sources_debug/200/R2.fastq.gz
+python ~/project/singleCell/allon_script/preproc/processSingleSample.py --paired_end --rsem_bowtie_maxins 400 -p 8 -r mm10 --skip_tophat --skip_tophat_qc -o /home/eecs/allonwag/data/BRAIN/processed_debug/rsemMaxIns400 ~/data/BRAIN/sources_debug/400/R1.fastq.gz   ~/data/BRAIN/sources_debug/400/R2.fastq.gz
+python ~/project/singleCell/allon_script/preproc/processSingleSample.py --paired_end --rsem_bowtie_maxins 600 -p 8 -r mm10 --skip_tophat --skip_tophat_qc -o /home/eecs/allonwag/data/BRAIN/processed_debug/rsemMaxIns600 ~/data/BRAIN/sources_debug/600/R1.fastq.gz   ~/data/BRAIN/sources_debug/600/R2.fastq.gz
+python ~/project/singleCell/allon_script/preproc/processSingleSample.py --paired_end --rsem_bowtie_maxins 750 -p 8 -r mm10 --skip_tophat --skip_tophat_qc -o /home/eecs/allonwag/data/BRAIN/processed_debug/rsemMaxIns750 ~/data/BRAIN/sources_debug/750/R1.fastq.gz   ~/data/BRAIN/sources_debug/750/R2.fastq.gz
+python ~/project/singleCell/allon_script/preproc/processSingleSample.py --paired_end --rsem_bowtie_maxins 1000 -p 8 -r mm10 --skip_tophat --skip_tophat_qc -o /home/eecs/allonwag/data/BRAIN/processed_debug/rsemMaxIns1000 ~/data/BRAIN/sources_debug/1000/R1.fastq.gz ~/data/BRAIN/sources_debug/1000/R2.fastq.gz
+python ~/project/singleCell/allon_script/preproc/processSingleSample.py --paired_end --rsem_bowtie_maxins 1500 -p 8 -r mm10 --skip_tophat --skip_tophat_qc -o /home/eecs/allonwag/data/BRAIN/processed_debug/rsemMaxIns1500 ~/data/BRAIN/sources_debug/1500/R1.fastq.gz ~/data/BRAIN/sources_debug/1500/R2.fastq.gz
 
 
 /150202_HS2A/Project_Ngai

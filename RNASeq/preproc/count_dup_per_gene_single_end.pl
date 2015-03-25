@@ -81,7 +81,7 @@ while(<FD_sam>){
         }
 }
 close FD_sam;
-%uread=(); %read=();
+%uread=(); %read=();%genes=();
 
 
 my $posnegrat=$npos_strand/$counter;

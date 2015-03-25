@@ -374,60 +374,62 @@ if(RUN_RSEM_PIPELINE and not(args.skip_rsem)):
 	print("**********************************************************");
 	print("**********************************************************");
 
-	## previous code: since then I have chosen to run bowtie2 manually
-	# print("Running rsem");
-	# #Note that in rsem I use the --output-genome-bam flag to generate a genome bam (in addition to the transcriptome bam that is always created) - rsem will also sort this bam. This is necessary for the QC later.
-	# if(args.paired_end):
-	# 	rsemComand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --bowtie2 --estimate-rspd --output-genome-bam --sampling-for-bam --paired-end --fragment-length-max $RSEM_BOWTIE_MAXINS $SAMPLE_FILE1 $SAMPLE_FILE2 $RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder, RSEM_INDEX=RSEM_INDEX, SAMPLE_FILE1=args.sampleFile1, SAMPLE_FILE2=args.sampleFile2, NUM_THREADS=args.num_threads, RSEM_BOWTIE_MAXINS=args.rsem_bowtie_maxins);
-	# else:
-	# 	rsemComand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --bowtie2 --estimate-rspd --output-genome-bam --sampling-for-bam $SAMPLE_FILE1 $RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder, RSEM_INDEX=RSEM_INDEX, SAMPLE_FILE1=args.sampleFile1, NUM_THREADS=args.num_threads);
-    #
-	# print(rsemComand)
-	# sys.stdout.flush();
-	# returnCode = subprocess.call(rsemComand, shell=True);
-	# if(returnCode != 0):
-	# 	raise Exception("rsem failed");
+	RUN_DIRECT_RSEM = False #Run RSEM directly or run manually bowtie2 and then rsem
+	if(RUN_DIRECT_RSEM):
+		# previous code: since then I have chosen to run bowtie2 manually
+		print("Running rsem");
+		#Note that in rsem I use the --output-genome-bam flag to generate a genome bam (in addition to the transcriptome bam that is always created) - rsem will also sort this bam. This is necessary for the QC later.
+		if(args.paired_end):
+			rsemComand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --bowtie2 --estimate-rspd --output-genome-bam --sampling-for-bam --paired-end --fragment-length-max $RSEM_BOWTIE_MAXINS $SAMPLE_FILE1 $SAMPLE_FILE2 $RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder, RSEM_INDEX=RSEM_INDEX, SAMPLE_FILE1=args.sampleFile1, SAMPLE_FILE2=args.sampleFile2, NUM_THREADS=args.num_threads, RSEM_BOWTIE_MAXINS=args.rsem_bowtie_maxins);
+		else:
+			rsemComand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --bowtie2 --estimate-rspd --output-genome-bam --sampling-for-bam $SAMPLE_FILE1 $RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder, RSEM_INDEX=RSEM_INDEX, SAMPLE_FILE1=args.sampleFile1, NUM_THREADS=args.num_threads);
 
-	#I am running bowtie manually and then giving the output to rsem because sometimes the bowtie parameters need to be tweaked and rsem does not support changes of many of the parameters at present
-	print("Running bowtie for rsem")
-	#this are the params that rsem delivers to bowtie2 by default
-	bowtieParams = Template("-q --phred33 --sensitive --dpad 0 --gbar 99999999 --mp 1,1 --np 1 --score-min L,0,-0.1 " +
-							"-x $RSEM_INDEX -p $NUM_THREADS -k 200").substitute(RSEM_INDEX=RSEM_INDEX, NUM_THREADS=args.num_threads)
-
-	if(args.paired_end):
-		#additional params that are specific to paired-end
-		bowtieParams += Template(" --no-mixed --no-discordant -I 1 -X $RSEM_BOWTIE_MAXINS").substitute(RSEM_BOWTIE_MAXINS=args.rsem_bowtie_maxins)
-		bowtieInput = Template("-1 $SAMPLE_FILE1 -2 $SAMPLE_FILE2").substitute(SAMPLE_FILE1=args.sampleFile1, SAMPLE_FILE2=args.sampleFile2)
+		print(rsemComand)
+		sys.stdout.flush();
+		returnCode = subprocess.call(rsemComand, shell=True);
+		if(returnCode != 0):
+			raise Exception("rsem failed");
 	else:
-			bowtieInput = Template("-U $SAMPLE_FILE1").substitute(SAMPLE_FILE1=args.sampleFile1)
+		#I am running bowtie manually and then giving the output to rsem because sometimes the bowtie parameters need to be tweaked and rsem does not support changes of many of the parameters at present
+		print("Running bowtie for rsem")
+		#this are the params that rsem delivers to bowtie2 by default
+		bowtieParams = Template("-q --phred33 --sensitive --dpad 0 --gbar 99999999 --mp 1,1 --np 1 --score-min L,0,-0.1 " +
+								"-x $RSEM_INDEX -p $NUM_THREADS -k 200").substitute(RSEM_INDEX=RSEM_INDEX, NUM_THREADS=args.num_threads)
 
-	bowtieForRsemCmd = Template("/opt/genomics/bin/bowtie2 $BOWTIE_PARAMS $BOWTIE_INPUT | samtools view -S -b -o $OUTPUT_FOLDER/rsem_output/aligned_by_bowtie2.bam -").substitute(BOWTIE_INPUT=bowtieInput, BOWTIE_PARAMS=bowtieParams, OUTPUT_FOLDER=args.output_folder)
-	print(bowtieForRsemCmd)
-	sys.stdout.flush();
-	returnCode = subprocess.call(bowtieForRsemCmd, shell=True);
-	if(returnCode != 0):
-		raise Exception("bowtie2 for rsem failed");
+		if(args.paired_end):
+			#additional params that are specific to paired-end
+			bowtieParams += Template(" --no-mixed --no-discordant -I 1 -X $RSEM_BOWTIE_MAXINS").substitute(RSEM_BOWTIE_MAXINS=args.rsem_bowtie_maxins)
+			bowtieInput = Template("-1 $SAMPLE_FILE1 -2 $SAMPLE_FILE2").substitute(SAMPLE_FILE1=args.sampleFile1, SAMPLE_FILE2=args.sampleFile2)
+		else:
+				bowtieInput = Template("-U $SAMPLE_FILE1").substitute(SAMPLE_FILE1=args.sampleFile1)
 
-	#--sampling-for-bam: rsem outputs a bam with multiple possible alignments per read plus their posterior probabilities, which means that the read counts are disrupted
-	#this flag tells it to sample one read per the distribution, assign it a MAPQ=100 value (also tag ZW:f:1) and the rest are 0 value (and tag ZW:f:0)
+		bowtieForRsemCmd = Template("/opt/genomics/bin/bowtie2 $BOWTIE_PARAMS $BOWTIE_INPUT | samtools view -S -b -o $OUTPUT_FOLDER/rsem_output/aligned_by_bowtie2.bam -").substitute(BOWTIE_INPUT=bowtieInput, BOWTIE_PARAMS=bowtieParams, OUTPUT_FOLDER=args.output_folder)
+		print(bowtieForRsemCmd)
+		sys.stdout.flush();
+		returnCode = subprocess.call(bowtieForRsemCmd, shell=True);
+		if(returnCode != 0):
+			raise Exception("bowtie2 for rsem failed");
 
-	print("Running rsem");
-	#params that are relevant only in paired_end run
-	rsemParamsOnlyForPairedEnd = Template("--fragment-length-max $RSEM_BOWTIE_MAXINS").substitute(RSEM_BOWTIE_MAXINS=args.rsem_bowtie_maxins) if args.paired_end else ""
-	#Note that in rsem I use the --output-genome-bam flag to generate a genome bam (in addition to the transcriptome bam that is always created) - rsem will also sort this bam. This is necessary for the QC later.
-	rsemComand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --estimate-rspd " +
-							"$RSEM_PARAMS_ONLY_FOR_PAIRED_END --output-genome-bam --sampling-for-bam --bam $IS_PAIRED_END $OUTPUT_FOLDER/rsem_output/aligned_by_bowtie2.bam " +
-							"$RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder,
-																									   RSEM_INDEX=RSEM_INDEX,
-																									   NUM_THREADS=args.num_threads,
-																									   RSEM_PARAMS_ONLY_FOR_PAIRED_END=rsemParamsOnlyForPairedEnd,
-																									   IS_PAIRED_END="--paired-end" if args.paired_end else "");
+		#--sampling-for-bam: rsem outputs a bam with multiple possible alignments per read plus their posterior probabilities, which means that the read counts are disrupted
+		#this flag tells it to sample one read per the distribution, assign it a MAPQ=100 value (also tag ZW:f:1) and the rest are 0 value (and tag ZW:f:0)
 
-	print(rsemComand)
-	sys.stdout.flush();
-	returnCode = subprocess.call(rsemComand, shell=True);
-	if(returnCode != 0):
-		raise Exception("rsem failed");
+		print("Running rsem");
+		#params that are relevant only in paired_end run
+		rsemParamsOnlyForPairedEnd = Template("--fragment-length-max $RSEM_BOWTIE_MAXINS").substitute(RSEM_BOWTIE_MAXINS=args.rsem_bowtie_maxins) if args.paired_end else ""
+		#Note that in rsem I use the --output-genome-bam flag to generate a genome bam (in addition to the transcriptome bam that is always created) - rsem will also sort this bam. This is necessary for the QC later.
+		rsemComand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --estimate-rspd " +
+								"$RSEM_PARAMS_ONLY_FOR_PAIRED_END --output-genome-bam --sampling-for-bam --bam $IS_PAIRED_END $OUTPUT_FOLDER/rsem_output/aligned_by_bowtie2.bam " +
+								"$RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder,
+																										   RSEM_INDEX=RSEM_INDEX,
+																										   NUM_THREADS=args.num_threads,
+																										   RSEM_PARAMS_ONLY_FOR_PAIRED_END=rsemParamsOnlyForPairedEnd,
+																										   IS_PAIRED_END="--paired-end" if args.paired_end else "");
+
+		print(rsemComand)
+		sys.stdout.flush();
+		returnCode = subprocess.call(rsemComand, shell=True);
+		if(returnCode != 0):
+			raise Exception("rsem failed");
 
 
 

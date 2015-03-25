@@ -110,6 +110,10 @@ for sample1 in sampleList:
 		SKIP_RSEM_QC="--skip_rsem_qc" if args.skip_rsem_qc else "", \
 		RSEM_BOWTIE_MAXINS=("--rsem_bowtie_maxins %s" % args.rsem_bowtie_maxins) if args.paired_end else "")
 	
+
+	#a simple way to remove all duplicate whitespaces and replace them with one whitespace. The duplicate whitespaced occur because of the way I implement not transferring optional arguments (it leaves extra double whitespaces where the optional arg could have been)
+	cmd = ' '.join(cmd.split())
+
 	print "sending cmd to queue: " + cmd;
 
 	print("**********************************************************");

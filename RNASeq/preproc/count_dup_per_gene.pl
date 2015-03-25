@@ -103,7 +103,7 @@ while(<FD_sam>){
                 }
         }
 }
-close FD_sam;
+close FD_sam;%genes=();
 
 
 my $posnegrat=$npos_strand/$counter;
