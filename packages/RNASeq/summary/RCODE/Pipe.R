@@ -1,12 +1,47 @@
-collect_dir = "/Users/mbeloc/Documents/RNASeq/TCR_Example"
-config_file = "/Users/mbeloc/Documents/RNASeq/tcr-example_config.xls"
-qc_fields_file = "/Users/mbeloc/Documents/RNASeq/qc_fields.txt"
-gene_fields_file = "/Users/mbeloc/Documents/RNASeq/gene_fields.txt"
-out_dir = "/Users/mbeloc/Documents/RNASeq/TCR_Summary"
-lib_dir = "/Users/mbeloc/Documents/RNASeq"
-sig_file = "/Users/mbeloc/Documents/RNASeq/immsig.txt"
+rm(list=ls())
+library(sva)
+library(optparse)
+
+option_list <- list(
+  make_option("--collect", default="/data/yosef/CD8_effector_diff/data/Single_Cell_RNAseq/LCMV_Pilot/LCMV_Plates1_d7_Arm/rsem", type="character",
+              help="Directory containing your RNA Seq results from the preproc pipeline."),
+  make_option("--config", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline/TestConfig-All.xls", type="character",
+              help="Config file for your project."),
+  make_option("--qcfields", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline/qc_fields.txt", type="character"),
+  make_option("--genefields", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline/gene_fields.txt", type="character",
+              help=""),
+  make_option("--out", default="", type="character",
+              help=""),
+  make_option("--lib", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline", type="character",
+              help=""),
+  make_option("--sigfile", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline/immsig-ProperCase.txt", type="character",
+              help=""),
+  make_option("--housekeeping", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline/house_keeping_mouse_TitleCase.txt", type="character",
+              help=""),
+  make_option("--combat", action="store_true", default=FALSE,
+              help="This will run the ComBat package for batch correction on your data."),
+  make_option("--multiple_collect", type="character", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline/CollectFolders.txt",
+              help="If you need to load multiple collect directories and config files, please supply a text file listing them here..")
+  
+)
+
+opt <- parse_args(OptionParser(option_list=option_list))
+
+BC = opt$combat
+collect_dir = opt$collect
+config_file = opt$config 
+qc_fields_file = opt$qcfields
+gene_fields_file = opt$genefields
+out_dir = opt$out
+lib_dir = opt$lib
+sig_file = opt$sigfile
+
+fileSample<-file(paste0(out_dir,"/SampleLog.tab"))
+write(("Sample Information"), fileSample)
+
+
 # Point to all sig files
-housekeeping_list = "/Users/mbeloc/Documents/RNASeq/house_keeping_human_names.txt"
+housekeeping_list = opt$housekeeping
 
 ## ----- Produce Output Directory
 if (file.exists(out_dir)){
@@ -14,6 +49,24 @@ if (file.exists(out_dir)){
 } else {
   dir.create(out_dir)
 }
+
+source(paste0(lib_dir,"/loadRSEM.R"))
+## ----- LoadRSEMStudy - function to load multiple collect directories
+if(opt$multiple_collect != ""){
+  dfCollect <- read.table(opt$multiple_collect,header=T,sep="\t")
+}
+apply(dfCollect,1,function(x) print(x[2]))
+li_eSet <-apply(dfCollect,1,function(x) loadRSEM(collect_dir = x[2],config_file =x[1],qc_fields_file = qc_fields_file,gene_fields_file = gene_fields_file))
+
+eSet = li_eSet[[1]]
+if (length(li_eSet) > 1){
+  for (i in 2:length(li_eSet)){
+    eSet <- Biobase::combine(eSet,li_eSet[[i]])
+  }
+}
+
+summary(eSet)
+
 
 ## ----- Load Data and Pre-Filtering of Failed Samples
 source(paste0(lib_dir,"/loadRSEM.R"))
@@ -69,6 +122,31 @@ exprs(tc.sc.eSet) = tc.sc.matrix
 
 # Weights
 fnr_weights = FNRw(tc.sc.eSet,tc.sc.eSet,gf.vec = gf.vec, FN_thresh = 0,housekeeping_list = housekeeping_list)
+
+###### Combat Batch Correction #######
+# Maybe wrap up the signature analysis into a module, and then you can do before and after.
+# This is still in development, please check to make sure the parameters make sense for your study.
+if(BC){
+  
+  dfPheno <- pData(tc.sc.eSet)
+  #vCompare <- c("Condition_Code","Time_Code")
+  
+  exprs(tc.sc.eSet) <- log10(exprs(tc.sc.eSet)+1)
+  combat.eSet = tc.sc.eSet[which(gf.vec),]
+  modcombat = model.matrix(~ as.factor(Condition_Code), data=dfPheno)
+  combat_edata = ComBat(dat=exprs(combat.eSet), batch=pData(combat.eSet)$Batch_Code, mod=modcombat, par.prior=T, prior.plots=T)
+  
+  dim(combat.eSet)
+  dim(combat_edata)
+  
+  vAdjGenes <- rownames(combat_edata)
+  combat.eSet <- tc.sc.eSet
+  
+  if (all(rownames(exprs(combat.eSet)[vAdjGenes,])==rownames(combat_edata[vAdjGenes,]))){
+    exprs(combat.eSet)[vAdjGenes,] <- combat_edata[vAdjGenes,]
+  }
+  tc.sc.eSet <- combat.eSet
+}
 
 # wPCA on filtered genes (to save time)
 source(paste0(lib_dir,"/wPCA.R"))
