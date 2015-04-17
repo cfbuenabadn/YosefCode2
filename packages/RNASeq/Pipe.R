@@ -51,6 +51,24 @@ if (file.exists(out_dir)){
   dir.create(out_dir)
 }
 
+source(paste0(lib_dir,"/loadRSEM.R"))
+## ----- LoadRSEMStudy - function to load multiple collect directories
+if(opt$multiple_collect != ""){
+  dfCollect <- read.table(opt$multiple_collect,header=T,sep="\t")
+}
+apply(dfCollect,1,function(x) print(x[2]))
+li_eSet <-apply(dfCollect,1,function(x) loadRSEM(collect_dir = x[2],config_file =x[1],qc_fields_file = qc_fields_file,gene_fields_file = gene_fields_file))
+
+eSet = li_eSet[[1]]
+if (length(li_eSet) > 1){
+  for (i in 2:length(li_eSet)){
+    eSet <- Biobase::combine(eSet,li_eSet[[i]])
+  }
+}
+
+summary(eSet)
+
+
 ## ----- Load Data and Pre-Filtering of Failed Samples
 source(paste0(lib_dir,"/loadRSEM.R"))
 eSet = loadRSEM(collect_dir = collect_dir,config_file = config_file,qc_fields_file = qc_fields_file,gene_fields_file = gene_fields_file)
