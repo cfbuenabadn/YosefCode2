@@ -1,8 +1,7 @@
 rm(list=ls())
 library(sva)
 library(optparse)
-library(CCA)
-library(ppls)
+
 option_list <- list(
   make_option("--collect", default="/data/yosef/CD8_effector_diff/data/Single_Cell_RNAseq/LCMV_Pilot/LCMV_Plates1_d7_Arm/rsem", type="character",
               help="Directory containing your RNA Seq results from the preproc pipeline."),
@@ -11,7 +10,7 @@ option_list <- list(
   make_option("--qcfields", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline/qc_fields.txt", type="character"),
   make_option("--genefields", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline/gene_fields.txt", type="character",
               help=""),
-  make_option("--out", default="/data/yosef/CD8_effector_diff/out/SingleCell-RNA-Seq/04-14-2015_NoBC_40bins_MedianVersionOfTechCorrect1_SLOWLY2", type="character",
+  make_option("--out", default="", type="character",
               help=""),
   make_option("--lib", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline", type="character",
               help=""),
@@ -123,6 +122,31 @@ exprs(tc.sc.eSet) = tc.sc.matrix
 
 # Weights
 fnr_weights = FNRw(tc.sc.eSet,tc.sc.eSet,gf.vec = gf.vec, FN_thresh = 0,housekeeping_list = housekeeping_list)
+
+###### Combat Batch Correction #######
+# Maybe wrap up the signature analysis into a module, and then you can do before and after.
+# This is still in development, please check to make sure the parameters make sense for your study.
+if(BC){
+  
+  dfPheno <- pData(tc.sc.eSet)
+  #vCompare <- c("Condition_Code","Time_Code")
+  
+  exprs(tc.sc.eSet) <- log10(exprs(tc.sc.eSet)+1)
+  combat.eSet = tc.sc.eSet[which(gf.vec),]
+  modcombat = model.matrix(~ as.factor(Condition_Code), data=dfPheno)
+  combat_edata = ComBat(dat=exprs(combat.eSet), batch=pData(combat.eSet)$Batch_Code, mod=modcombat, par.prior=T, prior.plots=T)
+  
+  dim(combat.eSet)
+  dim(combat_edata)
+  
+  vAdjGenes <- rownames(combat_edata)
+  combat.eSet <- tc.sc.eSet
+  
+  if (all(rownames(exprs(combat.eSet)[vAdjGenes,])==rownames(combat_edata[vAdjGenes,]))){
+    exprs(combat.eSet)[vAdjGenes,] <- combat_edata[vAdjGenes,]
+  }
+  tc.sc.eSet <- combat.eSet
+}
 
 # wPCA on filtered genes (to save time)
 source(paste0(lib_dir,"/wPCA.R"))
