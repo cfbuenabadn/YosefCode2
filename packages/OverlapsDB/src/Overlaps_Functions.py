@@ -159,13 +159,13 @@ def SortBed(strIn,strOut,cmdBedtools):
                         stdout=fileSortedBed)
                         
 def GetGeneTable(strPeaks,strGTF,cmdBedtools,dirTmp,strTitle):
-    strTmpResults = dirTmp + os.sep + "GeneTable.bed"
+    strTmpResults = dirTmp + os.sep + os.path.basename(strGTF)+"_hits.tab"
         
     
     with open(strTmpResults,'w') as fileTmpResults:
         pSed = sp.Popen(["sed",'/chrNT/d',strGTF],stdout=sp.PIPE)
         outSed = pSed.communicate()[0]
-        pBedtools = sp.Popen([cmdBedtools,"intersect", "-wb","-bed","-a",strPeaks,
+        pBedtools = sp.Popen([cmdBedtools,"intersect", "-wo","-bed","-a",strPeaks,
                           "-b","stdin"],stdout=fileTmpResults,stdin=sp.PIPE)
         pBedtools.communicate(outSed)
         
@@ -173,6 +173,41 @@ def GetGeneTable(strPeaks,strGTF,cmdBedtools,dirTmp,strTitle):
     dfGenes = dfGenes.drop_duplicates()
     dfGenes[strTitle] = dfGenes.groupby(['chr','start','end'])[strTitle].transform(lambda x: ','.join(x))
     dfGenes = dfGenes.drop_duplicates()
+    os.remove(strTmpResults)
+    return dfGenes
+
+def GetClosestGTFFeature(strPeaks,strGTF,cmdBedtools,dirTmp,strTitle):
+    strTmpResults = dirTmp + os.sep + "GeneTable.bed"
+    strSortedPeaks = dirTmp + os.sep + "SortedPeaks.bed"
+    
+    with open(strSortedPeaks,'w') as fileSortedPeaks:
+        print "Sorting", strPeaks,"..."
+        pSort = sp.Popen(["sort","-k","1,1","-k2,2n",strPeaks],stdout=fileSortedPeaks)
+        pSort.communicate()
+            
+    
+    
+    with open(strTmpResults,'w') as fileTmpResults:
+        
+        pSed = sp.Popen(["sed",'/chrNT/d',strGTF],stdout=sp.PIPE)
+        outSed = pSed.communicate()[0]
+    
+        # I believe gtf files have a different format than bed, but Nir's seem to start with chr, start, end, so we
+        # use that for sorting here.
+        print "Sorting", strGTF,"..."
+        pSort = sp.Popen(["sort","-k","1,1","-k2,2n"],stdin=sp.PIPE,stdout=sp.PIPE)
+        outSort = pSort.communicate(outSed)[0]
+        
+        pBedtools = sp.Popen([cmdBedtools,"closest", "-d","-bed","-a",strSortedPeaks,
+                          "-b","stdin"],stdout=fileTmpResults,stdin=sp.PIPE)
+        pBedtools.communicate(outSort)
+        
+    dfGenes = pd.read_table(strTmpResults,sep="\t",usecols=[0,1,2,8,11],names=["chr","start","end",strTitle,strTitle+"-distance"])
+    dfGenes = dfGenes.drop_duplicates()
+    dfGenes[strTitle] = dfGenes.groupby(['chr','start','end'])[strTitle].transform(lambda x: ','.join(x))
+    dfGenes = dfGenes.drop_duplicates()
+    os.remove(strTmpResults)
+    os.remove(strSortedPeaks)
     return dfGenes
     
     
@@ -200,7 +235,7 @@ def ReadMatlabDB(strDir,dirTmp):
     # Rename the columns
     dfCombined = dfIntervals.join(dfGeneColumns)
     dfCombined.columns.values[5:] = [dictGeneNames[x] for x in dfCombined.columns.values[5:]]
-    dfCombined.to_csv(dirTmp+os.sep+"Test.tab")
+    #dfCombined.to_csv(dirTmp+os.sep+"Test.tab")
     
     for strAnnot in dfCombined.columns.values[5:]:
         strBedName = dirTmp+os.sep+strAnnot+".bed"
@@ -226,6 +261,7 @@ def ConvertOverlapHits(strAllHits,dirTmp,dfPeaks,strStem):
     # Reshape, and write to dirTmp+os.sep+"RehshapedHits.csv"
         pd.pivot_table(dfAllHits, index=['chr','start','end'],columns=['bed'],values='bp_overlap').to_csv(strReshaped,sep="\t")
         dfFullTable = pd.read_table(strReshaped,sep="\t",header=0)
+        os.remove(strReshaped)
         
     else:
         # May want to put in the first peak of strPeaks here, and set overlap equal to 0.
@@ -234,6 +270,9 @@ def ConvertOverlapHits(strAllHits,dirTmp,dfPeaks,strStem):
     dfFullTable = pd.merge(dfPeaks, dfFullTable, how='left', on=["chr","start","end"])
     dfFullTable.to_csv(strFullTable,sep="\t")
         
+    
+    os.remove(strFullTable)
+    os.remove(dirTmp+os.sep+strStem+"_HitTable.tab")
     return dfFullTable
     
     
