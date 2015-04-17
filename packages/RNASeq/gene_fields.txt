@@ -1,3 +1,0 @@
-Gene_ID
-Gene_Symbol
-Transcript_Type
