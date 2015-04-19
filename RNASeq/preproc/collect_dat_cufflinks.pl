@@ -23,7 +23,7 @@ my ($WORK_FOLDER,$dict_file,$include_raw_read)=@ARGV;
 #$include_raw_read=0;
 #perl collect_dat_cufflinks.pl /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai/
 #with include raw read:
-#perl /home/eecs/allonwag/project/singleCell/allon_script/YosefCode/RNASeq/preproc/collect_dat_cufflinks.pl /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai/ /data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt 1
+#perl /home/eecs/allonwag/project/singleCell/allon_script/YosefCode/RNASeq/preproc/collect_dat_cufflinks.pl /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai_AsSingle/ /data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt 1
 
 my $cntr=0;my %fpkm=();
 my %read_count=();my %read_dup=();my %read_count_unique=();
@@ -130,12 +130,12 @@ while(<FD>){
     if (exists($fpkm{$p})) {
 	print  h_out_dat join "\t",@{$fpkm{$p}};
 	if ($include_raw_read){
-	    if (!exists($read_count{$p})) {die "Integrity: no read count data for gene $p\n";}	
-	    print  h_out_dat_read join "\t",@{$read_count{$p}};
-	    if (!exists($read_count_unique{$p})) {die "Integrity: no unique read count data for gene $p\n";}	
-	    print  h_out_dat_read_unique join "\t",@{$read_count_unique{$p}};
-	    if (!exists($read_dup{$p})) {die "Integrity: no read dup data for gene $p\n";}	
-	    print  h_out_dat_dup join "\t",@{$read_dup{$p}};
+	    if (!exists($read_count{$tmp})) {print "Integrity: no read count data for gene $p\n"; print  h_out_dat_read join "\t",@zeros;}	
+	    else{print  h_out_dat_read join "\t",@{$read_count{$tmp}};}
+	    if (!exists($read_count_unique{$tmp})) {print "Integrity: no unique read count data for gene $p\n"; print  h_out_dat_read_unique join "\t",@zeros;}	
+	    else{print  h_out_dat_read_unique join "\t",@{$read_count_unique{$tmp}};}
+	    if (!exists($read_dup{$tmp})) {print "Integrity: no read dup data for gene $p\n"; print  h_out_dat_dup join "\t",@zeros;}	
+	    else{print  h_out_dat_dup join "\t",@{$read_dup{$tmp}};}
 	}
     }else{
 	print  h_out_dat join "\t",@zeros;
@@ -145,7 +145,7 @@ while(<FD>){
 	    print  h_out_dat_dup join "\t",@zeros;
 	}
     }
-    print h_out_dat "\n";print h_out_dat_read "\n";print h_out_dat_dup "\n";
+    print h_out_dat "\n";print h_out_dat_read "\n";print h_out_dat_dup "\n";print  h_out_dat_read_unique "\n";
     $printed{$p}=1;
 }close FD;
 

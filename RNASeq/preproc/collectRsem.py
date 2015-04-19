@@ -16,6 +16,9 @@
 # 6. debug the ribosomal % index - is it ok? Do we see so few rRNAs because we use RefSeq that has much fewer rRNAs than GenCode, or is there a bug in the index?
 # 7. add a capability to count_dup_per_gene for cufflinks (currently it relies on rsem indices...)
 # 8. Input unaligned BAM file as Nir requested
+# 9. For count_dup_unique: uses too much memory. We can increase the $GRID parameter. It should be a ~linear trade off between memory and running time. Maybe parallelization?
+# 10. add a parameter for "declared number of processors" to allow using a different number of processors than was declared... this will allow qsub to put more jobs per machine
+# 11. scripts for counting reads: htseq and featureCounts http://genomespot.blogspot.com/2014/09/read-counting-with-featurecounts.html
 
 from collections import namedtuple;
 import argparse;
