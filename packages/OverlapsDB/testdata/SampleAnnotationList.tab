@@ -1,0 +1,62 @@
+# Peaks
+#/data/yosef/CD8_effector_diff/tmp/ATAC-Seq/Peaks/Data/12-4-Arm-d27_peaks.bed	peaks
+
+# Other Annotation - Misc 
+/data/yosef/index_files/mm9/other_annot/multiz30way_score_over0-70.bed	1
+/data/yosef/index_files/mm9/other_annot/oreganno.bed	1
+/data/yosef/index_files/mm9/other_annot/repeats.bed	1
+/data/yosef/index_files/mm9/other_annot/regulatory_features.gff	1
+/data/yosef/index_files/mm9/other_annot/regulatory_features_contig.gff	0
+
+# Other Annotation - Nir Databases
+/data/yosef/index_files/mm9/other_annot/CD8_TF	NirDB
+
+# Set 3
+/data/yosef/index_files/mm9/other_annot/histone_CD8/k27ac.bed	1
+/data/yosef/index_files/mm9/other_annot/histone_CD8/k27me3.bed	1
+/data/yosef/index_files/mm9/other_annot/histone_CD8/k4me1.bed	1
+/data/yosef/index_files/mm9/other_annot/histone_CD8/k4me3.bed	1
+
+
+/data/yosef/index_files/mm9/other_annot/histone_CD8/poised_enh.bed	1
+/data/yosef/index_files/mm9/other_annot/histone_CD8/polycomb_rep.bed	1
+/data/yosef/index_files/mm9/other_annot/histone_CD8/active_enh.bed	1
+/data/yosef/index_files/mm9/other_annot/histone_CD8/active_prom.bed	1
+/data/yosef/index_files/mm9/other_annot/histone_CD8/bivalent_prom.bed	1
+/data/yosef/index_files/mm9/other_annot/histone_CD8/dev_enh.bed	1
+/data/yosef/index_files/mm9/other_annot/histone_CD8/init_prom.bed	1
+
+# Genes
+#/data/yosef/index_files/mm9/genes/Mus_musculus.NCBIM37.61.exons.gtf	1
+#/data/yosef/index_files/mm9/genes/Mus_musculus.NCBIM37.lincRNA.gtf	1
+# FIX THIS ONE /data/yosef/index_files/mm9/genes/tight_genes.3p.gtf	1
+# FIX THIS ONE /data/yosef/index_files/mm9/genes/tight_genes.gtf	1
+# FIX THIS ONE /data/yosef/index_files/mm9/genes/tight_genes.prom.gtf	1
+
+# Other Annotation - Gata
+#/data/yosef/index_files/mm9/other_annot/Gata/CD8.bed	1
+#/data/yosef/index_files/mm9/other_annot/Gata/iTreg.bed	1
+#/data/yosef/index_files/mm9/other_annot/Gata/nTreg.bed	1
+#/data/yosef/index_files/mm9/other_annot/Gata/Th1.bed	1
+#/data/yosef/index_files/mm9/other_annot/Gata/Th2.bed	1
+#/data/yosef/index_files/mm9/other_annot/Gata/Th17.bed	1
+
+# /data/yosef/index_files/mm9/other_annot/H3K-data (Include these?)
+
+# Other Annotation - Histone Marks
+
+
+
+
+# Other Annotation - Foxp3
+#/data/yosef/index_files/mm9/other_annot/Foxp3/Treg_Foxp3_all.bed	1
+
+
+
+# TCR
+#/data/yosef/index_files/mm9/TCR/mm9.ensembl.TCR.bed	1
+
+
+
+
+

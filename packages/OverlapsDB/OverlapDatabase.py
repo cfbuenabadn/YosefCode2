@@ -88,7 +88,7 @@ astrPeaks = args.astrPeaks
 adfFullResults = []
 astrBeds = []
 astrGFFs = []
-astrCutPeaks = []
+
 
 
 astrNirDBs = []
@@ -123,7 +123,7 @@ print astrBeds
 # Make bed files from files in "Nir DB" format.
 
 for strDir in astrNirDBs:
-    for strBed in odb.ReadMatlabDB(strDir,dirTmp):
+    for strBed in odb.ReadMatlabDB(strDir,dirBed):
         astrBeds.append(strBed)
     
 
@@ -137,14 +137,15 @@ for strDir in astrNirDBs:
 # peak.
 
 dictPeakdfs = {}
+dictCutPeaks = {}
 
 for strPeaks in astrPeaks:
     strCutPeaks = dirTmp + os.sep + os.path.basename(strPeaks).replace(".bed","cut.bed")
     strStem = strPeaks
     
     odb.cut_file(strPeaks,strCutPeaks)
-    astrCutPeaks.append(strCutPeaks)
-    dfPeaks = pd.read_table(strCutPeaks,sep="\t")
+    dictCutPeaks[strPeaks] = strCutPeaks
+    dfPeaks = pd.read_table(strCutPeaks,sep="\t",names=["chr","start","end"])
     dfPeaks.columns = ["chr","start","end"]
 
     #We want to reflect this line of unix code:
@@ -192,7 +193,7 @@ for strAnnot in astrGFFs:
             odb.IntersectGFF( strAnnot,strCutPeaks,fileHits,args.cmdBedtools,strPeaks,"peaks against gff")
     strStem = os.path.basename(strAnnot)
     dfAnnotOL = odb.ConvertOverlapHits(strAllAnnotHits,dirTmp,dfGFF,strStem)
-    #os.remove(strAllAnnotHits)
+    os.remove(strAllAnnotHits)
     dictAnnotOL[strAnnot] = dfAnnotOL
 
 
@@ -272,12 +273,12 @@ for strAnnot in astrGFFs:
 astrAnnot = astrBeds + astrGFFs
 
 
-for strCutPeaks in dictPeakdfs.keys():
+for strPeaks in dictPeakdfs.keys():
     print "Processing", strCutPeaks
     dfPV = pd.DataFrame(0, index=[], columns=['Annotation','Fold Enrichment','p-value',
     'Peaks with Overlap','Overlap(bp)','Total Peaks','Pct Peaks Overlapping','AnnotationPeaks','Annotation Peaks Overlapping','AnnotationSize(bp)',
     'AnnotationSize / EffectiveGenome','Effective Genome Size'])
-    dfResults =dictPeakdfs[strCutPeaks]
+    dfResults =dictPeakdfs[strPeaks]
     i=0
     for strAnnot in astrAnnot:
         print "Calculating results for", strAnnot
@@ -311,7 +312,7 @@ for strCutPeaks in dictPeakdfs.keys():
             dEnrichment = dPctPeaksOverlap/dAnnotToGenomeRatio            
             
             dfOLData = dictAnnotOL[strAnnot]
-            iAnnotPeaksWithOL = (dfOLData[strCutPeaks] >= 1).sum() 
+            iAnnotPeaksWithOL = (dfOLData[strPeaks] >= 1).sum() 
         
             dPVal = stats.binom_test(n = iTotalPeaks,x=iOverlappingPeaks, p=dAnnotToGenomeRatio)
         # Append rows to dataframe here.
@@ -324,14 +325,14 @@ for strCutPeaks in dictPeakdfs.keys():
             #print stats.binom_test(n = iTotalPeakLen,x=iAnnotOverlap, p=dAnnotToGenomeRatio)
     iTotalCoverage = (dfResults["end"]-dfResults["start"]).sum()
     dfPV['Annotation'] =  dfPV['Annotation'].map(lambda x: os.path.basename(x))
-    dfPV.to_csv(dirOut+os.sep+os.path.basename(strCutPeaks+"_Statistics.tab"),sep="\t",index=False)
-    with open(dirOut+os.sep+os.path.basename(strCutPeaks+"_Statistics.tab"),"a") as fileStats:
+    dfPV.to_csv(dirOut+os.sep+os.path.basename(strPeaks+"_Statistics.tab"),sep="\t",index=False)
+    with open(dirOut+os.sep+os.path.basename(strPeaks+"_Statistics.tab"),"a") as fileStats:
         fileStats.write("\n\n#Total bp covered by ATAC-Seq:\t" + str(iTotalCoverage)+ "\n")
     
     for strCol in list(dfResults.columns.values)[3:]:
         dfResults.loc[dfResults[strCol] > 0, strCol] = 1
     dfResults.columns = [os.path.basename(x) for x in list(dfResults.columns.values)]
-    print list(dfResults.columns.values)[3:]
+    print "Finished calculating statistics. Will now merge on information on nearby genomic features."
     
     """
     for i in range(len(list(dfResults.columns.values)[3:])):
@@ -352,7 +353,7 @@ for strCutPeaks in dictPeakdfs.keys():
             dEnrichment = dPctPeaksOverlap/dAnnotToGenomeRatio            
             
             dfOLData = dictAnnotOL[strAnnot]
-            iAnnotPeaksWithOL = (dfOLData[strCutPeaks] >= 1).sum() 
+            iAnnotPeaksWithOL = (dfOLData[strPeaks] >= 1).sum() 
             
             dPVal = stats.binom_test(n = iTotalPeaks,x=iOverlappingPeaks, p=dAnnotToGenomeRatio)
             # Append rows to dataframe here.
@@ -365,8 +366,8 @@ for strCutPeaks in dictPeakdfs.keys():
             #print stats.binom_test(n = iTotalPeakLen,x=iAnnotOverlap, p=dAnnotToGenomeRatio)
     
     dfPV['Annotation'] =  dfPV['Annotation'].map(lambda x: os.path.basename(x))
-    dfPV.to_csv(dirOut+os.sep+os.path.basename(strCutPeaks+"_Statistics.tab"),sep="\t",index=False)
-    with open(dirOut+os.sep+os.path.basename(strCutPeaks+"_Statistics.tab"),"a") as fileStats:
+    dfPV.to_csv(dirOut+os.sep+os.path.basename(strPeaks+"_Statistics.tab"),sep="\t",index=False)
+    with open(dirOut+os.sep+os.path.basename(strPeaks+"_Statistics.tab"),"a") as fileStats:
         fileStats.write("\n\n#Total bp covered by ATAC-Seq:\t" + str(iTotalCoverage)+ "\n")
     
     for strCol in list(dfResults.columns.values)[3:]:
@@ -376,16 +377,27 @@ for strCutPeaks in dictPeakdfs.keys():
 ###############################################################################
 #  Step 6: Add genes
 
-    dfGeneResults = odb.GetGeneTable(strCutPeaks,"/data/yosef/index_files/mm9/genes/tight_genes.gtf",args.cmdBedtools,dirTmp,"Gene")
-    dfGenePromoter = odb.GetGeneTable(strCutPeaks,"/data/yosef/index_files/mm9/genes/tight_genes.3p.gtf",args.cmdBedtools,dirTmp,"Promoter")
-    dfGenesThreePrime = odb.GetGeneTable(strCutPeaks,"/data/yosef/index_files/mm9/genes/tight_genes.prom.gtf",args.cmdBedtools,dirTmp,"3\' of Gene")
+    
+    dfGeneResults = odb.GetGeneTable(dictCutPeaks[strPeaks],"/data/yosef/index_files/mm9/genes/tight_genes.gtf",args.cmdBedtools,dirTmp,"Gene")    
+    dfGenePromoter = odb.GetGeneTable(dictCutPeaks[strPeaks],"/data/yosef/index_files/mm9/genes/tight_genes.3p.gtf",args.cmdBedtools,dirTmp,"3prime of Gene")
+    dfGenesThreePrime = odb.GetGeneTable(dictCutPeaks[strPeaks],"/data/yosef/index_files/mm9/genes/tight_genes.prom.gtf",args.cmdBedtools,dirTmp,"Promoter")
+    dfClosestGeneResults = odb.GetClosestGTFFeature(dictCutPeaks[strPeaks],"/data/yosef/index_files/mm9/genes/tight_genes.gtf",args.cmdBedtools,dirTmp,"ClosestGene")
+    
     dfResults = pd.merge(dfResults,dfGeneResults,how="left",on=["chr","start","end"])    
     dfResults = pd.merge(dfResults,dfGenePromoter,how="left",on=["chr","start","end"]) 
     dfResults = pd.merge(dfResults,dfGenesThreePrime,how="left",on=["chr","start","end"]) 
+    dfResults = pd.merge(dfResults,dfClosestGeneResults,how="left",on=["chr","start","end"])     
     
-    dfResults.to_csv(dirOut+os.sep+os.path.basename(strCutPeaks+"_Overlaps.tab"),sep="\t",index=False)
+    dfResults.to_csv(dirOut+os.sep+os.path.basename(strPeaks+"_Overlaps.tab"),sep="\t",index=False)
     #dfGeneResults.to_csv(dirOut+os.sep+os.path.basename(astrPeaks[iDF]+"_Genes.tab"),sep="\t",index=False)
- 
+
+
+# Clean up at end of run
+os.remove(strUnionBed)
+os.remove(strBedEffGenome)
+os.remove(strUnionSortedBed) 
+for strCutPeaks in dictCutPeaks.values():
+    os.remove(strCutPeaks)
     
 """
 if ".bed" in strAnnot:

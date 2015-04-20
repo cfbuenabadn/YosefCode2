@@ -72,6 +72,8 @@ print "Folder is: " + args.folder;
 #folder_format = Template("$BASE_FOLDER/*/*_R1_001.fastq.gz").substitute(BASE_FOLDER=args.folder);
 #folder_format = Template("$BASE_FOLDER/*/*.R1_L001.fastq.gz").substitute(BASE_FOLDER=args.folder);
 folder_format = Template("$BASE_FOLDER/*/*_R1_combined.fastq.gz").substitute(BASE_FOLDER=args.folder);
+#to take the other end
+#folder_format = Template("$BASE_FOLDER/*/*_R2_combined.fastq.gz").substitute(BASE_FOLDER=args.folder);
 
 sampleList = glob.iglob(folder_format);
 
