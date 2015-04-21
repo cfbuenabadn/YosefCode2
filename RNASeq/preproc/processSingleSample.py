@@ -56,6 +56,7 @@ elif(args.paired_end and args.sampleFile2 == ''):
 if(args.reference == "mm10"):
 	#settings for mm10 with ERCC spike-ins and other additions required by the BRAIN
 	#project (eGFP, tdTomato, CreER)
+	GENOME_REFERENCE_FILE = "/data/yosef/index_files/mm10_4brain/index/GCF_000001635.23_GRCm38.p3_genomic_4brain.fna";
 	BOWTIE2_INDEX = "/data/yosef/index_files/mm10_4brain/index/GRCm38.p3_4brain";
 	TOPHAT2_TRANSCRIPTOME_INDEX = "/data/yosef/index_files/mm10_4brain/index/tophat_transcriptome_data/GRCm38.p3_refseq_annot";
 	TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/mm10_4brain/index/GRCm38.p3.gff";
@@ -518,7 +519,7 @@ if(RUN_QC and not(args.skip_qc)):
 		sortedBamFile = args.output_folder + "/tophat_output/picard_output/sorted.bam";
 		tophatOutputFolder = args.output_folder + "/tophat_output";
 		print "Warning: the cufflinks pipleline still doesn't have the two dictionary required for the collect dup perl... this part will be skipped..."
-		tophat_qc_metrics = doQC.CollectData(sortedBamFile, tophatOutputFolder, REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX, args.paired_end, RSEM_TRANSCRIPT_ANNOTATION, RSEM_DICTIONARY); #patch - use the same dictionaries for tophat and rsem for Nir's count dups
+		tophat_qc_metrics = doQC.CollectData(sortedBamFile, tophatOutputFolder, REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX, args.paired_end, RSEM_TRANSCRIPT_ANNOTATION, RSEM_DICTIONARY, GENOME_REFERENCE_FILE); #patch - use the same dictionaries for tophat and rsem for Nir's count dups
 		doQC.WriteQCMetrics(tophatOutputFolder, commonMetrics, tophat_qc_metrics);
 
 	RUN_QC_RSEM = True;
@@ -531,7 +532,7 @@ if(RUN_QC and not(args.skip_qc)):
 		#sortedBamFile = args.output_folder + "/rsem_output/rsem_output.genome.sorted.bam";
 		#use only aligned reads for qc
 		sortedBamFile = args.output_folder + "/rsem_output/picard_output/sorted.bam";
-		rsem_qc_metrics = doQC.CollectData(sortedBamFile, rsemOutputFolder, REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM, args.paired_end, RSEM_TRANSCRIPT_ANNOTATION, RSEM_DICTIONARY);
+		rsem_qc_metrics = doQC.CollectData(sortedBamFile, rsemOutputFolder, REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM, args.paired_end, RSEM_TRANSCRIPT_ANNOTATION, RSEM_DICTIONARY, GENOME_REFERENCE_FILE);
 		doQC.WriteQCMetrics(rsemOutputFolder, commonMetrics, rsem_qc_metrics);
 
 

@@ -28,7 +28,7 @@ def CheckContam(sampleFile, outputFolder, sample_end):
 		raise Exception("CheckContam failed");
 
 
-def CollectData(bamFile, outputFolder, refFlatAnnotationsFile, ribosomalIntervalsFile, isPairedEnd, transcriptAnnotationFile, transcriptDictionaryFile):
+def CollectData(bamFile, outputFolder, refFlatAnnotationsFile, ribosomalIntervalsFile, isPairedEnd, transcriptAnnotationFile, transcriptDictionaryFile, genomeReferenceFile):
 	rnaMetricsFileName = outputFolder + '/picard_output/rna_metrics.txt';
 	cmd = Template("picard CollectRnaSeqMetrics TMP_DIR=$OUTPUT_FOLDER/temp INPUT=$BAM_FILE OUTPUT=$OUTPUT_FILE CHART=$OUTPUT_FOLDER/picard_output/rna_coverage.pdf REF_FLAT=$refFlatFile STRAND=NONE RIBOSOMAL_INTERVALS=$ribosomalIntervalsFile").substitute(BAM_FILE=bamFile, OUTPUT_FOLDER=outputFolder, OUTPUT_FILE=rnaMetricsFileName, refFlatFile=refFlatAnnotationsFile, ribosomalIntervalsFile=ribosomalIntervalsFile);
 	print(cmd)
@@ -37,7 +37,8 @@ def CollectData(bamFile, outputFolder, refFlatAnnotationsFile, ribosomalInterval
 		raise Exception("CollectData failed");
 
 	alnMetricsFileName = outputFolder + '/picard_output/aln_metrics.txt';
-	cmd = Template("picard CollectAlignmentSummaryMetrics INPUT=$BAM_FILE OUTPUT=$OUTPUT_FILE\n").substitute(BAM_FILE=bamFile, OUTPUT_FILE=alnMetricsFileName);
+	#I found in an online forum (http://sourceforge.net/p/samtools/mailman/message/32772099/) that you have to give the genome reference file for this command to work, even though all the data it needs may already be contained in the bam file...
+	cmd = Template("picard CollectAlignmentSummaryMetrics INPUT=$BAM_FILE OUTPUT=$OUTPUT_FILE REFERENCE_SEQUENCE=$GENOME_REFERENCE_FILE=\n").substitute(BAM_FILE=bamFile, OUTPUT_FILE=alnMetricsFileName, REFERENCE_SEQUENCE=genomeReferenceFile);
 	print(cmd)
 	returnCode = subprocess.call(cmd, shell=True);
 	if(returnCode != 0):
