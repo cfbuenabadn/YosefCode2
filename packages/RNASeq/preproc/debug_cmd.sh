@@ -45,8 +45,10 @@ python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_trimmom
 python ~/project/singleCell/allon_script/preproc/processFolder.py --rsem_bowtie_maxins 3000 -N firstDavidBatch -r mm10 -p 2 -o /data/yosef/BRAIN/processed2/150309_HS1A /data/yosef/BRAIN/sources/150309_HS1A
 
 
-python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/processFolder.py --rsem_bowtie_maxins 3000 --paired_end -N brainPaired -r mm10 -p 1 -o /home/eecs/allonwag/data/BRAIN/processed4/150202_HS2A/Project_Ngai /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai
-python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/processFolder.py --rsem_bowtie_maxins 3000 -N brainPairedAsSingle -r mm10 -p 1 -o /home/eecs/allonwag/data/BRAIN/processed4/150202_HS2A/Project_Ngai_AsSingle /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai
+python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/processFolder.py --skip_trimmomatic --skip_tophat --skip_rsem --trimmomatic_window 4:20 --rsem_bowtie_maxins 3000 --paired_end -N brainPaired -r mm10 -p 1 -o /home/eecs/allonwag/data/BRAIN/processed4/150202_HS2A/Project_Ngai /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai
+python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/processFolder.py --skip_trimmomatic --skip_tophat --skip_rsem --trimmomatic_window 4:20 --rsem_bowtie_maxins 3000 -N brainPairedAsSingle -r mm10 -p 1 -o /home/eecs/allonwag/data/BRAIN/processed4/150202_HS2A/Project_Ngai_AsSingle /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai
+python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collectRsem.py -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed4/150202_HS2A/Project_Ngai/rsem  /home/eecs/allonwag/data/BRAIN/processed4/150202_HS2A/Project_Ngai
+python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed4/150202_HS2A/Project_Ngai_AsSingle/rsem /home/eecs/allonwag/data/BRAIN/processed4/150202_HS2A/Project_Ngai_AsSingle
 
 
 python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed2/GBC_L01/rsem /home/eecs/allonwag/data/BRAIN/processed2/GBC_L01

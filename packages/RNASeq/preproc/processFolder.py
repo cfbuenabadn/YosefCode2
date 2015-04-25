@@ -114,7 +114,7 @@ for sample1 in sampleList:
 		SKIP_RSEM_QC="--skip_rsem_qc" if args.skip_rsem_qc else "", \
 		RSEM_BOWTIE_MAXINS=("--rsem_bowtie_maxins %s" % args.rsem_bowtie_maxins) if args.paired_end else "", \
 		TRIMMOMATIC_WINDOW=("--trimmomatic_window %s" % args.trimmomatic_window) if args.trimmomatic_window else "")
-	
+
 
 	#a simple way to remove all duplicate whitespaces and replace them with one whitespace. The duplicate whitespaced occur because of the way I implement not transferring optional arguments (it leaves extra double whitespaces where the optional arg could have been)
 	cmd = ' '.join(cmd.split())
@@ -144,7 +144,7 @@ for sample1 in sampleList:
 		fout.write("#PBS -o localhost:/dev/null\n");
 		
 		fout.write("### Set the queue to which to send\n");
-		fout.write("#PBS -q yosef_test\n");
+		fout.write("#PBS -q yosef\n");
 		
 		fout.write("### Limit the resources used\n");
 		fout.write(Template("#PBS -l nodes=1:ppn=$NUM_THREADS\n").substitute(NUM_THREADS=args.num_threads));

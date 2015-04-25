@@ -23,7 +23,7 @@ my ($WORK_FOLDER,$dict_file,$include_raw_read)=@ARGV;
 #$include_raw_read=0;
 #perl collect_dat_cufflinks.pl /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai/
 #with include raw read:
-#perl /home/eecs/allonwag/project/singleCell/allon_script/YosefCode/RNASeq/preproc/collect_dat_cufflinks.pl /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai_AsSingle/ /data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt 1
+#perl /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collect_dat_cufflinks.pl /home/eecs/allonwag/data/BRAIN/processed4/150202_HS2A/Project_Ngai_AsSingle /data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt 1
 
 my $cntr=0;my %fpkm=();
 my %read_count=();my %read_dup=();my %read_count_unique=();

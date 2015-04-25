@@ -38,7 +38,7 @@ def CollectData(bamFile, outputFolder, refFlatAnnotationsFile, ribosomalInterval
 
 	alnMetricsFileName = outputFolder + '/picard_output/aln_metrics.txt';
 	#I found in an online forum (http://sourceforge.net/p/samtools/mailman/message/32772099/) that you have to give the genome reference file for this command to work, even though all the data it needs may already be contained in the bam file...
-	cmd = Template("picard CollectAlignmentSummaryMetrics INPUT=$BAM_FILE OUTPUT=$OUTPUT_FILE REFERENCE_SEQUENCE=$GENOME_REFERENCE_FILE=\n").substitute(BAM_FILE=bamFile, OUTPUT_FILE=alnMetricsFileName, REFERENCE_SEQUENCE=genomeReferenceFile);
+	cmd = Template("picard CollectAlignmentSummaryMetrics INPUT=$BAM_FILE OUTPUT=$OUTPUT_FILE REFERENCE_SEQUENCE=$GENOME_REFERENCE_FILE\n").substitute(BAM_FILE=bamFile, OUTPUT_FILE=alnMetricsFileName, GENOME_REFERENCE_FILE=genomeReferenceFile);
 	print(cmd)
 	returnCode = subprocess.call(cmd, shell=True);
 	if(returnCode != 0):
