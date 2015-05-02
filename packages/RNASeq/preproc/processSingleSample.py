@@ -102,6 +102,7 @@ elif(args.reference == "hg38"):
 	#RIBOSOMAL_INTERVALS_INDEX = "null";
 	#RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM = "null";
 
+	GENOME_REFERENCE_FILE = "/data/yosef/index_files/hg38/index/hs_ref_GRCh38.ref_name.fna";
 	BOWTIE2_INDEX = "/data/yosef/index_files/hg38/index/GRCh38";
 	TOPHAT2_TRANSCRIPTOME_INDEX = "/data/yosef/index_files/hg38/index/tophat_transcriptome_data/GRCh38";
 	RSEM_TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/hg38/rsem_index/GRCh38.gtf";
