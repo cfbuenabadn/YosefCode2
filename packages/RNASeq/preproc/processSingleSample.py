@@ -574,7 +574,7 @@ for remFile in filesToClear:
 	if(returnCode != 0):
 		raise Exception("rm of file to clear failed");
 
-if(not(args.do_not_clean_intermediary_files))
+if(not(args.do_not_clean_intermediary_files)):
 	cleanup_after_preproc.cleanTemporaryFiles(args.output_folder)
 
 #print("**********************************************************");
