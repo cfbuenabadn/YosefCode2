@@ -42,6 +42,8 @@ parser.add_argument('--skip_tophat_qc', action='store_true',
                    help="skip the qc part of the pipeline only for tophat (ignored if the --skip_qc flag is given, in which case qc is not run in the first place)")
 parser.add_argument('--skip_rsem_qc', action='store_true',
                    help="skip the qc part of the pipeline only for rsem (ignored if the --skip_qc flag is given, in which case qc is not run in the first place)")
+parser.add_argument('--do_not_clean_intermediary_files', action='store_true',
+                   help="If set, do not clean intermediary files that are produced in the course of running (default: off, i.e. clean the intermediary files)")
 parser.add_argument('--rsem_bowtie_maxins', action='store', default=1000,
                    help="For paired-end data only (ignored if --paired_end is not set): the maximum fragment length (this is the value of the --fragment-length-max in rsem and -X/--maxins in bowtie2). Defaults to 1000, which is the rsem default")
 parser.add_argument('--trimmomatic_window', action='store', default='',
@@ -572,7 +574,8 @@ for remFile in filesToClear:
 	if(returnCode != 0):
 		raise Exception("rm of file to clear failed");
 
-cleanup_after_preproc.cleanTemporaryFiles(args.output_folder)
+if(not(args.do_not_clean_intermediary_files))
+	cleanup_after_preproc.cleanTemporaryFiles(args.output_folder)
 
 #print("**********************************************************");
 #print("**********************************************************");
