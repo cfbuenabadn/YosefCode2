@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 # Allon Wagner
 # Nir Yosef's lab, UC Berkeley
 # May 2015
