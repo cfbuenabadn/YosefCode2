@@ -12,6 +12,7 @@ import doQC;
 import sys;
 import shutil;
 import rnaSeqPipelineUtils;
+import cleanup_after_preproc;
 
 parser = argparse.ArgumentParser(description="Process one single cell sample")
 parser.add_argument("--paired_end", action="store_true",
@@ -131,10 +132,11 @@ if(args.sampleFile1[-6:] != ".fastq") or (args.paired_end and args.sampleFile2[-
 	print "Input file names are" + args.sampleFile1 + (args.sampleFile2 if args.paired_end else "");
 	raise Exception("Error: The input file names indicate these are not fastq files, but only this format is supported at present")
 
+
+args.output_folder = os.path.expanduser(args.output_folder);
 args.sampleFile1 = os.path.expanduser(args.sampleFile1);
 if(args.paired_end):
 	args.sampleFile2 = os.path.expanduser(args.sampleFile2);
-
 
 #debug code:
 #subprocess.call("rm aaa*", shell=True);
@@ -570,6 +572,7 @@ for remFile in filesToClear:
 	if(returnCode != 0):
 		raise Exception("rm of file to clear failed");
 
+cleanup_after_preproc.cleanTemporaryFiles(args.output_folder)
 
 #print("**********************************************************");
 #print("**********************************************************");
