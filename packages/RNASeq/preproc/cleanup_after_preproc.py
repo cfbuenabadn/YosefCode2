@@ -7,8 +7,7 @@ import os
 import shutil
 import gzip
 
-FILES_TO_REMOVE = ['temp',
-                   os.path.join('fastqc_output', '1.Ptrim_fastqc'),
+FILES_TO_REMOVE = [os.path.join('fastqc_output', '1.Ptrim_fastqc'),
                    os.path.join('fastqc_output', '1.Utrim_fastqc'),
                    os.path.join('fastqc_output', '2.Ptrim_fastqc'),
                    os.path.join('fastqc_output', '2.Utrim_fastqc'),
