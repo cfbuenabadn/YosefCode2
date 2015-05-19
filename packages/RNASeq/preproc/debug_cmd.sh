@@ -5,14 +5,14 @@ python ~/project/singleCell/allon_script/preproc/normalizeBrainFastaInput.py /ho
 
 #!/bin/sh
 
-python ~/project/singleCell/allon_script/preproc/processSingleSample.py --skip_tophat --skip_tophat_qc -p 16 -r mm10 -o ~/archive/TFH/script/output_single  ~/archive/TFH/script/gbc.fastq.gz
+python ~/project/singleCell/allon_script/preproc/processSingleSample.py --kallisto_bootstrap_samples 100 --skip_tophat --skip_tophat_qc --skip_rsem --skip_rsem_qc --skip_qc --skip_trimmomatic --do_not_rely_on_previous_trimmomatic -p 16 -r mm10 -o ~/archive/TFH/script/output_single  ~/archive/TFH/script/gbc.fastq.gz
 
-#python ~/project/singleCell/allon_script/preproc/processSingleSample.py --skip_tophat --skip_tophat_qc -p 16 --paired_end -r mm10 -o ~/archive/TFH/script/output_paired  ~/archive/TFH/script/tfh1.fastq.gz ~/archive/TFH/script/tfh2.fastq.gz
+#python ~/project/singleCell/allon_script/preproc/processSingleSample.py --paired_end --kallisto_bootstrap_samples 100 --skip_tophat --skip_tophat_qc --skip_rsem --skip_rsem_qc --skip_qc --skip_trimmomatic --do_not_rely_on_previous_trimmomatic -p 16 -r mm10 -o ~/archive/TFH/script/output_paired  ~/archive/TFH/script/tfh1.fastq.gz ~/archive/TFH/script/tfh2.fastq.gz
 
 echo "" > /var/mail/allonwag; rm -f *zen*.OU; rm -f *zen*.ER; python ~/project/singleCell/allon_script/preproc/processFolder.py -N tryRnaPipe -r mm10 -o ~/archive/TFH/pipeout_single ~/data/BRAIN/sources/olfactory/truncated_GBC_L01
 
 
-
+python ~/project/singleCell/allon_script/preproc/processSingleSample.py --paired_end --kallisto_bootstrap_samples 100 -p 30 -r mm10 -o ~/archive/TFH/script/output_paired /data/yosef/BRAIN/sources/150202_HS2A/Project_Ngai/Sample_OEP02_N712_S504/OEP02_N712_S504_GTAGAGGA-AGAGTAGA_L002_R1_001.fastq.gz /data/yosef/BRAIN/sources/150202_HS2A/Project_Ngai/Sample_OEP02_N712_S504/OEP02_N712_S504_GTAGAGGA-AGAGTAGA_L002_R2_001.fastq.gz
 
 
 on queue yosef:

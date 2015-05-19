@@ -39,21 +39,32 @@ parser.add_argument('--skip_tophat', action='store_true',
                    help="skip the tophat pipeline (note that you still have to set the --skip_tophat_qc flag separately if you wish)")
 parser.add_argument('--skip_rsem', action='store_true',
                    help="skip the rsem pipeline (note that you still have to set the --skip_rsem_qc flag separately if you wish)")
+parser.add_argument('--skip_kallisto', action='store_true',
+                   help="skip the Kallisto pipeline (note that you still have to set the --skip_kallisto_qc flag separately if you wish)")
 parser.add_argument('--skip_qc', action='store_true',
                    help="skip the qc part of the pipeline")
 parser.add_argument('--skip_tophat_qc', action='store_true',
                    help="skip the qc part of the pipeline only for tophat (ignored if the --skip_qc flag is given, in which case qc is not run in the first place)")                 
 parser.add_argument('--skip_rsem_qc', action='store_true',
                    help="skip the qc part of the pipeline only for rsem (ignored if the --skip_qc flag is given, in which case qc is not run in the first place)")                 
+parser.add_argument('--skip_kallisto_qc', action='store_true',
+                   help="skip the qc part of the pipeline only for Kallisto (ignored if the --skip_qc flag is given, in which case qc is not run in the first place)")
 parser.add_argument('--do_not_clean_intermediary_files', action='store_true',
                    help="If set, do not clean intermediary files that are produced in the course of running (default: off, i.e. clean the intermediary files)")
 parser.add_argument('--rsem_bowtie_maxins', action='store', default=1000,
                    help="For paired-end data only (ignored if --paired_end is not set): the maximum fragment length (this is the value of the --fragment-length-max in rsem and -X/--maxins in bowtie2). Defaults to 1000, which is the rsem default")                 
 parser.add_argument('--trimmomatic_window', action='store', default='',
                    help="The trimmomatic sliding window argument. Format: '<windowSize>:<requiredQuality>' ")
+parser.add_argument('--kallisto_bootstrap_samples', action='store', default='0',
+                   help="The number of bootstraps done by Kallisto (default: 0)")
+parser.add_argument('--kallisto_fragment_length', action='store', default='180',
+                   help="The fragment length paramter that Kallisto requires (applies only to single-end; this parameter will be ignored and the fragment length estimated from the data if the --paired_end flag is set (default: 180)")
 
-       
-                  
+
+
+
+
+
 args = parser.parse_args();
 
 #if the path begins with a tilde - expand it to the user's homedir
@@ -100,23 +111,27 @@ for sample1 in sampleList:
 	if not os.path.exists(sampleOutputFolder):
 		os.makedirs(sampleOutputFolder);
 		
-	cmd = Template("python /project/eecs/yosef/singleCell/allon_script/preproc/processSingleSample.py $IS_PAIRED_END -r $REFERENCE -p $NUM_THREADS -o $OUTPUT_FOLDER $SKIP_TRIMMOMATIC $DO_NOT_RELY_ON_PREVIOUS_TRIMMOMATIC $SKIP_TOPHAT $SKIP_RSEM $SKIP_QC $SKIP_TOPHAT_QC $SKIP_RSEM_QC $RSEM_BOWTIE_MAXINS $TRIMMOMATIC_WINDOW $SAMPLE1 $SAMPLE2").substitute( \
-		IS_PAIRED_END=("--paired_end" if args.paired_end else ""), \
-		REFERENCE=args.reference, \
-		NUM_THREADS=args.num_threads, \
-		OUTPUT_FOLDER=sampleOutputFolder, \
-		SAMPLE1=sample1, \
-		SAMPLE2=sample2 if args.paired_end else "", \
-		SKIP_TRIMMOMATIC="--skip_trimmomatic" if args.skip_trimmomatic else "", \
-		DO_NOT_RELY_ON_PREVIOUS_TRIMMOMATIC="--do_not_rely_on_previous_trimmomatic" if args.do_not_rely_on_previous_trimmomatic else "", \
-		SKIP_TOPHAT="--skip_tophat" if args.skip_tophat else "", \
-		SKIP_RSEM="--skip_rsem" if args.skip_rsem else "", \
-		SKIP_QC="--skip_qc" if args.skip_qc else "", \
-		SKIP_TOPHAT_QC="--skip_tophat_qc" if args.skip_tophat_qc else "", \
-		SKIP_RSEM_QC="--skip_rsem_qc" if args.skip_rsem_qc else "", \
-		DO_NOT_CLEAN_INTERMEDIARY_FILES="--do_not_clean_intermediary_files" if args.do_not_clean_intermediary_files else "", \
-		RSEM_BOWTIE_MAXINS=("--rsem_bowtie_maxins %s" % args.rsem_bowtie_maxins) if args.paired_end else "", \
-		TRIMMOMATIC_WINDOW=("--trimmomatic_window %s" % args.trimmomatic_window) if args.trimmomatic_window else "")
+	cmd = Template("python /project/eecs/yosef/singleCell/allon_script/preproc/processSingleSample.py $IS_PAIRED_END -r $REFERENCE -p $NUM_THREADS -o $OUTPUT_FOLDER $SKIP_TRIMMOMATIC $DO_NOT_RELY_ON_PREVIOUS_TRIMMOMATIC $SKIP_TOPHAT $SKIP_RSEM $SKIP_KALLISTO $SKIP_QC $SKIP_TOPHAT_QC $SKIP_RSEM_QC $SKIP_KALLISTO_QC $DO_NOT_CLEAN_INTERMEDIARY_FILES $RSEM_BOWTIE_MAXINS $TRIMMOMATIC_WINDOW $SAMPLE1 $SAMPLE2").substitute(
+		IS_PAIRED_END=("--paired_end" if args.paired_end else ""),
+		REFERENCE=args.reference,
+		NUM_THREADS=args.num_threads,
+		OUTPUT_FOLDER=sampleOutputFolder,
+		SAMPLE1=sample1,
+		SAMPLE2=sample2 if args.paired_end else "",
+		SKIP_TRIMMOMATIC="--skip_trimmomatic" if args.skip_trimmomatic else "",
+		DO_NOT_RELY_ON_PREVIOUS_TRIMMOMATIC="--do_not_rely_on_previous_trimmomatic" if args.do_not_rely_on_previous_trimmomatic else "",
+		SKIP_TOPHAT="--skip_tophat" if args.skip_tophat else "",
+		SKIP_RSEM="--skip_rsem" if args.skip_rsem else "",
+		SKIP_KALLISTO="--skip_kallisto" if args.skip_kallisto else "",
+		SKIP_QC="--skip_qc" if args.skip_qc else "",
+		SKIP_TOPHAT_QC="--skip_tophat_qc" if args.skip_tophat_qc else "",
+		SKIP_RSEM_QC="--skip_rsem_qc" if args.skip_rsem_qc else "",
+		SKIP_KALLISTO_QC="--skip_kallisto_qc" if args.skip_kallisto_qc else "",
+		DO_NOT_CLEAN_INTERMEDIARY_FILES="--do_not_clean_intermediary_files" if args.do_not_clean_intermediary_files else "",
+		RSEM_BOWTIE_MAXINS=("--rsem_bowtie_maxins %s" % args.rsem_bowtie_maxins) if args.paired_end else "",
+		TRIMMOMATIC_WINDOW=("--trimmomatic_window %s" % args.trimmomatic_window) if args.trimmomatic_window else "",
+		KALLISTO_BOOTSTRAP_SAMPLES=("--kallisto_bootstrap_samples %s" % args.kallisto_bootstrap_samples) if args.kallisto_bootstrap_samples else "",
+		KALLISTO_FRAGMENT_LENGTH=("--kallisto_fragment_length %s" % args.kallisto_fragment_length) if args.kallisto_fragment_length else "")
 
 
 	#a simple way to remove all duplicate whitespaces and replace them with one whitespace. The duplicate whitespaced occur because of the way I implement not transferring optional arguments (it leaves extra double whitespaces where the optional arg could have been)
