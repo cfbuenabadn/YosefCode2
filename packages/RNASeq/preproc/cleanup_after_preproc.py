@@ -68,7 +68,7 @@ if __name__ == '__main__':
     #if the path begins with a tilde - expand it to the user's homedir
     args.folder = os.path.expanduser(args.folder)
 
-    if(not(args.folder_has_multiple_samples)):
+    if(not(args.recursive)):
         #this is a single sample
         cleanTemporaryFiles(args.folder)
     else:
