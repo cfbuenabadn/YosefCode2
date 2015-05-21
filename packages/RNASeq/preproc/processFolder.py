@@ -101,7 +101,7 @@ for sample1 in sampleList:
 	else:
 		sample2 = "";
 		
-	sampleName = os.path.basename(sample1).replace("_R1_001.fastq.gz", "");
+	sampleName = os.path.basename(sample1).replace("_R1_combined.fastq.gz", "");
 	sampleOutputFolder = os.path.join(args.output_folder, sampleName);
 	
 	#remove this redundant ending if it's in the dir name
@@ -111,13 +111,15 @@ for sample1 in sampleList:
 	if not os.path.exists(sampleOutputFolder):
 		os.makedirs(sampleOutputFolder);
 		
-	cmd = Template("python /project/eecs/yosef/singleCell/allon_script/preproc/processSingleSample.py $IS_PAIRED_END -r $REFERENCE -p $NUM_THREADS -o $OUTPUT_FOLDER $SKIP_TRIMMOMATIC $DO_NOT_RELY_ON_PREVIOUS_TRIMMOMATIC $SKIP_TOPHAT $SKIP_RSEM $SKIP_KALLISTO $SKIP_QC $SKIP_TOPHAT_QC $SKIP_RSEM_QC $SKIP_KALLISTO_QC $DO_NOT_CLEAN_INTERMEDIARY_FILES $RSEM_BOWTIE_MAXINS $TRIMMOMATIC_WINDOW $SAMPLE1 $SAMPLE2").substitute(
+	cmd = Template("python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/processSingleSample.py $IS_PAIRED_END \
+					-r $REFERENCE -p $NUM_THREADS -o $OUTPUT_FOLDER $SKIP_TRIMMOMATIC $DO_NOT_RELY_ON_PREVIOUS_TRIMMOMATIC \
+					$SKIP_TOPHAT $SKIP_RSEM $SKIP_KALLISTO $SKIP_QC $SKIP_TOPHAT_QC $SKIP_RSEM_QC $SKIP_KALLISTO_QC \
+					$DO_NOT_CLEAN_INTERMEDIARY_FILES $RSEM_BOWTIE_MAXINS $TRIMMOMATIC_WINDOW \
+					$KALLISTO_BOOTSTRAP_SAMPLES $KALLISTO_FRAGMENT_LENGTH $SAMPLE1 $SAMPLE2").substitute(
 		IS_PAIRED_END=("--paired_end" if args.paired_end else ""),
 		REFERENCE=args.reference,
 		NUM_THREADS=args.num_threads,
 		OUTPUT_FOLDER=sampleOutputFolder,
-		SAMPLE1=sample1,
-		SAMPLE2=sample2 if args.paired_end else "",
 		SKIP_TRIMMOMATIC="--skip_trimmomatic" if args.skip_trimmomatic else "",
 		DO_NOT_RELY_ON_PREVIOUS_TRIMMOMATIC="--do_not_rely_on_previous_trimmomatic" if args.do_not_rely_on_previous_trimmomatic else "",
 		SKIP_TOPHAT="--skip_tophat" if args.skip_tophat else "",
@@ -131,7 +133,9 @@ for sample1 in sampleList:
 		RSEM_BOWTIE_MAXINS=("--rsem_bowtie_maxins %s" % args.rsem_bowtie_maxins) if args.paired_end else "",
 		TRIMMOMATIC_WINDOW=("--trimmomatic_window %s" % args.trimmomatic_window) if args.trimmomatic_window else "",
 		KALLISTO_BOOTSTRAP_SAMPLES=("--kallisto_bootstrap_samples %s" % args.kallisto_bootstrap_samples) if args.kallisto_bootstrap_samples else "",
-		KALLISTO_FRAGMENT_LENGTH=("--kallisto_fragment_length %s" % args.kallisto_fragment_length) if args.kallisto_fragment_length else "")
+		KALLISTO_FRAGMENT_LENGTH=("--kallisto_fragment_length %s" % args.kallisto_fragment_length) if args.kallisto_fragment_length else "",
+		SAMPLE1=sample1,
+		SAMPLE2=sample2 if args.paired_end else "")
 
 
 	#a simple way to remove all duplicate whitespaces and replace them with one whitespace. The duplicate whitespaced occur because of the way I implement not transferring optional arguments (it leaves extra double whitespaces where the optional arg could have been)

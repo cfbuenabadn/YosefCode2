@@ -197,14 +197,15 @@ if(args.paired_end):
 	filesToClear = filesToClear + [args.sampleFile2]
 
 
+if(not(KALLISTO_INDEX_FILE)):
+	print("Kallisto index has not been defined... skipping Kallisto");
+	args.skip_kallisto = True
+
 DO_KALLISTO = True;
 if(DO_KALLISTO and not(args.skip_kallisto)):
 	print("**********************************************************");
 	print("**********************************************************");
 	print("Running Kallisto")
-
-	if(not(KALLISTO_INDEX_FILE)):
-		print("Kallisto index has not been defined... skipping Kallisto");
 
 	#I decided to do Kallisto before trimmomatic because I was afraid that Kallisto's fragment length estimation will not work correctly
 	#if we start trimming reads (and anyhow, once you do not align but rather pseudo-align errors in BPs are less important

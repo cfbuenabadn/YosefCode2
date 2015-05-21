@@ -1,9 +1,12 @@
+#!/bin/sh
 
 https://www.broadinstitute.org/~picard/picard_metric_definitions.html
 
 python ~/project/singleCell/allon_script/preproc/normalizeBrainFastaInput.py /home/eecs/allonwag/data/BRAIN/sources/150309_HS1A
+python ~/project/singleCell/allon_script/preproc/processFolder.py -N tfh_1st --paired_end --kallisto_fragment_length 300 -p 2 -r mm10 -o /data/yosef/TFH/processed/FC_01481 /data/yosef/TFH/sources/FC_01481
 
-#!/bin/sh
+
+
 
 python ~/project/singleCell/allon_script/preproc/processSingleSample.py --kallisto_bootstrap_samples 100 --skip_tophat --skip_tophat_qc --skip_rsem --skip_rsem_qc --skip_qc --skip_trimmomatic --do_not_rely_on_previous_trimmomatic -p 16 -r mm10 -o ~/archive/TFH/script/output_single  ~/archive/TFH/script/gbc.fastq.gz
 
