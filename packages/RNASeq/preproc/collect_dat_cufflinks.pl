@@ -24,6 +24,8 @@ my ($WORK_FOLDER,$dict_file,$include_raw_read)=@ARGV;
 #perl collect_dat_cufflinks.pl /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai/
 #with include raw read:
 #perl /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collect_dat_cufflinks.pl /home/eecs/allonwag/data/BRAIN/processed4/150202_HS2A/Project_Ngai_AsSingle /data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt 1
+#perl collect_dat_cufflinks.pl /home/eecs/allonwag/data/TFH/processed/FC_01481/ /data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt 0
+
 
 my $cntr=0;my %fpkm=();
 my %read_count=();my %read_dup=();my %read_count_unique=();
@@ -31,7 +33,7 @@ my @qc_info=();my @cell_nm=();my @failed_cells=();
 
 print "Processing $WORK_FOLDER\n";
 
-foreach my $f(<$WORK_FOLDER/*combined/tophat_output/cuff_output/genes.fpkm_tracking>){
+foreach my $f(<$WORK_FOLDER/*/tophat_output/cuff_output/genes.fpkm_tracking>){
     my $dir=$f;$dir=~s/genes\.fpkm_tracking//;
     if (!(-e "$dir/../summary.txt")) {print "Warning: Could not find $dir/../summary.txt\n";push @failed_cells,$f;next;}
     if ($include_raw_read && !(-e "$dir/../picard_output/dup.txt.genes.txt")) {print "Warning: Could not find $dir/../picard_output/dup.txt.genes.txt\n";push @failed_cells,$f;next;}
@@ -42,11 +44,11 @@ foreach my $f(<$WORK_FOLDER/*combined/tophat_output/cuff_output/genes.fpkm_track
 }my @zeros=();for(my $i=0;$i<$cntr;$i++){push @zeros,0;}$cntr=0;
 
 
-foreach my $f(<$WORK_FOLDER/*combined/tophat_output/cuff_output/genes.fpkm_tracking>){
+foreach my $f(<$WORK_FOLDER/*/tophat_output/cuff_output/genes.fpkm_tracking>){
     my $dir=$f;$dir=~s/genes\.fpkm_tracking//;
-    if (!(-e "$dir/../summary.txt")) {print "Warning: Could not find $dir/../summary.txt\n";next;}
-    if ($include_raw_read && !(-e "$dir/../picard_output/dup.txt.genes.txt")) {print "Warning: Could not find $dir/../picard_output/dup.txt.genes.txt\n";next;}
-    if ($include_raw_read && !(-e "$dir/../picard_output/dup_unique.txt.genes.txt")) {print "Warning: Could not find $dir/../picard_output/dup_unique.txt.genes.txt\n";next;}
+    if (!(-e "$dir/../summary.txt")) {next;}
+    if ($include_raw_read && !(-e "$dir/../picard_output/dup.txt.genes.txt")) {next;}
+    if ($include_raw_read && !(-e "$dir/../picard_output/dup_unique.txt.genes.txt")) {next;}
     
     my $nm=$dir;if ($nm=~/$WORK_FOLDER\/([\w\_\-]+)\/tophat_output/) {$nm=$1;}else{die "Could not parse folder name $dir\n";}
     $cell_nm[$cntr]=$nm;
