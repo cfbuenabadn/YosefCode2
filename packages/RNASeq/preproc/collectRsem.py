@@ -25,11 +25,13 @@
 # 15. Make sample name meaningful in processFolder: instead of the -N for the project, do -N for the sample name
 
 
-#and make the argparse parent
+#and make the argparse parent: did this but still replicates command line arguments when writing the PBS script.
+#I should have used the: argparse.REMAINDER. All the remaining command-line arguments are gathered into a list. This is commonly useful for command line utilities that dispatch to other command line utilities:
+#BUT then I have to give the remainder at the end, and cannot use them upfront....
+#maybe convert the parsed namespace object back to a string and omit the arguments unique to processFolder?
 #https://docs.python.org/3/library/argparse.html
 #https://docs.python.org/3/library/argparse.html#the-parse-args-method
 
-#remove all the /project/eecs/yosef/singleCell/allon_script/preproc/....
 #call Nir's new count dup script
 
 

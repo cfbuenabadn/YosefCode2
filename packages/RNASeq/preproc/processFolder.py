@@ -15,56 +15,16 @@ import glob
 import stat
 import socket
 import sys
+import rnaSeqPipelineUtils
 
-parser = argparse.ArgumentParser(description="Process all the samples in a folder")
-parser.add_argument("--paired_end", action="store_true",
-                    help="The sample is paired-end (if this flag is not given, single end is assumed)")
-parser.add_argument("-r", "--reference", action="store", required=True,
-		    choices=["mm10", "hg38", "hg19"],
-                    help="The referernce genome against which to align. Currently supported: mm10 = mm10, with ERCC spike-ins, RefSeq annotations, compiled by Allon.\nhg38 = human, compiled by Michael")                
-parser.add_argument("-o", "--output_folder", action="store", required=True,
-                    help="The directory to which output is written.")
-parser.add_argument("-N", "--job_name", action="store", default='RnaSeq_preproc_pipeline',
-                    help="A name for the job submitted to the cluster.")
+
+parser = argparse.ArgumentParser(description="Process all the samples in a folder", parents=[rnaSeqPipelineUtils.common_rnaseq_parser])
 parser.add_argument('folder', action='store',
                    help='the folder to read')
-parser.add_argument("-p", "--num_threads", action="store", required=False, default=6,
-                    help="The number of allocated threads, to be passed to trimmomatic, tophat, cufflinks, and rsem.");  
-parser.add_argument('--do_not_send_to_cluster', action='store_true',
+parser.add_argument("-N", "--job_name", action="store", default='RnaSeq_preproc_pipeline',
+                    help="A name for the job submitted to the cluster.")
+parser.add_argument('-d', '--do_not_send_to_cluster', action='store_true',
 	help="just write the directory structure, but do not call the cluster to execute the jobs (used for debug)")
-parser.add_argument('--skip_trimmomatic', action='store_true',
-                   help="don't run trimmomatic before running on the samples")
-parser.add_argument('--do_not_rely_on_previous_trimmomatic', action='store_true',
-                   help="This flag has effect only if the flag --skip_trimmomatic is also set. The default behavior when --skip_trimmomatic is set is to rely on outputs from a previous trimmomatic run (it is assumed that they already exist, an error is thrown otherwise). However, if the flag --do_not_rely_on_previous_trimmomatic is set, then the program totally skips the trimmomatic phase and feeds the untrimmed reads to tophat/rsem");
-parser.add_argument('--skip_tophat', action='store_true',
-                   help="skip the tophat pipeline (note that you still have to set the --skip_tophat_qc flag separately if you wish)")
-parser.add_argument('--skip_rsem', action='store_true',
-                   help="skip the rsem pipeline (note that you still have to set the --skip_rsem_qc flag separately if you wish)")
-parser.add_argument('--skip_kallisto', action='store_true',
-                   help="skip the Kallisto pipeline (note that you still have to set the --skip_kallisto_qc flag separately if you wish)")
-parser.add_argument('--skip_qc', action='store_true',
-                   help="skip the qc part of the pipeline")
-parser.add_argument('--skip_tophat_qc', action='store_true',
-                   help="skip the qc part of the pipeline only for tophat (ignored if the --skip_qc flag is given, in which case qc is not run in the first place)")                 
-parser.add_argument('--skip_rsem_qc', action='store_true',
-                   help="skip the qc part of the pipeline only for rsem (ignored if the --skip_qc flag is given, in which case qc is not run in the first place)")                 
-parser.add_argument('--skip_kallisto_qc', action='store_true',
-                   help="skip the qc part of the pipeline only for Kallisto (ignored if the --skip_qc flag is given, in which case qc is not run in the first place)")
-parser.add_argument('--do_not_clean_intermediary_files', action='store_true',
-                   help="If set, do not clean intermediary files that are produced in the course of running (default: off, i.e. clean the intermediary files)")
-parser.add_argument('--rsem_bowtie_maxins', action='store', default=1000,
-                   help="For paired-end data only (ignored if --paired_end is not set): the maximum fragment length (this is the value of the --fragment-length-max in rsem and -X/--maxins in bowtie2). Defaults to 1000, which is the rsem default")                 
-parser.add_argument('--trimmomatic_window', action='store', default='',
-                   help="The trimmomatic sliding window argument. Format: '<windowSize>:<requiredQuality>' ")
-parser.add_argument('--kallisto_bootstrap_samples', action='store', default='0',
-                   help="The number of bootstraps done by Kallisto (default: 0)")
-parser.add_argument('--kallisto_fragment_length', action='store', default='180',
-                   help="The fragment length paramter that Kallisto requires (applies only to single-end; this parameter will be ignored and the fragment length estimated from the data if the --paired_end flag is set (default: 180)")
-
-
-
-
-
 
 args = parser.parse_args();
 
@@ -84,6 +44,20 @@ if(socket.gethostname() != "zen" and not(args.do_not_send_to_cluster)):
 scriptDirectory = os.path.realpath(os.path.dirname(sys.argv[0]))
 scriptToRun = os.path.join(scriptDirectory, "processSingleSample.py")
 print "Script to execute on each cell is: " + scriptToRun
+
+
+#get the command line arguments for the processSingleSample script. I prefer not to use argparse.REMAINDER
+#(which is normally recommended for command line utilities that dispatch to other command line utilities) because then
+#the redundant arguments must be grouped at the end of the command
+# argumentsForScriptAsDictionary = vars(args)
+# #remove the arguments that are unique to processFolder and are not consumed by processSingleSample:
+# keysToExclude = ["folder", "job_name", "do_not_send_to_cluster"]
+# for key in keysToExclude:
+# 	argumentsForScriptAsDictionary.pop(key, None) #pop is a convenient way to remove from a dictionary only if key exists
+# argumentsForScript = ' '.join(["--%s %s" % (key, value) for key,value in vars(args).iteritems()])
+# print "Command line arguments for the script to execute on each cell are: " + argumentsForScript
+# This way is also problematic because what do you do with the flag arguments? They should be "--flag" and not "--flag True"
+
 
 print "Running on folder...";
 print "Folder is: " + args.folder;
@@ -114,7 +88,6 @@ for sample1 in sampleList:
 	
 	if not os.path.exists(sampleOutputFolder):
 		os.makedirs(sampleOutputFolder);
-
 
 	cmd = Template("python $SCRIPT_TO_RUN $IS_PAIRED_END \
 					-r $REFERENCE -p $NUM_THREADS -o $OUTPUT_FOLDER $SKIP_TRIMMOMATIC $DO_NOT_RELY_ON_PREVIOUS_TRIMMOMATIC \
