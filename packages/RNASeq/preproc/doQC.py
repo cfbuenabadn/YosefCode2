@@ -28,7 +28,7 @@ def CheckContam(sampleFile, outputFolder, sample_end):
 		raise Exception("CheckContam failed");
 
 
-def CollectData(bamFile, outputFolder, refFlatAnnotationsFile, ribosomalIntervalsFile, isPairedEnd, transcriptAnnotationFile, transcriptDictionaryFile):
+def CollectData(bamFile, outputFolder, refFlatAnnotationsFile, ribosomalIntervalsFile, isPairedEnd, transcriptAnnotationFile, transcriptDictionaryFile, genomeReferenceFile):
 	rnaMetricsFileName = outputFolder + '/picard_output/rna_metrics.txt';
 	cmd = Template("picard CollectRnaSeqMetrics TMP_DIR=$OUTPUT_FOLDER/temp INPUT=$BAM_FILE OUTPUT=$OUTPUT_FILE CHART=$OUTPUT_FOLDER/picard_output/rna_coverage.pdf REF_FLAT=$refFlatFile STRAND=NONE RIBOSOMAL_INTERVALS=$ribosomalIntervalsFile").substitute(BAM_FILE=bamFile, OUTPUT_FOLDER=outputFolder, OUTPUT_FILE=rnaMetricsFileName, refFlatFile=refFlatAnnotationsFile, ribosomalIntervalsFile=ribosomalIntervalsFile);
 	print(cmd)
@@ -37,7 +37,8 @@ def CollectData(bamFile, outputFolder, refFlatAnnotationsFile, ribosomalInterval
 		raise Exception("CollectData failed");
 
 	alnMetricsFileName = outputFolder + '/picard_output/aln_metrics.txt';
-	cmd = Template("picard CollectAlignmentSummaryMetrics INPUT=$BAM_FILE OUTPUT=$OUTPUT_FILE\n").substitute(BAM_FILE=bamFile, OUTPUT_FILE=alnMetricsFileName);
+	#I found in an online forum (http://sourceforge.net/p/samtools/mailman/message/32772099/) that you have to give the genome reference file for this command to work, even though all the data it needs may already be contained in the bam file...
+	cmd = Template("picard CollectAlignmentSummaryMetrics INPUT=$BAM_FILE OUTPUT=$OUTPUT_FILE REFERENCE_SEQUENCE=$GENOME_REFERENCE_FILE\n").substitute(BAM_FILE=bamFile, OUTPUT_FILE=alnMetricsFileName, GENOME_REFERENCE_FILE=genomeReferenceFile);
 	print(cmd)
 	returnCode = subprocess.call(cmd, shell=True);
 	if(returnCode != 0):
@@ -62,15 +63,15 @@ def CollectData(bamFile, outputFolder, refFlatAnnotationsFile, ribosomalInterval
 
 
 
-		#cmd = Template("perl /project/eecs/yosef/singleCell/allon_script/preproc/count_dup.pl $BAM_FILE $OUTPUT_FILE").substitute(BAM_FILE=bamFile, OUTPUT_FILE=dupFileName);
+		cmd = Template("perl /project/eecs/yosef/singleCell/allon_script/preproc/count_dup.pl $BAM_FILE $OUTPUT_FILE").substitute(BAM_FILE=bamFile, OUTPUT_FILE=dupFileName);
 		#updated script that in addition to total dup counting, also counts them per gene: It creates the dup.txt file as before and also a new file with a postfix of .genes.txt that includes: <gene name> <#dup reads> <tot reads> <ratio> Note that this is a read-level analysis, not fragment.
-		cmd = Template("perl /project/eecs/yosef/singleCell/allon_script/preproc/$DUP_SCRIPT_TO_RUN $BAM_FILE $OUTPUT_FILE $TRANSCRIPT_ANNOTATION $TRANSCRIPT_DICTIONARY 0").substitute(BAM_FILE=bamFile, OUTPUT_FILE=dupFileName, TRANSCRIPT_ANNOTATION=transcriptAnnotationFile, TRANSCRIPT_DICTIONARY=transcriptDictionaryFile, DUP_SCRIPT_TO_RUN=dupScriptToRun);
+		#cmd = Template("perl /project/eecs/yosef/singleCell/allon_script/preproc/$DUP_SCRIPT_TO_RUN $BAM_FILE $OUTPUT_FILE $TRANSCRIPT_ANNOTATION $TRANSCRIPT_DICTIONARY 0").substitute(BAM_FILE=bamFile, OUTPUT_FILE=dupFileName, TRANSCRIPT_ANNOTATION=transcriptAnnotationFile, TRANSCRIPT_DICTIONARY=transcriptDictionaryFile, DUP_SCRIPT_TO_RUN=dupScriptToRun);
 		print(cmd)
 		returnCode = subprocess.call(cmd, shell=True);
 		if(returnCode != 0):
 			raise Exception("count dups failed");
 
-		if(True):
+		if(False):
 			#in addition to the previous call to the script which counted dups, now call it in a way that counts unique dups
 			dupUniqueFileName = outputFolder + '/picard_output/dup_unique.txt';
 			cmd = Template("perl /project/eecs/yosef/singleCell/allon_script/preproc/$DUP_SCRIPT_TO_RUN $BAM_FILE $OUTPUT_FILE $TRANSCRIPT_ANNOTATION $TRANSCRIPT_DICTIONARY 1").substitute(BAM_FILE=bamFile, OUTPUT_FILE=dupUniqueFileName, TRANSCRIPT_ANNOTATION=transcriptAnnotationFile, TRANSCRIPT_DICTIONARY=transcriptDictionaryFile, DUP_SCRIPT_TO_RUN=dupScriptToRun);

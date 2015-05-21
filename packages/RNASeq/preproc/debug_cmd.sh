@@ -1,18 +1,21 @@
+#!/bin/sh
 
 https://www.broadinstitute.org/~picard/picard_metric_definitions.html
 
 python ~/project/singleCell/allon_script/preproc/normalizeBrainFastaInput.py /home/eecs/allonwag/data/BRAIN/sources/150309_HS1A
+python ~/project/singleCell/allon_script/preproc/processFolder.py -N tfh_1st --paired_end --kallisto_fragment_length 300 -p 2 -r mm10 -o /data/yosef/TFH/processed/FC_01481 /data/yosef/TFH/sources/FC_01481
 
-#!/bin/sh
 
-python ~/project/singleCell/allon_script/preproc/processSingleSample.py --skip_tophat --skip_tophat_qc -p 16 -r mm10 -o ~/archive/TFH/script/output_single  ~/archive/TFH/script/gbc.fastq.gz
 
-#python ~/project/singleCell/allon_script/preproc/processSingleSample.py --skip_tophat --skip_tophat_qc -p 16 --paired_end -r mm10 -o ~/archive/TFH/script/output_paired  ~/archive/TFH/script/tfh1.fastq.gz ~/archive/TFH/script/tfh2.fastq.gz
+
+python ~/project/singleCell/allon_script/preproc/processSingleSample.py --kallisto_bootstrap_samples 100 --skip_tophat --skip_tophat_qc --skip_rsem --skip_rsem_qc --skip_qc --skip_trimmomatic --do_not_rely_on_previous_trimmomatic -p 16 -r mm10 -o ~/archive/TFH/script/output_single  ~/archive/TFH/script/gbc.fastq.gz
+
+#python ~/project/singleCell/allon_script/preproc/processSingleSample.py --paired_end --kallisto_bootstrap_samples 100 --skip_tophat --skip_tophat_qc --skip_rsem --skip_rsem_qc --skip_qc --skip_trimmomatic --do_not_rely_on_previous_trimmomatic -p 16 -r mm10 -o ~/archive/TFH/script/output_paired  ~/archive/TFH/script/tfh1.fastq.gz ~/archive/TFH/script/tfh2.fastq.gz
 
 echo "" > /var/mail/allonwag; rm -f *zen*.OU; rm -f *zen*.ER; python ~/project/singleCell/allon_script/preproc/processFolder.py -N tryRnaPipe -r mm10 -o ~/archive/TFH/pipeout_single ~/data/BRAIN/sources/olfactory/truncated_GBC_L01
 
 
-
+python ~/project/singleCell/allon_script/preproc/processSingleSample.py --paired_end --kallisto_bootstrap_samples 100 -p 30 -r mm10 -o ~/archive/TFH/script/output_paired /data/yosef/BRAIN/sources/150202_HS2A/Project_Ngai/Sample_OEP02_N712_S504/OEP02_N712_S504_GTAGAGGA-AGAGTAGA_L002_R1_001.fastq.gz /data/yosef/BRAIN/sources/150202_HS2A/Project_Ngai/Sample_OEP02_N712_S504/OEP02_N712_S504_GTAGAGGA-AGAGTAGA_L002_R2_001.fastq.gz
 
 
 on queue yosef:
@@ -40,15 +43,30 @@ python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_tophat 
 python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_tophat --skip_tophat_qc -N brainL02 -r mm10 -p 2 -o /home/eecs/allonwag/data/BRAIN/processed2/GBC_L02 /home/eecs/allonwag/data/BRAIN/sources/olfactory/GBC_L02
 python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_trimmomatic --skip_tophat --skip_rsem --rsem_bowtie_maxins 3000 --paired_end -N brainPaired -r mm10 -p 1 -o /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai
 python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_trimmomatic --skip_tophat --skip_rsem --rsem_bowtie_maxins 3000 -N brainPairedAsSingle -r mm10 -p 1 -o /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai_AsSingle /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai
+python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_tophat --skip_tophat_qc -N brainPairedAsSingleOtherEnd -r mm10 -p 2 -o /home/eecs/allonwag/data/BRAIN/processed2/150202_HS2A/Project_Ngai_AsSingleOtherEnd /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai
 python ~/project/singleCell/allon_script/preproc/processFolder.py --skip_trimmomatic --skip_tophat --skip_rsem --rsem_bowtie_maxins 3000 --paired_end -N brain96_192 -r mm10 -p 4 -o /home/eecs/allonwag/data/BRAIN/processed3/2015_3_13/150309_HS3A/Project_Ngai /home/eecs/allonwag/data/BRAIN/sources/2015_3_13/150309_HS3A/Project_Ngai 
 python ~/project/singleCell/allon_script/preproc/processFolder.py --rsem_bowtie_maxins 3000 -N firstDavidBatch -r mm10 -p 2 -o /data/yosef/BRAIN/processed2/150309_HS1A /data/yosef/BRAIN/sources/150309_HS1A
+
+
+python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/processFolder.py --skip_trimmomatic --skip_tophat --skip_rsem --trimmomatic_window 4:20 --rsem_bowtie_maxins 3000 --paired_end -N brainPaired -r mm10 -p 1 -o /home/eecs/allonwag/data/BRAIN/processed4/150202_HS2A/Project_Ngai /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai
+python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/processFolder.py --skip_trimmomatic --skip_tophat --skip_rsem --trimmomatic_window 4:20 --rsem_bowtie_maxins 3000 -N brainPairedAsSingle -r mm10 -p 1 -o /home/eecs/allonwag/data/BRAIN/processed4/150202_HS2A/Project_Ngai_AsSingle /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai
+python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collectRsem.py -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed4/150202_HS2A/Project_Ngai/rsem  /home/eecs/allonwag/data/BRAIN/processed4/150202_HS2A/Project_Ngai
+python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed4/150202_HS2A/Project_Ngai_AsSingle/rsem /home/eecs/allonwag/data/BRAIN/processed4/150202_HS2A/Project_Ngai_AsSingle
+perl /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collect_dat_cufflinks.pl /home/eecs/allonwag/data/BRAIN/processed4/150202_HS2A/Project_Ngai /data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt 0
+perl /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collect_dat_cufflinks.pl /home/eecs/allonwag/data/BRAIN/processed4/150202_HS2A/Project_Ngai_AsSingle /data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt 0
+python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/processFolder.py --trimmomatic_window 4:30 --rsem_bowtie_maxins 3000 --paired_end -N brainPaired -r mm10 -p 1 -o /home/eecs/allonwag/data/BRAIN/processed5/150202_HS2A/Project_Ngai /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai
+python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/processFolder.py --trimmomatic_window 4:30 --rsem_bowtie_maxins 3000 -N brainPairedAsSingle -r mm10 -p 1 -o /home/eecs/allonwag/data/BRAIN/processed5/150202_HS2A/Project_Ngai_AsSingle /home/eecs/allonwag/data/BRAIN/sources/150202_HS2A/Project_Ngai
+
+
 
 python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed2/GBC_L01/rsem /home/eecs/allonwag/data/BRAIN/processed2/GBC_L01
 python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed2/GBC_L02/rsem /home/eecs/allonwag/data/BRAIN/processed2/GBC_L02
 python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed2/GBC_P02-P03/rsem /home/eecs/allonwag/data/BRAIN/processed2/GBC_P02-P03
 python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai/rsem /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai
+python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed2/150202_HS2A/Project_Ngai_AsSingleOtherEnd/rsem /home/eecs/allonwag/data/BRAIN/processed2/150202_HS2A/Project_Ngai_AsSingleOtherEnd
 python ~/project/singleCell/allon_script/preproc/collectRsem.py  -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai_AsSingle/rsem /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai_AsSingle
 python ~/project/singleCell/allon_script/preproc/collectRsem.py -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed3/2015_3_13/150309_HS3A/Project_Ngai/rsem  /home/eecs/allonwag/data/BRAIN/processed3/2015_3_13/150309_HS3A/Project_Ngai
+python ~/project/singleCell/allon_script/preproc/collectRsem.py -r mm10 -o /data/yosef/BRAIN/processed2/150309_HS1A/rsem  /data/yosef/BRAIN/processed2/150309_HS1A
 
 
 %shows that the parameter that controls the insert size works, but it simply does not increase above 200

@@ -62,6 +62,7 @@ grpParam.add_argument('--config', type=str, dest='strConfig',default="",
                           1 - Annotation file, include \
                           NirDB - Nir\'s matlab style database.')
 grpParam.add_argument('--out', type=str, dest='dirOut', help='Output folder',default=os.getcwd()+os.sep+"out")
+grpParam.add_argument('--genome', type=str, dest='strRefGenome', help='Please enter hg or mm',default="")
 grpParam.add_argument('--bed', type=str, dest='dirBed', help='Folder for bed files',default= "")
 grpParam.add_argument('--peaks', type=str, dest='astrPeaks', nargs='*',help='Enter one or more peak files, saved as bed files.',default= "")
 grpParam.add_argument('--bedtools', type=str, dest='cmdBedtools', help='Path to bedtools program',default= "/home/eecs/jimkaminski/tools/bedtools2/bin/bedtools")
@@ -89,7 +90,9 @@ adfFullResults = []
 astrBeds = []
 astrGFFs = []
 
-
+strPromFile = ""
+strGeneFile = ""
+str3PrimeFile = ""
 
 astrNirDBs = []
 astrUnknown = []
@@ -116,6 +119,12 @@ with open(args.strConfig, 'rb') as fileConfig:
                 astrUnknown.append(strPath)
             elif strType=="NirDB":
                 astrNirDBs.append(strPath)
+            elif strType=="Genes":
+                strGeneFile = strPath
+            elif strType=="3Prime":
+                str3PrimeFile = strPath
+            elif strType=="Promoters":
+                strPromFile = strPath
 
 print astrBeds
 
@@ -284,7 +293,10 @@ for strPeaks in dictPeakdfs.keys():
         print "Calculating results for", strAnnot
         
         if "repeats.bed" in strAnnot or "multiz30way_score_over0-70.bed" in strAnnot :
-            iGSize = 2716965481 
+            if args.strRefGenome == "hg":
+                iGSize = 2897310462
+            else:
+                iGSize = 2716965481
         else: 
             iGSize = iSizeEffGenome
 
@@ -377,16 +389,16 @@ for strPeaks in dictPeakdfs.keys():
 ###############################################################################
 #  Step 6: Add genes
 
-    
-    dfGeneResults = odb.GetGeneTable(dictCutPeaks[strPeaks],"/data/yosef/index_files/mm9/genes/tight_genes.gtf",args.cmdBedtools,dirTmp,"Gene")    
-    dfGenePromoter = odb.GetGeneTable(dictCutPeaks[strPeaks],"/data/yosef/index_files/mm9/genes/tight_genes.3p.gtf",args.cmdBedtools,dirTmp,"3prime of Gene")
-    dfGenesThreePrime = odb.GetGeneTable(dictCutPeaks[strPeaks],"/data/yosef/index_files/mm9/genes/tight_genes.prom.gtf",args.cmdBedtools,dirTmp,"Promoter")
-    dfClosestGeneResults = odb.GetClosestGTFFeature(dictCutPeaks[strPeaks],"/data/yosef/index_files/mm9/genes/tight_genes.gtf",args.cmdBedtools,dirTmp,"ClosestGene")
-    
-    dfResults = pd.merge(dfResults,dfGeneResults,how="left",on=["chr","start","end"])    
-    dfResults = pd.merge(dfResults,dfGenePromoter,how="left",on=["chr","start","end"]) 
-    dfResults = pd.merge(dfResults,dfGenesThreePrime,how="left",on=["chr","start","end"]) 
-    dfResults = pd.merge(dfResults,dfClosestGeneResults,how="left",on=["chr","start","end"])     
+    if strGeneFile != "":
+        dfGeneResults = odb.GetGeneTable(dictCutPeaks[strPeaks],strGeneFile,args.cmdBedtools,dirTmp,"Gene")    
+        dfGenePromoter = odb.GetGeneTable(dictCutPeaks[strPeaks],str3PrimeFile,args.cmdBedtools,dirTmp,"3prime of Gene")
+        dfGenesThreePrime = odb.GetGeneTable(dictCutPeaks[strPeaks],strPromFile,args.cmdBedtools,dirTmp,"Promoter")
+        dfClosestGeneResults = odb.GetClosestGTFFeature(dictCutPeaks[strPeaks],strGeneFile,args.cmdBedtools,dirTmp,"ClosestGene")
+        
+        dfResults = pd.merge(dfResults,dfGeneResults,how="left",on=["chr","start","end"])    
+        dfResults = pd.merge(dfResults,dfGenePromoter,how="left",on=["chr","start","end"]) 
+        dfResults = pd.merge(dfResults,dfGenesThreePrime,how="left",on=["chr","start","end"]) 
+        dfResults = pd.merge(dfResults,dfClosestGeneResults,how="left",on=["chr","start","end"])     
     
     dfResults.to_csv(dirOut+os.sep+os.path.basename(strPeaks+"_Overlaps.tab"),sep="\t",index=False)
     #dfGeneResults.to_csv(dirOut+os.sep+os.path.basename(astrPeaks[iDF]+"_Genes.tab"),sep="\t",index=False)

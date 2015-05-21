@@ -16,6 +16,17 @@
 # 6. debug the ribosomal % index - is it ok? Do we see so few rRNAs because we use RefSeq that has much fewer rRNAs than GenCode, or is there a bug in the index?
 # 7. add a capability to count_dup_per_gene for cufflinks (currently it relies on rsem indices...)
 # 8. Input unaligned BAM file as Nir requested
+# 9. For count_dup_unique: uses too much memory. We can increase the $GRID parameter. It should be a ~linear trade off between memory and running time. Maybe parallelization?
+# 10. add a parameter for "declared number of processors" to allow using a different number of processors than was declared... this will allow qsub to put more jobs per machine
+# 11. scripts for counting reads: htseq and featureCounts http://genomespot.blogspot.com/2014/09/read-counting-with-featurecounts.html
+# 12. support Kallisto
+# 13. Broad's qc: http://www.broadinstitute.org/cancer/cga/rnaseqc_run
+# 14. Use Prinseq as another way to trim? (supports trimming low complexity reads,and other goodies see http://www.pnas.org/content/suppl/2015/05/14/1507125112.DCSupplemental/pnas.1507125112.sapp.pdf)
+
+
+# process folder: the script calls directly from my directory.... and make the argparse parent
+#https://docs.python.org/3/library/argparse.html
+#https://docs.python.org/3/library/argparse.html#the-parse-args-method
 
 from collections import namedtuple;
 import argparse;

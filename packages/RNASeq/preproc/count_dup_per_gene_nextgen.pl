@@ -36,7 +36,8 @@ while(<FD_sam>){
 			$my_score=$1;my $other_score=0;if ($l=~/XS\:i\:(\d+)/){if ($my_score<=$1) {next;}}
 		}
 	}
-	if(!($chrom=~/\*/ || $bitmap&0x200 || $bitmap&0x4 || $bitmap&0x8 || ($only_uniquely_alligned && ($bitmap&0x100)))){
+		
+        if(!($chrom=~/\*/ || $bitmap&0x200 || $bitmap&0x4 || $bitmap&0x8 || ($only_uniquely_alligned && ($bitmap&0x100)))){
                 if($prv_chrom ne $chrom && $prv_chrom ne "" && $chrom!~/\*/){
 			calc_dup($prv_chrom);
 			%frag=();%ufrag=();%ufrag_no_strand=();%read=();%uread=();%uread_no_strand=();

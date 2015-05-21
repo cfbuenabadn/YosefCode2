@@ -23,7 +23,7 @@ my ($WORK_FOLDER,$dict_file,$include_raw_read)=@ARGV;
 #$include_raw_read=0;
 #perl collect_dat_cufflinks.pl /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai/
 #with include raw read:
-#perl /home/eecs/allonwag/project/singleCell/allon_script/YosefCode/RNASeq/preproc/collect_dat_cufflinks.pl /home/eecs/allonwag/data/BRAIN/processed3/150202_HS2A/Project_Ngai_AsSingle/ /data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt 1
+#perl /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collect_dat_cufflinks.pl /home/eecs/allonwag/data/BRAIN/processed4/150202_HS2A/Project_Ngai_AsSingle /data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt 1
 
 my $cntr=0;my %fpkm=();
 my %read_count=();my %read_dup=();my %read_count_unique=();
@@ -39,7 +39,7 @@ foreach my $f(<$WORK_FOLDER/*combined/tophat_output/cuff_output/genes.fpkm_track
     $cntr++;
     #if ($cntr>10){last;} #DDEEEEBBBUUUGG
     
-}my @zeros=();my @nans=();for(my $i=0;$i<$cntr;$i++){push @zeros,0;push @nans,"NaN";}$cntr=0;
+}my @zeros=();for(my $i=0;$i<$cntr;$i++){push @zeros,0;}$cntr=0;
 
 
 foreach my $f(<$WORK_FOLDER/*combined/tophat_output/cuff_output/genes.fpkm_tracking>){
@@ -153,12 +153,16 @@ my $fcntr=0;
 foreach my $p(keys %fpkm){
     if (exists($printed{$p})){next;}
     print  h_out_gene "$p\t$p\t-1\n";
-    print  h_out_dat join "\t",@{$fpkm{$p}};print h_out_dat "\n";
+    print  h_out_dat join "\t",@{$fpkm{$p}};
     if ($include_raw_read){
-	print  h_out_dat_read join "\t",@nans;print h_out_dat_read "\n";
-	print  h_out_dat_read_unique join "\t",@nans;print h_out_dat_read_unique "\n";
-	print  h_out_dat_dup join "\t",@nans;print h_out_dat_dup "\n";
+	if (!exists($read_count{$p})) {die "Integrity: no read count data for gene $p\n";}	
+	print  h_out_dat_read join "\t",@{$read_count{$p}};print h_out_dat_read "\n";
+	if (!exists($read_count_unique{$p})) {die "Integrity: no unique read count data for gene $p\n";}	
+	print  h_out_dat_read_unique join "\t",@{$read_count_unique{$p}};print h_out_dat_read_unique "\n";
+	if (!exists($read_dup{$p})) {die "Integrity: no read dup data for gene $p\n";}
+	print  h_out_dat_dup join "\t",@{$read_dup{$p}};print h_out_dat_dup "\n";
     }
+    print h_out_dat "\n";
     $fcntr++;
 }
 print "Printed ".scalar(keys %printed)." genes, plus $fcntr additional genes not in dictionary\n";
