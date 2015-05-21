@@ -4,6 +4,7 @@
 
 library(Biobase)
 library(gdata)
+library(xlsx)
 
 # Function: loadRSEM
 # Usage: Load tpm data from collect script output <- RNASeq preprocessing pipeline w/rsem
@@ -36,8 +37,16 @@ loadRSEM = function(collect_dir,config_file,qc_fields_file,gene_fields_file){
   colnames(tpm_table) = rownames(qc_table)
 
   ##----- Phenotype Data
-  config_table = read.xls(config_file,sheet = 1)
-  config_key = read.xls(config_file,sheet = 2)
+  suff = gsub(".*\\.","",config_file)
+  if (suff == "xls"){
+    config_table = read.xls(config_file,sheet = 1)
+    config_key = read.xls(config_file,sheet = 2)
+  }else if (suff == "xlsx"){
+    config_table = read.xlsx(config_file,sheetIndex = 1)
+    config_key = read.xlsx(config_file,sheetIndex = 2)
+  } else{
+    stop("Configuration file must be .xls or .xlsx.")
+  }
 
   # Decode Configuration
   for (level in levels(config_key$Code_Class)){
@@ -58,5 +67,31 @@ loadRSEM = function(collect_dir,config_file,qc_fields_file,gene_fields_file){
   phenoData = new("AnnotatedDataFrame", sample.info)
   eMatrix = data.matrix(tpm_table)
   eSet = new("ExpressionSet", exprs = eMatrix, featureData = featureDat, protocolData = protoDat, phenoData = phenoData)
+  return(eSet)
+}
+
+# Function: loadRSEMStudy
+# Usage: Load tpm data from multiple collect script outputs
+# Params:
+# -------------------------
+# muliple_collect = path to tab-delim. table containing paths to config files in first column and collect directories in second column
+# qc_fields_file = path to names of qc fields (one per line - no tabs!)
+# gene_fields_file = path to names of gene info fields (one per line - no tabs!)
+
+loadRSEMStudy = function(muliple_collect,qc_fields_file,gene_fields_file){
+  dfCollect <- read.table(multiple_collect,header=T,sep="\t")
+  
+  print("Combining multiple collects:")
+  apply(dfCollect,1,function(x) print(x[2]))
+  
+  # Call loadRSEM on each collect
+  li_eSet <-apply(dfCollect,1,function(x) loadRSEM(collect_dir = x[2],config_file =x[1],qc_fields_file = qc_fields_file,gene_fields_file = gene_fields_file))
+  
+  eSet = li_eSet[[1]]
+  if (length(li_eSet) > 1){
+    for (i in 2:length(li_eSet)){
+      eSet <- Biobase::combine(eSet,li_eSet[[i]])
+    }
+  }
   return(eSet)
 }

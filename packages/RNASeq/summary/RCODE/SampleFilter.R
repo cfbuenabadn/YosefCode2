@@ -99,7 +99,9 @@ FNRw = function(eSet, bulk.eSet, gf.vec, FN_thresh, housekeeping_list){
 
 # ref_list = character. path to list of reference gene symbols (one per line)
 
-SampleFilter = function(eSet, gene.filter.vec = NULL, housekeeping_list, mixture = T, verbose = T, plot.dir = NULL){
+SampleFilter = function(eSet, gene.filter.vec = NULL, housekeeping_list, mixture = T, verbose = T, plot.dir = NULL,Z_CUTOFF = 2.3, numbins = 20, DIP_THRESH = .01, MAX_LOG = 0, MIN_NREADS = 25000,
+                        MIN_RALIGN = 15,
+                        MIN_EFF = 0.2){
   
   # Create plot directory, if necessary
   if (!is.null(plot.dir) && !file.exists(plot.dir)){
@@ -108,34 +110,24 @@ SampleFilter = function(eSet, gene.filter.vec = NULL, housekeeping_list, mixture
   
   qual.names = c("NREADS","RALIGN")
   
-  ##----- Hard Cutoffs
-  MIN_NREADS = 25000
-  MIN_RALIGN = 15 # Used to be 20
-  MIN_EFF = 0.2
-  
   ##----- Sufficient Cutoffs
   SUFF_RALIGN = 65
   SUFF_EFF = 0.8
-  
-  ##----- Deviation
-  Z_CUTOFF = 1.645
-  
-  ##----- AUC Params
-  MAX_LOG = 6 
-  
+    
   ##----- Calculate Final Cutoffs
   
   # Number of reads (Transformed)
   logr = unlist(log10(pData(protocolData(eSet)[,qual.names[1]]) + 1))
   
+  LOGR_CUTOFF = log10(MIN_NREADS + 1)
+  if (!is.null(Z_CUTOFF)){
   # Simple thresholds
-  LOGR_CUTOFF = max(median(logr) - Z_CUTOFF*mad(logr), log10(MIN_NREADS + 1))
+  LOGR_CUTOFF = max(median(logr) - Z_CUTOFF*mad(logr), LOGR_CUTOFF )
   LOGR_CUTOFF = max(mean(logr) - Z_CUTOFF*sd(logr), LOGR_CUTOFF)
-  
   # Mixture model threshold
   if(mixture){    
     
-    is.multimodal = dip.test(logr)$p.value < .01
+    is.multimodal = dip.test(logr)$p.value < DIP_THRESH
     
     if(is.multimodal){
       print("NREADS is multimodal -> Applying normalmixEM...")
@@ -144,12 +136,16 @@ SampleFilter = function(eSet, gene.filter.vec = NULL, housekeeping_list, mixture
       LOGR_CUTOFF = max(mixmdl$mu[component] - Z_CUTOFF*mixmdl$sigma[component], LOGR_CUTOFF)
     }
   }
+  }
   
   # Ratio of reads aligned
   ralign = unlist(pData(protocolData(eSet)[,qual.names[2]]))
   
+  RALIGN_CUTOFF = MIN_RALIGN
+  if (!is.null(Z_CUTOFF)){
+    
   # Simple thresholds
-  RALIGN_CUTOFF = max(median(ralign) - Z_CUTOFF*mad(ralign), MIN_RALIGN)
+  RALIGN_CUTOFF = max(median(ralign) - Z_CUTOFF*mad(ralign), RALIGN_CUTOFF)
   RALIGN_CUTOFF = max(mean(ralign) - Z_CUTOFF*sd(ralign), RALIGN_CUTOFF)
   
   # Mixture model threshold
@@ -166,6 +162,7 @@ SampleFilter = function(eSet, gene.filter.vec = NULL, housekeeping_list, mixture
   }
   
   RALIGN_CUTOFF = min(RALIGN_CUTOFF,SUFF_RALIGN)
+  }
     
   # Efficiency: Fraction of filtered genes expressed higher than minimum level (typically zero)
   if (is.null(gene.filter.vec)){
@@ -173,8 +170,11 @@ SampleFilter = function(eSet, gene.filter.vec = NULL, housekeeping_list, mixture
   }
   efficiency = colMeans(exprs(eSet)[gene.filter.vec,] > min(exprs(eSet)))
   
+  EFF_CUTOFF = MIN_EFF
+  
+  if (!is.null(Z_CUTOFF)){
   # Simple thresholds
-  EFF_CUTOFF = max(median(efficiency) - Z_CUTOFF*mad(efficiency), MIN_EFF)
+  EFF_CUTOFF = max(median(efficiency) - Z_CUTOFF*mad(efficiency), EFF_CUTOFF)
   EFF_CUTOFF = max(mean(efficiency) - Z_CUTOFF*sd(efficiency), EFF_CUTOFF)
   
   # Mixture model threshold
@@ -192,10 +192,11 @@ SampleFilter = function(eSet, gene.filter.vec = NULL, housekeeping_list, mixture
   
   EFF_CUTOFF = min(EFF_CUTOFF,SUFF_EFF)
   
-  # FNR AUC Filter
+  }
   
+  # FNR AUC Filter
   ref.glms = FNR(eSet = eSet[gene.filter.vec,],bulk.eSet = eSet[gene.filter.vec,],housekeeping_list,out.dir = plot.dir,plot.name = "fnr_before.pdf")
-
+  
   # Compute AUC  
   AUC = NULL
   for (si in 1:dim(sc.eSet)[2]){
@@ -206,11 +207,14 @@ SampleFilter = function(eSet, gene.filter.vec = NULL, housekeeping_list, mixture
       AUC[si] = NA
     }
   }
-  
+
+  is.pos.slope.of.good = sign(matrix(na.omit(unlist(ref.glms)),nrow = 2)[2,]) > 0  
   is.good_AUC = !is.na(AUC)
-  is.FNR_nonconverge = is.na(AUC)
-  is.multimodal = dip.test(AUC)$p.value < .01
+  is.good_AUC[is.good_AUC] = is.pos.slope.of.good
   
+  is.FNR_nonconverge = is.na(AUC)
+  is.multimodal = dip.test(AUC)$p.value < DIP_THRESH
+
   if(is.multimodal){
     print("AUC is multimodal -> Applying normalmixEM...")
     mixmdl = normalmixEM(na.omit(AUC),k = 2)
@@ -219,6 +223,8 @@ SampleFilter = function(eSet, gene.filter.vec = NULL, housekeeping_list, mixture
     component = which(mixmdl$mu %in% max(mixmdl$mu))
     is.good_AUC[!is.na(AUC)] = mixmdl$posterior[,component] > 0.5
   }
+  
+  is.good_AUC = T # OVERRIDE
   
   is.Low.Reads = logr < LOGR_CUTOFF
   is.Low.Read.Rat = ralign < RALIGN_CUTOFF
@@ -233,42 +239,44 @@ SampleFilter = function(eSet, gene.filter.vec = NULL, housekeeping_list, mixture
     report = report[is.Low.Technical.Quality,]
     colnames(report) = c("Filtered_Sample","Low_Reads","Low_Aligned_Ratio","Low_Efficiency","FNR_Not_Converged","Low/Failed_FNR_AUC")
     write.table(report,file = paste0(plot.dir,"/filter_report.txt"),quote = F,row.names = F,col.names = T,sep = "\t")
-    
-    pdf(paste0(plot.dir,"/nreads_before.pdf"))
-    hist(logr, main = "NREADS Filter", xlab = "log10(NREADS+1)")
+        
+    pdf(paste0(plot.dir,"/filtering_per_criterion.pdf"))
+    par(mfcol = c(3,2))
+  
+    hist(logr, main = paste0("NREADS: Thresh = ",signif(LOGR_CUTOFF,3)," , Rm = ",sum(is.Low.Reads)), xlab = "log10(NREADS+1)", breaks = numbins)
     abline(v = LOGR_CUTOFF, col = "red", lty = 2)
     print(paste("NREADS Cutoff:",10^LOGR_CUTOFF - 1))
-    dev.off()
-    
-    pdf(paste0(plot.dir,"/ralign_before.pdf"))
-    hist(ralign, main = "RALIGN Filter", xlab = "RALIGN")
+        
+      hist(ralign, main = paste0("RALIGN: Thresh = ",signif(RALIGN_CUTOFF,3)," , Rm = ",sum(is.Low.Read.Rat)), xlab = "RALIGN", breaks = numbins)
     abline(v = RALIGN_CUTOFF, col = "red", lty = 2)
     print(paste("RALIGN Cutoff:",RALIGN_CUTOFF))
-    dev.off()
-    
-    pdf(paste0(plot.dir,"/effic_before.pdf"))
-    hist(efficiency, main = "Efficiency Filter", xlab = "Efficiency")
+        
+      hist(efficiency, main = paste0("Effic: Thresh = ",signif(EFF_CUTOFF,3)," , Rm = ",sum(is.Low.Efficiency)," , Tot_Rm = ",sum(is.Low.Technical.Quality)), xlab = "Efficiency", breaks = numbins)
     abline(v = EFF_CUTOFF, col = "red", lty = 2)
     print(paste("Efficiency:",EFF_CUTOFF))
-    dev.off()
-    
-    pdf(paste0(plot.dir,"/nreads_after.pdf"))
-    hist(logr[!is.Low.Technical.Quality], main = "NREADS Filter", xlab = "log10(NREADS+1)")
+        
+      hist(logr[!is.Low.Technical.Quality], main = paste0("NREADS: Thresh = ",signif(LOGR_CUTOFF,3)," , Rm = ",sum(is.Low.Reads)), xlab = "log10(NREADS+1)", breaks = numbins)
     abline(v = LOGR_CUTOFF, col = "red", lty = 2)
-    dev.off()
-    
-    pdf(paste0(plot.dir,"/ralign_after.pdf"))
-    hist(ralign[!is.Low.Technical.Quality], main = "RALIGN Filter", xlab = "RALIGN")
+        
+      hist(ralign[!is.Low.Technical.Quality], main = paste0("RALIGN: Thresh = ",signif(RALIGN_CUTOFF,3)," , Rm, = ",sum(is.Low.Read.Rat)), xlab = "RALIGN", breaks = numbins)
     abline(v = RALIGN_CUTOFF, col = "red", lty = 2)
-    dev.off()
-    
-    pdf(paste0(plot.dir,"/effic_after.pdf"))
-    hist(efficiency[!is.Low.Technical.Quality], main = "Efficiency Filter", xlab = "Efficiency")
+        
+      hist(efficiency[!is.Low.Technical.Quality],  main = paste0("Effic: Thresh = ",signif(EFF_CUTOFF,3)," , Rm = ",sum(is.Low.Efficiency)," , Tot_Rm = ",sum(is.Low.Technical.Quality)), xlab = "Efficiency", breaks = numbins)
     abline(v = EFF_CUTOFF, col = "red", lty = 2)
     dev.off()
+    
+    pdf(paste0(plot.dir,"/overlap_of_criteria.pdf"))
+    v = cbind(is.Low.Reads,is.Low.Read.Rat,is.Low.Efficiency)
+    m = t(v) %*% v
+    m = t(t(m)/diag(m))
+    barplot(m, beside = T,legend.text = T, ylim = c(0,1.5))
+    dev.off()
+    
+    
   }
   
-  FNR(eSet = sf.eSet[gene.filter.vec,],bulk.eSet = sf.eSet[gene.filter.vec,],housekeeping_list,report_miss = F,out.dir = plot.dir,plot.name = "fnr_after.pdf")
+  temp.gene.filter.vec = gene.filter.vec & (apply(exprs(sf.eSet),1,sd) > 0)
+  FNR(eSet = sf.eSet[temp.gene.filter.vec,],bulk.eSet = sf.eSet[temp.gene.filter.vec ,],housekeeping_list,report_miss = F,out.dir = plot.dir,plot.name = "fnr_after.pdf")
   
   # Report
   if(verbose){
