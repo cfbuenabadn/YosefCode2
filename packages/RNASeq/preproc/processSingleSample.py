@@ -603,9 +603,9 @@ if(RUN_QC and not(args.skip_qc)):
 
 
 	#if(args.paired_end):
-	#	qcComand = Template("perl /project/eecs/yosef/singleCell/allon_script/preproc/qc.pl $QC_OUTPUT_DIR  $REF_FLAT_FILE $RIBOSOMAL_INTERVALS_INDEX $SAMPLE_FILE1 $SAMPLE_FILE2").substitute(QC_OUTPUT_DIR=args.output_folder, SAMPLE_FILE1=args.sampleFile1, SAMPLE_FILE2=args.sampleFile2, REF_FLAT_FILE=REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX=RIBOSOMAL_INTERVALS_INDEX);
+	#	qcComand = Template("perl qc.pl $QC_OUTPUT_DIR  $REF_FLAT_FILE $RIBOSOMAL_INTERVALS_INDEX $SAMPLE_FILE1 $SAMPLE_FILE2").substitute(QC_OUTPUT_DIR=args.output_folder, SAMPLE_FILE1=args.sampleFile1, SAMPLE_FILE2=args.sampleFile2, REF_FLAT_FILE=REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX=RIBOSOMAL_INTERVALS_INDEX);
 	#else:
-	#	qcComand = Template("perl /project/eecs/yosef/singleCell/allon_script/preproc/qc.pl $QC_OUTPUT_DIR  $REF_FLAT_FILE $RIBOSOMAL_INTERVALS_INDEX $SAMPLE_FILE1").substitute(QC_OUTPUT_DIR=args.output_folder, SAMPLE_FILE1=args.sampleFile1, REF_FLAT_FILE=REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX=RIBOSOMAL_INTERVALS_INDEX);
+	#	qcComand = Template("perl qc.pl $QC_OUTPUT_DIR  $REF_FLAT_FILE $RIBOSOMAL_INTERVALS_INDEX $SAMPLE_FILE1").substitute(QC_OUTPUT_DIR=args.output_folder, SAMPLE_FILE1=args.sampleFile1, REF_FLAT_FILE=REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX=RIBOSOMAL_INTERVALS_INDEX);
 
 
 	#print(qcComand)

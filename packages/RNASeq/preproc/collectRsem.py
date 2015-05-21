@@ -22,11 +22,16 @@
 # 12. support Kallisto
 # 13. Broad's qc: http://www.broadinstitute.org/cancer/cga/rnaseqc_run
 # 14. Use Prinseq as another way to trim? (supports trimming low complexity reads,and other goodies see http://www.pnas.org/content/suppl/2015/05/14/1507125112.DCSupplemental/pnas.1507125112.sapp.pdf)
+# 15. Make sample name meaningful in processFolder: instead of the -N for the project, do -N for the sample name
 
 
-# process folder: the script calls directly from my directory.... and make the argparse parent
+#and make the argparse parent
 #https://docs.python.org/3/library/argparse.html
 #https://docs.python.org/3/library/argparse.html#the-parse-args-method
+
+#remove all the /project/eecs/yosef/singleCell/allon_script/preproc/....
+#call Nir's new count dup script
+
 
 from collections import namedtuple;
 import argparse;

@@ -4,6 +4,8 @@ https://www.broadinstitute.org/~picard/picard_metric_definitions.html
 
 python ~/project/singleCell/allon_script/preproc/normalizeBrainFastaInput.py /home/eecs/allonwag/data/BRAIN/sources/150309_HS1A
 python ~/project/singleCell/allon_script/preproc/processFolder.py -N tfh_1st --paired_end --kallisto_fragment_length 300 -p 2 -r mm10 -o /data/yosef/TFH/processed/FC_01481 /data/yosef/TFH/sources/FC_01481
+python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collectRsem.py  --skip_collecting_dup_genes -r mm10 -o /home/eecs/allonwag/data/TFH/processed/FC_01481/rsem /home/eecs/allonwag/data/TFH/processed/FC_01481/
+perl /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collect_dat_cufflinks.pl /home/eecs/allonwag/data/TFH/processed/FC_01481/ /data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt 0
 
 
 

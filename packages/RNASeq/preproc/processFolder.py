@@ -10,10 +10,11 @@
 import subprocess
 from string import Template
 import argparse
-import os;
-import glob;
-import stat;
-import socket;
+import os
+import glob
+import stat
+import socket
+import sys
 
 parser = argparse.ArgumentParser(description="Process all the samples in a folder")
 parser.add_argument("--paired_end", action="store_true",
@@ -79,7 +80,10 @@ if(args.folder[-1] == '/'):
 if(socket.gethostname() != "zen" and not(args.do_not_send_to_cluster)):
 	raise Exception("This script must be run from the zen machine that supports the  queue");
 
-
+#get the path in which the current script is running
+scriptDirectory = os.path.realpath(os.path.dirname(sys.argv[0]))
+scriptToRun = os.path.join(scriptDirectory, "processSingleSample.py")
+print "Script to execute on each cell is: " + scriptToRun
 
 print "Running on folder...";
 print "Folder is: " + args.folder;
@@ -110,12 +114,14 @@ for sample1 in sampleList:
 	
 	if not os.path.exists(sampleOutputFolder):
 		os.makedirs(sampleOutputFolder);
-		
-	cmd = Template("python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/processSingleSample.py $IS_PAIRED_END \
+
+
+	cmd = Template("python $SCRIPT_TO_RUN $IS_PAIRED_END \
 					-r $REFERENCE -p $NUM_THREADS -o $OUTPUT_FOLDER $SKIP_TRIMMOMATIC $DO_NOT_RELY_ON_PREVIOUS_TRIMMOMATIC \
 					$SKIP_TOPHAT $SKIP_RSEM $SKIP_KALLISTO $SKIP_QC $SKIP_TOPHAT_QC $SKIP_RSEM_QC $SKIP_KALLISTO_QC \
 					$DO_NOT_CLEAN_INTERMEDIARY_FILES $RSEM_BOWTIE_MAXINS $TRIMMOMATIC_WINDOW \
 					$KALLISTO_BOOTSTRAP_SAMPLES $KALLISTO_FRAGMENT_LENGTH $SAMPLE1 $SAMPLE2").substitute(
+		SCRIPT_TO_RUN=scriptToRun,
 		IS_PAIRED_END=("--paired_end" if args.paired_end else ""),
 		REFERENCE=args.reference,
 		NUM_THREADS=args.num_threads,
