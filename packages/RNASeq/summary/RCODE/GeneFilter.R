@@ -39,7 +39,7 @@ plotDensities = function(x, xlim, ylim, main, xlab, ylab, zero.omit = F){
 # verbose = logical. If true, will print message describing filtering step
 # plot.dir = character. path to plot directory. No plots if NULL
 
-GeneFilter = function(eSet, count.cutoff, prop.failed, verbose = F, plot.dir = NULL){
+GeneFilter = function(eSet, count.cutoff, prop.failed, verbose = F, plot.dir = NULL, plot.prefix = NULL){
   
   # Create plot directory, if necessary
   if (!is.null(plot.dir) && !file.exists(plot.dir)){
@@ -49,7 +49,7 @@ GeneFilter = function(eSet, count.cutoff, prop.failed, verbose = F, plot.dir = N
   # Plot Raw Read distribution
   if (!is.null(plot.dir)){
     log.tpm.matrix = log10(exprs(eSet) + 1)
-    pdf(paste0(plot.dir,"/rawreads.pdf"))
+    pdf(paste0(plot.dir,"/",plot.prefix,"_rawreads.pdf"))
     plotDensities( x = log.tpm.matrix,
                    xlim = c(0,6), ylim = c(0,1),
                    main = "Read Distribution - Raw",
@@ -66,7 +66,7 @@ GeneFilter = function(eSet, count.cutoff, prop.failed, verbose = F, plot.dir = N
   # Plot Cut Read distribution
   if (!is.null(plot.dir)){
     log.cut.tpm.matrix = log10(exprs(genefilter.eSet) + 1)
-    pdf(paste0(plot.dir,"/cutreads.pdf"))
+    pdf(paste0(plot.dir,"/",plot.prefix,"_cutreads.pdf"))
     plotDensities( x = log.cut.tpm.matrix,
                    xlim = c(0,6), ylim = c(0,1),
                    main = "Read Distribution - Cut",
@@ -77,9 +77,8 @@ GeneFilter = function(eSet, count.cutoff, prop.failed, verbose = F, plot.dir = N
   }
   
   if(verbose){
-    print(paste0("Cut ",sum(is.Cut.Gene)," genes (", 100*sum(is.Cut.Gene)/length(is.Cut.Gene), "%) with more than ", prop.failed*100, " % of samples falling below ",count.cutoff," TPM, leaving ", dim(genefilter.eSet)[1]))
+    print(paste0("Cut ",sum(is.Cut.Gene)," genes (", signif(100*sum(is.Cut.Gene)/length(is.Cut.Gene),3), " %) with more than ", prop.failed*100, " % of samples falling below ",count.cutoff," TPM, leaving ", dim(genefilter.eSet)[1]))
   }
   
   return(!is.Cut.Gene)
 }
-

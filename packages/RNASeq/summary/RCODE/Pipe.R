@@ -1,32 +1,30 @@
 rm(list=ls())
 library(sva)
 library(optparse)
-
 option_list <- list(
-  make_option("--collect", default="/data/yosef/CD8_effector_diff/data/Single_Cell_RNAseq/LCMV_Pilot/LCMV_Plates1_d7_Arm/rsem", type="character",
+  make_option("--collect", default="/data/yosef/HIV/dat/Walker_Run_34/collect", type="character",
               help="Directory containing your RNA Seq results from the preproc pipeline."),
-  make_option("--config", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline/TestConfig-All.xls", type="character",
-              help="Config file for your project."),
-  make_option("--qcfields", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline/qc_fields.txt", type="character"),
-  make_option("--genefields", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline/gene_fields.txt", type="character",
+  make_option("--config", default="/data/yosef/HIV/dat/Walker_Run_34/collect/Walker_Run_34_config.xlsx", type="character",
+              help="Config file for your project (.xls or .xlsx)."),
+  make_option("--qcfields", default="~/YosefCode/packages/RNASeq/summary/TEXT/qc_fields.txt", type="character"),
+  make_option("--genefields", default="~/YosefCode/packages/RNASeq/summary/TEXT/gene_fields.txt", type="character",
               help=""),
-  make_option("--out", default="", type="character",
+  make_option("--out", default="/data/yosef/HIV/dat/Walker_Run_34/summary_out", type="character",
               help=""),
-  make_option("--lib", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline", type="character",
+  make_option("--lib", default="~/YosefCode/packages/RNASeq/summary/RCODE", type="character",
               help=""),
-  make_option("--sigfile", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline/immsig-ProperCase.txt", type="character",
+  make_option("--sigfile", default="~/YosefCode/packages/RNASeq/summary/EXAMPLE/reference_files/immsig.txt", type="character",
               help=""),
-  make_option("--housekeeping", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline/house_keeping_mouse_TitleCase.txt", type="character",
+  make_option("--housekeeping", default="~/YosefCode/packages/RNASeq/summary/EXAMPLE/reference_files/house_keeping_human_names.txt", type="character",
               help=""),
   make_option("--combat", action="store_true", default=FALSE,
               help="This will run the ComBat package for batch correction on your data."),
-  make_option("--multiple_collect", type="character", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline/CollectFolders.txt",
+  make_option("--multiple_collect", type="character", default=FALSE,
               help="If you need to load multiple collect directories and config files, please supply a text file listing them here..")
-  
 )
 
+## ----- Parse Arguments -----
 opt <- parse_args(OptionParser(option_list=option_list))
-
 BC = opt$combat
 collect_dir = opt$collect
 config_file = opt$config 
@@ -35,88 +33,112 @@ gene_fields_file = opt$genefields
 out_dir = opt$out
 lib_dir = opt$lib
 sig_file = opt$sigfile
-
-fileSample<-file(paste0(out_dir,"/SampleLog.tab"))
-write(("Sample Information"), fileSample)
-
-
 # Point to all sig files
 housekeeping_list = opt$housekeeping
 
 ## ----- Produce Output Directory
 if (file.exists(out_dir)){
-  stop("Output directory already exists! rm -r and try again...")
-} else {
+  } else {
   dir.create(out_dir)
 }
 
+## ---- Source Summary Library
+source(paste0(lib_dir,"/util.R"))
 source(paste0(lib_dir,"/loadRSEM.R"))
-## ----- LoadRSEMStudy - function to load multiple collect directories
-if(opt$multiple_collect != ""){
-  dfCollect <- read.table(opt$multiple_collect,header=T,sep="\t")
+source(paste0(lib_dir,"/GeneFilter.R"))
+source(paste0(lib_dir,"/SampleFilter.R"))
+source(paste0(lib_dir,"/TechFilter.R"))
+source(paste0(lib_dir,"/QuantileNormalization.R"))
+source(paste0(lib_dir,"/TechCorrect.R"))
+
+## ----- Load Expression Set -----
+if(opt$multiple_collect != FALSE){
+  eSet = loadRSEMStudy(muliple_collect = opt$multiple_collect, qc_fields_file = qc_fields_file,gene_fields_file = gene_fields_file)
+}else{
+  eSet = loadRSEM(collect_dir = collect_dir,config_file = config_file,qc_fields_file = qc_fields_file,gene_fields_file = gene_fields_file)
 }
-apply(dfCollect,1,function(x) print(x[2]))
-li_eSet <-apply(dfCollect,1,function(x) loadRSEM(collect_dir = x[2],config_file =x[1],qc_fields_file = qc_fields_file,gene_fields_file = gene_fields_file))
 
-eSet = li_eSet[[1]]
-if (length(li_eSet) > 1){
-  for (i in 2:length(li_eSet)){
-    eSet <- Biobase::combine(eSet,li_eSet[[i]])
-  }
-}
+## ----- Pre-Filtering of Failed Samples -----
+# Remove all samples failing the preprocessing step, based on config file. 
+# Note: These should have all NA TPM from collect.
 
-summary(eSet)
-
-
-## ----- Load Data and Pre-Filtering of Failed Samples
-source(paste0(lib_dir,"/loadRSEM.R"))
-eSet = loadRSEM(collect_dir = collect_dir,config_file = config_file,qc_fields_file = qc_fields_file,gene_fields_file = gene_fields_file)
-
-# Remove failed samples: is.na(TPM)
 is.failed = grepl("Failure",phenoData(eSet)$Preproc_Code)
 print(paste(sum(is.failed),"samples failed pipeline:"),quote = F)
-write.table(matrix(colnames(eSet)[is.failed],ncol = 1),row.names=F, col.names=F,quote = F)
-print("Removed failed samples.")
-prefilt.eSet = eSet[,!is.failed]
+write.table(matrix(colnames(eSet)[is.failed],ncol = 1),file = paste0(out_dir,"/failed_preproc_list.txt"),row.names=F, col.names=F,quote = F)
 
-## ----- Filter Reads
+prefilt.eSet = eSet[,!is.failed]
+print("Removed failed samples.")
+
+## ----- Pre-Filtering of Transcripts: Coding + Detected ----
 # Select only type 1 transcripts (Coding)
 type1.eSet = prefilt.eSet[featureData(eSet)$Transcript_Type == 1,]
-
 # Select only detected transcripts
 is.expressed.sc = rowMeans(exprs(type1.eSet)) > 0
-sc.eSet = type1.eSet[which(is.expressed.sc),]
 
-# No nan shall pass
+sc.eSet = type1.eSet[which(is.expressed.sc),]
+print("Removed non-Type1 transcripts and undetected transcripts.")
+
+## ----- Checkpoint: No NA shall pass! -----
 stopifnot(!any(is.na(exprs(sc.eSet))))
 
-source(paste0(lib_dir,"/GeneFilter.R"))
-gf.vec = GeneFilter(sc.eSet,
+## ----- Preliminary Gene Filtering
+init.gf.vec = GeneFilter(sc.eSet,
                     count.cutoff = 10,
                     prop.failed = .85,
                     verbose = T,
-                    plot.dir = paste0(out_dir,"/genefilter"))
+                    plot.dir = paste0(out_dir,"/genefilter"),
+                    plot.prefix = "pre_cell_filtering")
 
-## ----- Sample Filtering
-source(paste0(lib_dir,"/SampleFilter.R"))
-sf.sc.eSet = SampleFilter(eSet = sc.eSet,gene.filter.vec = gf.vec, housekeeping_list = housekeeping_list,mixture = T,verbose = T,plot.dir = paste0(out_dir,"/samplefilter_sc") )
-gf.vec = gf.vec & (apply(exprs(sf.sc.eSet),1,sd) > 0)
+## ----- Create Sample Filtering Directories
+if (!file.exists(paste0(out_dir,"/samplefilter/"))){dir.create(paste0(out_dir,"/samplefilter/"))}
+if (!file.exists(paste0(out_dir,"/samplefilter_tech/"))){dir.create(paste0(out_dir,"/samplefilter_tech/"))}
 
+## ----- Hard-Cutoff (Cell) Sample Filtering + Correlation with Technical Features
+# The Hard-Cutoff module is for diagnostic purposes only - output is not used.
+hard.sf.sc.eSet = SampleFilter(eSet = sc.eSet,gene.filter.vec = init.gf.vec, housekeeping_list = housekeeping_list,mixture = T,verbose = T, MIN_RALIGN = 5, Z_CUTOFF=NULL, plot.dir = paste0(out_dir,"/samplefilter/hard_cutoff") )
+hard.gf.vec = GeneFilter(hard.sf.sc.eSet,
+                    count.cutoff = 10,
+                    prop.failed = .85,
+                    verbose = T,
+                    plot.dir = paste0(out_dir,"/genefilter"),
+                    plot.prefix = "post_hard_cell_filtering")
+hard.tf.sc.eSet = TechFilter(hard.sf.sc.eSet,gf.vec = hard.gf.vec,Z_CUTOFF = NULL,PROP_CUTOFF = .9,plot.dir = paste0(out_dir,"/samplefilter_tech/hard_cutoff"),plot.prefix = "")
+
+## ----- Adaptive Sample and Gene Filtering
+sf.sc.eSet = SampleFilter(eSet = sc.eSet,gene.filter.vec = init.gf.vec, housekeeping_list = housekeeping_list,mixture = T,verbose = T,MIN_RALIGN = 5, plot.dir = paste0(out_dir,"/samplefilter/adaptive") )
+# Update gf.vec
+gf.vec = GeneFilter(sf.sc.eSet,
+                    count.cutoff = 10,
+                    prop.failed = .85,
+                    verbose = T,
+                    plot.dir = paste0(out_dir,"/genefilter"),
+                    plot.prefix = "post_adapt_cell_filtering_1")
+tf.sc.eSet = TechFilter(sf.sc.eSet,gf.vec = gf.vec,PROP_CUTOFF = .9,plot.dir = paste0(out_dir,"/samplefilter_tech/adaptive"),plot.prefix = "")
+
+# Update gf.vec
+gf.vec = GeneFilter(sf.sc.eSet,
+                    count.cutoff = 10,
+                    prop.failed = .80,
+                    verbose = T,
+                    plot.dir = paste0(out_dir,"/genefilter"),"post_adapt_cell_filtering_2")
 
 ##----- Normalization
-source(paste0(lib_dir,"/QuantileNormalization.R"))
-qn.sc.matrix = QuantileNormalization(exprs(sf.sc.eSet), gf.vec = gf.vec, plot.dir = paste0(out_dir,"/qn_sc"))
-qn.sc.eSet = sf.sc.eSet
-exprs(qn.sc.eSet) = qn.sc.matrix
-gf.vec = gf.vec & (apply(exprs(qn.sc.eSet),1,sd) > 10^(-10))
+if (!file.exists(paste0(out_dir,"/normalization/"))){dir.create(paste0(out_dir,"/normalization/"))}
 
+nrm.sc.matrix = QuantileNormalization(exprs(tf.sc.eSet), gf.vec = gf.vec, plot.dir = paste0(out_dir,"/normalization/qn_sc"))
+nrm.sc.matrix = QuartileNormalization(exprs(tf.sc.eSet), gf.vec = gf.vec, plot.dir = paste0(out_dir,"/normalization/qrn_sc"))
+print("Working with upper quartile normalization!")
+
+nrm.sc.eSet = tf.sc.eSet
+exprs(nrm.sc.eSet) = nrm.sc.matrix
+gf.vec = gf.vec & (apply(exprs(nrm.sc.eSet),1,sd) > 10^(-10))
+
+##----- Put COMBAT here
 ##----- Technical Adjustment
 
-source(paste0(lib_dir,"/TechCorrect.R"))
-tc.sc.matrix = TechCorrect(qn.sc.eSet,ignore.zeroes = F, gf.vec = gf.vec, maxnumbins = 10,Z_CUTOFF = .5,PROP_CUTOFF = .9,plot.dir = paste0(out_dir,"/tech_sc_10"))
+tc.sc.matrix = TechCorrect(nrm.sc.eSet,ignore.zeroes = F,QTHRESH = .01, gf.vec = gf.vec,PROP_CUTOFF = .9, plot.dir = paste0(out_dir,"/normalization/tech"))
 tc.sc.eSet = sf.sc.eSet
 exprs(tc.sc.eSet) = tc.sc.matrix
-
 
 ##----- Projections: Weighted PCA
 
@@ -170,6 +192,8 @@ plot(wpc$x[,1],wpc$x[,2],col = batch_colors[batch], xlab = "wPC1", ylab = "wPC2"
 legend(x = "topleft",legend = levels(batch),pch = 1,col = batch_colors )
 dev.off()
 
+### STOP HERE FOR NEXT WEEK
+
 ## ----- Signature Analysis
 
 source(paste0(lib_dir,"/CalcSig.R"))
@@ -182,11 +206,12 @@ Q = na.omit(t(processQf(pData(protocolData(tc.sc.eSet)),rownames(protocolData(tc
 qs = rbind(Q,s)
 qs = qs[apply(qs,1,sd) > 0,]
 
+MAX_EXP_PCS = 5
 cors = cor(t(qs),wpc$x,method = 'spearman')
 Fish = (1/2)*log((1+cors)/(1-cors))
 z = sqrt((dim(x)[2]-3)/1.06)*Fish
 p = 2*pnorm(-abs(z))
-is.top = wpc$sdev^2 >= sum(wpc$sdev^2)/(dim(x)[2]-1)
+is.top = 1:dim(p)[2] %in% 1:MAX_EXP_PCS
 p = p[,is.top]
 q = matrix(p.adjust(unlist(p),method = 'fdr'),nrow = dim(p)[1])
 is.sig.assoc.pc = colSums(q < .01) > 0
@@ -238,8 +263,10 @@ x = exprs(tc.sc.eSet)
 YosefPlot(x,gf.vec = gf.vec,as.character(unlist(read.table(housekeeping_list))),draw.lines = T,out.dir = paste0(out_dir,"/yplots"),plot.name = "hk_genes.pdf")
 
 for (sname in c(rownames(cors)[q[,1] == min(q[,1])],rownames(cors)[q[,1] == sort(q[,1])[2]],rownames(cors)[q[,2] == min(q[,2])],rownames(cors)[q[,2] == sort(q[,2])[2]])){
-  s1 = GetSigSet(table = sig_file,name = sname)
-  YosefPlot(x,gf.vec = gf.vec, s1[,1],draw.lines = T,out.dir = paste0(out_dir,"/yplots"),plot.name = paste0(sname,".pdf"))
+  if (!sname %in% rownames(Q)){
+    s1 = GetSigSet(table = sig_file,name = sname)
+    YosefPlot(x,gf.vec = gf.vec, s1[,1],draw.lines = T,out.dir = paste0(out_dir,"/yplots"),plot.name = paste0(sname,".pdf"))
+  }
 }
 
 
