@@ -7,6 +7,7 @@
 import subprocess
 from string import Template
 #import argparse
+import sys
 import os;
 import glob;
 
@@ -20,8 +21,10 @@ def RunFastQC(sampleFile, outputFolder):
 
 
 def CheckContam(sampleFile, outputFolder, sample_end):
-	cmd = Template("perl check_contam.pl $f  $OUTPUT_FOLDER/fastqc_output/primer.$END.txt").substitute(f=sampleFile, OUTPUT_FOLDER=outputFolder, END=sample_end);
-			
+	running_folder = os.path.realpath(os.path.dirname(sys.argv[0]))
+	scriptToCall = os.path.join(running_folder, "check_contam.pl")
+	cmd = Template("perl $SCRIPT_TO_CALL $f  $OUTPUT_FOLDER/fastqc_output/primer.$END.txt").substitute(SCRIPT_TO_CALL=scriptToCall,f=sampleFile, OUTPUT_FOLDER=outputFolder, END=sample_end);
+
 	print(cmd)
 	returnCode = subprocess.call(cmd, shell=True);
 	if(returnCode != 0):
@@ -56,16 +59,26 @@ def CollectData(bamFile, outputFolder, refFlatAnnotationsFile, ribosomalInterval
 	else:
 		dupFileName = outputFolder + '/picard_output/dup.txt';
 
-		if(isPairedEnd):
-			dupScriptToRun = "count_dup_per_gene.pl" # "count_dup.pl"
+		USE_ONLY_OLD_SCRIPT = True
+		if(USE_ONLY_OLD_SCRIPT):
+			#use old script until the new one is fixed:
+			dupScriptToRun = "count_dup.pl"
+			running_folder = os.path.realpath(os.path.dirname(sys.argv[0]))
+			dupScriptToRun = os.path.join(running_folder, dupScriptToRun)
+			cmd = Template("perl $DUP_SCRIPT_TO_RUN $BAM_FILE $OUTPUT_FILE").substitute(DUP_SCRIPT_TO_RUN=dupScriptToRun, BAM_FILE=bamFile, OUTPUT_FILE=dupFileName);
 		else:
-			dupScriptToRun = "count_dup_per_gene_single_end.pl"
+			if(isPairedEnd):
+				dupScriptToRun = "count_dup_per_gene_nextgen.pl"#"count_dup_per_gene.pl" # "count_dup.pl"
+			else:
+				dupScriptToRun = "count_dup_per_gene_nextgen_single.pl"#"count_dup_per_gene_single_end.pl"
+
+			running_folder = os.path.realpath(os.path.dirname(sys.argv[0]))
+			dupScriptToRun = os.path.join(running_folder, dupScriptToRun)
+
+			#updated script that in addition to total dup counting, also counts them per gene: It creates the dup.txt file as before and also a new file with a postfix of .genes.txt that includes: <gene name> <#dup reads> <tot reads> <ratio> Note that this is a read-level analysis, not fragment.
+			cmd = Template("perl $DUP_SCRIPT_TO_RUN $BAM_FILE $OUTPUT_FILE $TRANSCRIPT_ANNOTATION $TRANSCRIPT_DICTIONARY 0").substitute(BAM_FILE=bamFile, OUTPUT_FILE=dupFileName, TRANSCRIPT_ANNOTATION=transcriptAnnotationFile, TRANSCRIPT_DICTIONARY=transcriptDictionaryFile, DUP_SCRIPT_TO_RUN=dupScriptToRun);
 
 
-
-		cmd = Template("perl count_dup.pl $BAM_FILE $OUTPUT_FILE").substitute(BAM_FILE=bamFile, OUTPUT_FILE=dupFileName);
-		#updated script that in addition to total dup counting, also counts them per gene: It creates the dup.txt file as before and also a new file with a postfix of .genes.txt that includes: <gene name> <#dup reads> <tot reads> <ratio> Note that this is a read-level analysis, not fragment.
-		#cmd = Template("perl $DUP_SCRIPT_TO_RUN $BAM_FILE $OUTPUT_FILE $TRANSCRIPT_ANNOTATION $TRANSCRIPT_DICTIONARY 0").substitute(BAM_FILE=bamFile, OUTPUT_FILE=dupFileName, TRANSCRIPT_ANNOTATION=transcriptAnnotationFile, TRANSCRIPT_DICTIONARY=transcriptDictionaryFile, DUP_SCRIPT_TO_RUN=dupScriptToRun);
 		print(cmd)
 		returnCode = subprocess.call(cmd, shell=True);
 		if(returnCode != 0):
@@ -80,8 +93,36 @@ def CollectData(bamFile, outputFolder, refFlatAnnotationsFile, ribosomalInterval
 			if(returnCode != 0):
 				raise Exception("count dups unique failed");
 
+
+		#for debug
+		if(False):
+			#in addition, call the original old script that take LOTS of time to compare the results
+
+			if(isPairedEnd):
+				oldDupScriptToRun = "count_dup_per_gene.pl"
+			else:
+				oldDupScriptToRun = "count_dup_per_gene_single_end.pl"
+
+			oldDupScriptToRun = os.path.join(running_folder, oldDupScriptToRun)
+
+
+			dupOldFileName = outputFolder + '/picard_output/dup_OLD.txt';
+			cmd = Template("perl $OLD_DUP_SCRIPT_TO_RUN $BAM_FILE $OUTPUT_FILE $TRANSCRIPT_ANNOTATION $TRANSCRIPT_DICTIONARY 0").substitute(OLD_DUP_SCRIPT_TO_RUN=oldDupScriptToRun, BAM_FILE=bamFile, OUTPUT_FILE=dupOldFileName, TRANSCRIPT_ANNOTATION=transcriptAnnotationFile, TRANSCRIPT_DICTIONARY=transcriptDictionaryFile, DUP_SCRIPT_TO_RUN=dupScriptToRun);
+			print(cmd)
+			returnCode = subprocess.call(cmd, shell=True);
+			if(returnCode != 0):
+				raise Exception("old count dups failed");
+
+			#in addition to the previous call to the script which counted dups, now call it in a way that counts unique dups
+			dupOldUniqueFileName = outputFolder + '/picard_output/dup_OLD_unique.txt';
+			cmd = Template("perl $OLD_DUP_SCRIPT_TO_RUN $BAM_FILE $OUTPUT_FILE $TRANSCRIPT_ANNOTATION $TRANSCRIPT_DICTIONARY 1").substitute(OLD_DUP_SCRIPT_TO_RUN=oldDupScriptToRun, BAM_FILE=bamFile, OUTPUT_FILE=dupOldUniqueFileName, TRANSCRIPT_ANNOTATION=transcriptAnnotationFile, TRANSCRIPT_DICTIONARY=transcriptDictionaryFile, DUP_SCRIPT_TO_RUN=dupScriptToRun);
+			print(cmd)
+			returnCode = subprocess.call(cmd, shell=True);
+			if(returnCode != 0):
+				raise Exception("old count dups unique failed");
+
 		
-    #system("/opt/genomics/bin/CollectRnaSeqMetrics TMP_DIR=$OUTPUT_FOLDER/temp INPUT=$OUTPUT_FOLDER/picard_output/sorted.bam OUTPUT=$OUTPUT_FOLDER/picard_output/rna_metrics.txt CHART=$OUTPUT_FOLDER/picard_output/rna_coverage.pdf REF_FLAT=$refFlatFile STRAND=NONE RIBOSOMAL_INTERVALS=$ribosomalIntervalsFile\n");
+	#system("/opt/genomics/bin/CollectRnaSeqMetrics TMP_DIR=$OUTPUT_FOLDER/temp INPUT=$OUTPUT_FOLDER/picard_output/sorted.bam OUTPUT=$OUTPUT_FOLDER/picard_output/rna_metrics.txt CHART=$OUTPUT_FOLDER/picard_output/rna_coverage.pdf REF_FLAT=$refFlatFile STRAND=NONE RIBOSOMAL_INTERVALS=$ribosomalIntervalsFile\n");
     #system("/opt/genomics/bin/CollectAlignmentSummaryMetrics INPUT=$OUTPUT_FOLDER/picard_output/sorted.bam OUTPUT=$OUTPUT_FOLDER/picard_output/aln_metrics.txt\n");
     #system("/opt/genomics/bin/CollectInsertSizeMetrics INPUT=$OUTPUT_FOLDER/picard_output/sorted.bam OUTPUT=$OUTPUT_FOLDER/picard_output/aln_metrics1.txt H=$OUTPUT_FOLDER/picard_output/ins_metrics.histogram.pdf\n");
     #system("perl count_dup.pl $OUTPUT_FOLDER/picard_output/sorted.bam $OUTPUT_FOLDER/picard_output/dup.txt\n");
@@ -89,22 +130,22 @@ def CollectData(bamFile, outputFolder, refFlatAnnotationsFile, ribosomalInterval
 	#  Total number of reads
 	#  % of aligned reads	
 	with open(alnMetricsFileName) as fin:
-	    # skip the header lines
-	    for _ in xrange(6):
-		a = next(fin);
+		# skip the header lines
+		for _ in xrange(6):
+			a = next(fin)
 
-	    rows = ( line.split('\t') for line in fin );
+		rows = ( line.split('\t') for line in fin );
 
-	    firstRow = rows.next();
-	    secondRow = rows.next();
+		firstRow = rows.next();
+		secondRow = rows.next();
 	    
-	    if(secondRow[0] != "UNPAIRED"):
-		#if this is not an unpaired file, then the 2nd row is the 1st of the pair, the 3rd row is the 2nd of the pair, and we want the 4th rou which is the pair itself
-		secondRow = rows.next(); #read (and discard) 3rd row
-		secondRow = rows.next(); #read 4th row
+		if(secondRow[0] != "UNPAIRED"):
+			#if this is not an unpaired file, then the 2nd row is the 1st of the pair, the 3rd row is the 2nd of the pair, and we want the 4th rou which is the pair itself
+			secondRow = rows.next(); #read (and discard) 3rd row
+			secondRow = rows.next(); #read 4th row
 		
-		if(secondRow[0] != "PAIR"):
-			raise Exception("unrecognized structure of alignment metrics file");
+			if(secondRow[0] != "PAIR"):
+				raise Exception("unrecognized structure of alignment metrics file");
 
 
 	if(len(firstRow) != len(secondRow)):
