@@ -8,8 +8,11 @@ python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collectRsem.
 perl /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collect_dat_cufflinks.pl /home/eecs/allonwag/data/TFH/processed/FC_01481/ /data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt 0
 
 Brain May 2015 runs:
-python ~/project/singleCell/allon_script/preproc/processFolder.py -N May21Brain --rsem_bowtie_maxins 1000 --kallisto_fragment_length 540 -p 1 -r mm10 -0 /data/yosef/BRAIN/processed_15_05/150521_HS3A/ /data/yosef/BRAIN/sources/150521_HS3A/1_mismatch_better/Project_Ngai
-python ~/project/singleCell/allon_script/preproc/processFolder.py -N May21Olfa --rsem_bowtie_maxins 1000 --kallisto_fragment_length 540 -p 1 -r mm10 -0 /data/yosef/BRAIN/processed_15_05/150515_HS3A /data/yosef/BRAIN/sources/150515_HS3A/Project_Ngai8by8
+python ~/project/singleCell/allon_script/preproc/processFolder.py -N May21Brain --rsem_bowtie_maxins 1000 --kallisto_fragment_length 540 -p 1 -r mm10 -o /data/yosef/BRAIN/processed_15_05/150521_HS3A/ /data/yosef/BRAIN/sources/150521_HS3A/1_mismatch_better/Project_Ngai
+python ~/project/singleCell/allon_script/preproc/processFolder.py -N May21Olfa --rsem_bowtie_maxins 1000 --kallisto_fragment_length 540 -p 1 -r mm10 -o /data/yosef/BRAIN/processed_15_05/150515_HS3A /data/yosef/BRAIN/sources/150515_HS3A/Project_Ngai8by8
+python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collectRsem.py  --skip_collecting_dup_genes -r mm10 /data/yosef/BRAIN/processed_15_05/150521_HS3A/
+
+/data/yosef/BRAIN/sources/150521_HS3A/1_mismatch_better/Project_Ngai
 
 
 debug dup:

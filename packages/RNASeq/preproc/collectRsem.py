@@ -79,8 +79,8 @@ parser.add_argument("diretoryToProcess", action="store",
 parser.add_argument("-r", "--reference", action="store", required=True,
 		    choices=["mm10", "hg38"],
                     help="The referernce genome against which to align. Currently supported: mm10 = mm10, with ERCC spike-ins, RefSeq annotations, compiled by Allon.\nhg38 = human, compiled by Michael")                
-parser.add_argument("-o", "--output_folder", action="store", required=True,
-                    help="The directory to which output is written.")
+parser.add_argument("-o", "--output_folder", action="store", required=False, default="",
+                    help="The directory to which output is written (if not specified: add a '/rsem' folder to the input directory's name)")
 parser.add_argument('--skip_collecting_expression', action='store_true',
 	help="don't collect and overwrite the gene expression matrices")                 
 parser.add_argument('--skip_collecting_qc', action='store_true',
@@ -97,8 +97,19 @@ elif(args.reference == "hg38"):
 else:
 	raise Exception("should not happen - unsupported reference genome");
 
+
+#if the path begins with a tilde - expand it to the user's homedir
+args.diretoryToProcess = os.path.expanduser(args.diretoryToProcess);
+if(not(args.output_folder)):
+	#user did not specify an output folder
+	args.output_folder = os.path.join(args.diretoryToProcess, "rsem")
+else:
+	#if the path begins with a tilde - expand it to the user's homedir
+	args.output_folder = os.path.expanduser(args.output_folder);
+
+
 if not os.path.exists(args.output_folder):
-        os.makedirs(args.output_folder);
+	os.makedirs(args.output_folder);
         
 
 
@@ -106,12 +117,12 @@ if not os.path.exists(args.output_folder):
 GeneRecord = namedtuple('GeneRecord', 'geneID, geneName, geneNirType')
 
 with open(rsemDictionaryFile) as fin:
-    # skip the 3 header lines
-    for i in xrange(3):
-        next(fin)
+	# skip the 3 header lines
+	for i in xrange(3):
+		next(fin)
 
-    rows = ( line.split('\t') for line in fin )
-    rsemAnnotations = map(GeneRecord._make, rows)
+	rows = ( line.split('\t') for line in fin )
+	rsemAnnotations = map(GeneRecord._make, rows)
 
 rsemGeneList = [record.geneID for record in rsemAnnotations];
 NUM_RSEM_GENES = len(rsemGeneList);
