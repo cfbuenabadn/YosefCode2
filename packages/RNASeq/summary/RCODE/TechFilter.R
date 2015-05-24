@@ -37,6 +37,8 @@ TechFilter = function(eSet,gf.vec = NULL, Z_CUTOFF = 2.3, mixture = T,PROP_CUTOF
   }
   
   qual = processQf(pData(protocolData(eSet)),rownames(protocolData(eSet)))
+  #turn Infs to NA so that they will be filtered in the next line. Must to like that because is.infinite does not accept a list (while data.frame is a list)
+  qual <- data.frame(lapply(qual, function(x) replace(x, is.infinite(x),NA)), row.names=rownames(qual))
   qual = t(na.omit(t(qual)))
   tpm.matrix = exprs(eSet)
  
