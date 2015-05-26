@@ -1,18 +1,31 @@
+#!/bin/sh
 
 https://www.broadinstitute.org/~picard/picard_metric_definitions.html
 
 python ~/project/singleCell/allon_script/preproc/normalizeBrainFastaInput.py /home/eecs/allonwag/data/BRAIN/sources/150309_HS1A
+python ~/project/singleCell/allon_script/preproc/processFolder.py -N tfh_1st --paired_end --kallisto_fragment_length 300 -p 2 -r mm10 -o /data/yosef/TFH/processed/FC_01481 /data/yosef/TFH/sources/FC_01481
+python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collectRsem.py  --skip_collecting_dup_genes -r mm10 -o /home/eecs/allonwag/data/TFH/processed/FC_01481/rsem /home/eecs/allonwag/data/TFH/processed/FC_01481/
+perl /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collect_dat_cufflinks.pl /home/eecs/allonwag/data/TFH/processed/FC_01481/ /data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt 0
 
-#!/bin/sh
+Brain May 2015 runs:
+python ~/project/singleCell/allon_script/preproc/processFolder.py -N May21Brain --rsem_bowtie_maxins 1000 --kallisto_fragment_length 540 -p 1 -r mm10 -o /data/yosef/BRAIN/processed_15_05/150521_HS3A/ /data/yosef/BRAIN/sources/150521_HS3A/1_mismatch_better/Project_Ngai
+python ~/project/singleCell/allon_script/preproc/processFolder.py -N May21Olfa --rsem_bowtie_maxins 1000 --kallisto_fragment_length 540 -p 1 -r mm10 -o /data/yosef/BRAIN/processed_15_05/150515_HS3A /data/yosef/BRAIN/sources/150515_HS3A/Project_Ngai8by8
+python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collectRsem.py  --skip_collecting_dup_genes -r mm10 /data/yosef/BRAIN/processed_15_05/150521_HS3A/
 
-python ~/project/singleCell/allon_script/preproc/processSingleSample.py --skip_tophat --skip_tophat_qc -p 16 -r mm10 -o ~/archive/TFH/script/output_single  ~/archive/TFH/script/gbc.fastq.gz
+/data/yosef/BRAIN/sources/150521_HS3A/1_mismatch_better/Project_Ngai
 
-#python ~/project/singleCell/allon_script/preproc/processSingleSample.py --skip_tophat --skip_tophat_qc -p 16 --paired_end -r mm10 -o ~/archive/TFH/script/output_paired  ~/archive/TFH/script/tfh1.fastq.gz ~/archive/TFH/script/tfh2.fastq.gz
+
+debug dup:
+python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/processSingleSample.py --skip_tophat --skip_rsem --skip_kallisto --skip_trimmomatic -p 30 -r mm10 -o ~/archive/TFH/script/output_single ~/archive/TFH/script/gbc.fastq.gz
+
+python ~/project/singleCell/allon_script/preproc/processSingleSample.py --kallisto_bootstrap_samples 100 --skip_tophat --skip_tophat_qc --skip_rsem --skip_rsem_qc --skip_qc --skip_trimmomatic --do_not_rely_on_previous_trimmomatic -p 16 -r mm10 -o ~/archive/TFH/script/output_single  ~/archive/TFH/script/gbc.fastq.gz
+
+#python ~/project/singleCell/allon_script/preproc/processSingleSample.py --paired_end --kallisto_bootstrap_samples 100 --skip_tophat --skip_tophat_qc --skip_rsem --skip_rsem_qc --skip_qc --skip_trimmomatic --do_not_rely_on_previous_trimmomatic -p 16 -r mm10 -o ~/archive/TFH/script/output_paired  ~/archive/TFH/script/tfh1.fastq.gz ~/archive/TFH/script/tfh2.fastq.gz
 
 echo "" > /var/mail/allonwag; rm -f *zen*.OU; rm -f *zen*.ER; python ~/project/singleCell/allon_script/preproc/processFolder.py -N tryRnaPipe -r mm10 -o ~/archive/TFH/pipeout_single ~/data/BRAIN/sources/olfactory/truncated_GBC_L01
 
 
-
+python ~/project/singleCell/allon_script/preproc/processSingleSample.py --paired_end --kallisto_bootstrap_samples 100 -p 30 -r mm10 -o ~/archive/TFH/script/output_paired /data/yosef/BRAIN/sources/150202_HS2A/Project_Ngai/Sample_OEP02_N712_S504/OEP02_N712_S504_GTAGAGGA-AGAGTAGA_L002_R1_001.fastq.gz /data/yosef/BRAIN/sources/150202_HS2A/Project_Ngai/Sample_OEP02_N712_S504/OEP02_N712_S504_GTAGAGGA-AGAGTAGA_L002_R2_001.fastq.gz
 
 
 on queue yosef:

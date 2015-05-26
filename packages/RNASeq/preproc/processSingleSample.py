@@ -12,41 +12,13 @@ import doQC;
 import sys;
 import shutil;
 import rnaSeqPipelineUtils;
+import cleanup_after_preproc;
 
-parser = argparse.ArgumentParser(description="Process one single cell sample")
-parser.add_argument("--paired_end", action="store_true",
-                    help="The sample is paired-end (if this flag is not given, single end is assumed)")
-parser.add_argument("-r", "--reference", action="store", required=True,
-		    choices=["mm10", "hg38", "hg19"],
-                    help="The referernce genome against which to align. Currently supported: mm10 = mm10, with ERCC spike-ins, RefSeq annotations, compiled by Allon.\nhg38 = human, compiled by Michael")
-parser.add_argument("-o", "--output_folder", action="store", required=True,
-                    help="The directory to which output is written.")
-parser.add_argument("-p", "--num_threads", action="store", required=False, default=6,
-                    help="The number of allocated threads, to be passed to trimmomatic, tophat, cufflinks, and rsem.")
+parser = argparse.ArgumentParser(description="Process one single cell sample", parents=[rnaSeqPipelineUtils.common_rnaseq_parser])
 parser.add_argument('sampleFile1', action='store',
                    help='the first reads file')
 parser.add_argument('sampleFile2', action='store', nargs = '?', default='',
                    help='the second reads file (for paired-end. If the --paired_end flag is not specified and this argument is specified then an exception is thrown. If the --paired_end flag is raised but this file is not specified then again an exception is thrown')
-parser.add_argument('--skip_trimmomatic', action='store_true',
-                   help="don't run trimmomatic before running on the samples")
-parser.add_argument('--do_not_rely_on_previous_trimmomatic', action='store_true',
-                   help="This flag has effect only if the flag --skip_trimmomatic is also set. The default behavior when --skip_trimmomatic is set is to rely on outputs from a previous trimmomatic run (it is assumed that they already exist, an error is thrown otherwise). However, if the flag --do_not_rely_on_previous_trimmomatic is set, then the program totally skips the trimmomatic phase and feeds the untrimmed reads to tophat/rsem");
-parser.add_argument('--skip_tophat', action='store_true',
-                   help="skip the tophat pipeline (note that you still have to set the --skip_tophat_qc flag separately if you wish)")
-parser.add_argument('--skip_rsem', action='store_true',
-                   help="skip the rsem pipeline (note that you still have to set the --skip_rsem_qc flag separately if you wish)")
-parser.add_argument('--skip_qc', action='store_true',
-                   help="skip the qc part of the pipeline")
-parser.add_argument('--skip_tophat_qc', action='store_true',
-                   help="skip the qc part of the pipeline only for tophat (ignored if the --skip_qc flag is given, in which case qc is not run in the first place)")
-parser.add_argument('--skip_rsem_qc', action='store_true',
-                   help="skip the qc part of the pipeline only for rsem (ignored if the --skip_qc flag is given, in which case qc is not run in the first place)")
-parser.add_argument('--rsem_bowtie_maxins', action='store', default=1000,
-                   help="For paired-end data only (ignored if --paired_end is not set): the maximum fragment length (this is the value of the --fragment-length-max in rsem and -X/--maxins in bowtie2). Defaults to 1000, which is the rsem default")
-parser.add_argument('--trimmomatic_window', action='store', default='',
-                   help="The trimmomatic sliding window argument. Format: '<windowSize>:<requiredQuality>' ")
-
-
 
 args = parser.parse_args()
 
@@ -58,6 +30,9 @@ elif(args.paired_end and args.sampleFile2 == ''):
 if(args.reference == "mm10"):
 	#settings for mm10 with ERCC spike-ins and other additions required by the BRAIN
 	#project (eGFP, tdTomato, CreER)
+
+	KALLISTO_INDEX_FILE = "/data/yosef/index_files/mm10_4brain/index/kallisto_index/kallisto_index_mm10_4brain.idx"
+
 	GENOME_REFERENCE_FILE = "/data/yosef/index_files/mm10_4brain/index/GCF_000001635.23_GRCm38.p3_genomic_4brain.fna";
 	BOWTIE2_INDEX = "/data/yosef/index_files/mm10_4brain/index/GRCm38.p3_4brain";
 	TOPHAT2_TRANSCRIPTOME_INDEX = "/data/yosef/index_files/mm10_4brain/index/tophat_transcriptome_data/GRCm38.p3_refseq_annot";
@@ -81,6 +56,9 @@ if(args.reference == "mm10"):
 
 #hg19 was deprecated - then restored at Michael's request
 elif(args.reference == "hg19"):
+	KALLISTO_INDEX_FILE = ""
+
+
 	#settings for hg19 with and other additions required by the HIV project (tba)
 	#Compiled by Michael, Feb 2015
 	BOWTIE2_INDEX = "/data/yosef/index_files/hg19_HIV/index/GRCh37.p13";
@@ -101,6 +79,8 @@ elif(args.reference == "hg38"):
 	#REF_FLAT_INDEX = "/data/yosef/index_files/hg38/index/refFlat/refFlat.txt";
 	#RIBOSOMAL_INTERVALS_INDEX = "null";
 	#RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM = "null";
+
+	KALLISTO_INDEX_FILE = ""
 
 	GENOME_REFERENCE_FILE = "/data/yosef/index_files/hg38/index/hs_ref_GRCh38.ref_name.fna";
 	BOWTIE2_INDEX = "/data/yosef/index_files/hg38/index/GRCh38";
@@ -131,10 +111,11 @@ if(args.sampleFile1[-6:] != ".fastq") or (args.paired_end and args.sampleFile2[-
 	print "Input file names are" + args.sampleFile1 + (args.sampleFile2 if args.paired_end else "");
 	raise Exception("Error: The input file names indicate these are not fastq files, but only this format is supported at present")
 
+
+args.output_folder = os.path.expanduser(args.output_folder);
 args.sampleFile1 = os.path.expanduser(args.sampleFile1);
 if(args.paired_end):
 	args.sampleFile2 = os.path.expanduser(args.sampleFile2);
-
 
 #debug code:
 #subprocess.call("rm aaa*", shell=True);
@@ -169,12 +150,50 @@ if(args.paired_end):
 	#subprocess.call("gunzip -c aaa.fastq.gz > aaa.fastq", shell=True);
 
 if not os.path.exists(args.output_folder):
-        os.makedirs(args.output_folder);
+	os.makedirs(args.output_folder);
 
 #gunzipped files to clear at the end of the run
 filesToClear = [args.sampleFile1];
 if(args.paired_end):
 	filesToClear = filesToClear + [args.sampleFile2]
+
+
+if(not(KALLISTO_INDEX_FILE)):
+	print("Kallisto index has not been defined... skipping Kallisto");
+	args.skip_kallisto = True
+
+DO_KALLISTO = True;
+if(DO_KALLISTO and not(args.skip_kallisto)):
+	print("**********************************************************");
+	print("**********************************************************");
+	print("Running Kallisto")
+
+	#I decided to do Kallisto before trimmomatic because I was afraid that Kallisto's fragment length estimation will not work correctly
+	#if we start trimming reads (and anyhow, once you do not align but rather pseudo-align errors in BPs are less important
+
+	if not os.path.exists(args.output_folder + "/kallisto_output"):
+		os.makedirs(args.output_folder + "/kallisto_output");
+
+
+	kallistoCmd = Template("kallisto quant -i $KALLISTO_INDEX -o $OUTPUT_FOLDER -b $KALLISTO_BOOTSTRAP_SAMPLES").\
+		substitute(KALLISTO_INDEX=KALLISTO_INDEX_FILE, OUTPUT_FOLDER=args.output_folder + "/kallisto_output",
+				   KALLISTO_BOOTSTRAP_SAMPLES=args.kallisto_bootstrap_samples);
+
+	if(args.paired_end):
+		kallistoCmd += Template(" $SAMPLE_FILE1 $SAMPLE_FILE2").substitute(SAMPLE_FILE1=args.sampleFile1, SAMPLE_FILE2=args.sampleFile2)
+	else:
+		kallistoCmd += Template(" --single -l $KALLISTO_FRAGMENT_LENGTH $SAMPLE_FILE1").substitute(KALLISTO_FRAGMENT_LENGTH=args.kallisto_fragment_length, SAMPLE_FILE1=args.sampleFile1)
+
+	print(kallistoCmd)
+	sys.stdout.flush();
+	returnCode = subprocess.call(kallistoCmd, shell=True);
+	if(returnCode != 0):
+		raise Exception("Kallisto failed");
+
+	print("**********************************************************");
+	print("**********************************************************");
+	print("Kallisto done")
+
 
 DO_TRIMMOMATIC = True;
 #enter only if the user didn't select --skip_trimmomatic OR he did, but he did not mark the --do_not_rely_on_previous_trimmomatic (which means he does want to rely on previous output)
@@ -278,12 +297,12 @@ if(DO_TRIMMOMATIC and not(args.skip_trimmomatic and args.do_not_rely_on_previous
 	print("**********************************************************");
 	print("checking that Trimmomatic output is not empty...");
 
-        if(os.stat(args.sampleFile1).st_size == 0):
+	if(os.stat(args.sampleFile1).st_size == 0):
 		print "Danger, Will Robinson, sample file 1 was left empty after running trimmomatic!"
-	if(args.paired_end and (os.stat(args.sampleFile1).st_size == 0)):
+	if(args.paired_end and (os.stat(args.sampleFile2).st_size == 0)):
 		print "Danger, Will Robinson, sample file 2 was left empty after running trimmomatic!"
 
-        print("**********************************************************");
+	print("**********************************************************");
 	print("**********************************************************");
 	print("trimmomatic done!");
 
@@ -517,6 +536,7 @@ if(RUN_QC and not(args.skip_qc)):
 	commonMetrics = doQC.CollectFastQcData(args.output_folder, args.paired_end);
 	#commonMetrics - common to both the rsem and tophat pipelines
 
+
 	RUN_QC_TOPHAT = True;
 	if(RUN_QC_TOPHAT and not(args.skip_tophat_qc)):
 		sortedBamFile = args.output_folder + "/tophat_output/picard_output/sorted.bam";
@@ -544,9 +564,9 @@ if(RUN_QC and not(args.skip_qc)):
 
 
 	#if(args.paired_end):
-	#	qcComand = Template("perl /project/eecs/yosef/singleCell/allon_script/preproc/qc.pl $QC_OUTPUT_DIR  $REF_FLAT_FILE $RIBOSOMAL_INTERVALS_INDEX $SAMPLE_FILE1 $SAMPLE_FILE2").substitute(QC_OUTPUT_DIR=args.output_folder, SAMPLE_FILE1=args.sampleFile1, SAMPLE_FILE2=args.sampleFile2, REF_FLAT_FILE=REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX=RIBOSOMAL_INTERVALS_INDEX);
+	#	qcComand = Template("perl qc.pl $QC_OUTPUT_DIR  $REF_FLAT_FILE $RIBOSOMAL_INTERVALS_INDEX $SAMPLE_FILE1 $SAMPLE_FILE2").substitute(QC_OUTPUT_DIR=args.output_folder, SAMPLE_FILE1=args.sampleFile1, SAMPLE_FILE2=args.sampleFile2, REF_FLAT_FILE=REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX=RIBOSOMAL_INTERVALS_INDEX);
 	#else:
-	#	qcComand = Template("perl /project/eecs/yosef/singleCell/allon_script/preproc/qc.pl $QC_OUTPUT_DIR  $REF_FLAT_FILE $RIBOSOMAL_INTERVALS_INDEX $SAMPLE_FILE1").substitute(QC_OUTPUT_DIR=args.output_folder, SAMPLE_FILE1=args.sampleFile1, REF_FLAT_FILE=REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX=RIBOSOMAL_INTERVALS_INDEX);
+	#	qcComand = Template("perl qc.pl $QC_OUTPUT_DIR  $REF_FLAT_FILE $RIBOSOMAL_INTERVALS_INDEX $SAMPLE_FILE1").substitute(QC_OUTPUT_DIR=args.output_folder, SAMPLE_FILE1=args.sampleFile1, REF_FLAT_FILE=REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX=RIBOSOMAL_INTERVALS_INDEX);
 
 
 	#print(qcComand)
@@ -570,6 +590,8 @@ for remFile in filesToClear:
 	if(returnCode != 0):
 		raise Exception("rm of file to clear failed");
 
+if(not(args.do_not_clean_intermediary_files)):
+	cleanup_after_preproc.cleanTemporaryFiles(args.output_folder)
 
 #print("**********************************************************");
 #print("**********************************************************");

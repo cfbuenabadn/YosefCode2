@@ -4,6 +4,10 @@
 # Nir Yosef's lab, UC Berkeley
 # Jan 2015
 
+
+#NOTE that the use of os.walk here is not that crisp because this is a recursive function that iterates on all the subdirectories tree...
+#Or maybe it's not a bug but rather a feature... can work recursively on a folder...
+
 import os;
 import glob;
 import argparse;

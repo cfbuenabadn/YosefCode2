@@ -19,6 +19,21 @@
 # 9. For count_dup_unique: uses too much memory. We can increase the $GRID parameter. It should be a ~linear trade off between memory and running time. Maybe parallelization?
 # 10. add a parameter for "declared number of processors" to allow using a different number of processors than was declared... this will allow qsub to put more jobs per machine
 # 11. scripts for counting reads: htseq and featureCounts http://genomespot.blogspot.com/2014/09/read-counting-with-featurecounts.html
+# 12. support Kallisto
+# 13. Broad's qc: http://www.broadinstitute.org/cancer/cga/rnaseqc_run
+# 14. Use Prinseq as another way to trim? (supports trimming low complexity reads,and other goodies see http://www.pnas.org/content/suppl/2015/05/14/1507125112.DCSupplemental/pnas.1507125112.sapp.pdf)
+# 15. Make sample name meaningful in processFolder: instead of the -N for the project, do -N for the sample name
+
+
+#and make the argparse parent: did this but still replicates command line arguments when writing the PBS script.
+#I should have used the: argparse.REMAINDER. All the remaining command-line arguments are gathered into a list. This is commonly useful for command line utilities that dispatch to other command line utilities:
+#BUT then I have to give the remainder at the end, and cannot use them upfront....
+#maybe convert the parsed namespace object back to a string and omit the arguments unique to processFolder?
+#https://docs.python.org/3/library/argparse.html
+#https://docs.python.org/3/library/argparse.html#the-parse-args-method
+
+#call Nir's new count dup script
+
 
 from collections import namedtuple;
 import argparse;
@@ -64,8 +79,8 @@ parser.add_argument("diretoryToProcess", action="store",
 parser.add_argument("-r", "--reference", action="store", required=True,
 		    choices=["mm10", "hg38"],
                     help="The referernce genome against which to align. Currently supported: mm10 = mm10, with ERCC spike-ins, RefSeq annotations, compiled by Allon.\nhg38 = human, compiled by Michael")                
-parser.add_argument("-o", "--output_folder", action="store", required=True,
-                    help="The directory to which output is written.")
+parser.add_argument("-o", "--output_folder", action="store", required=False, default="",
+                    help="The directory to which output is written (if not specified: add a '/rsem' folder to the input directory's name)")
 parser.add_argument('--skip_collecting_expression', action='store_true',
 	help="don't collect and overwrite the gene expression matrices")                 
 parser.add_argument('--skip_collecting_qc', action='store_true',
@@ -82,8 +97,19 @@ elif(args.reference == "hg38"):
 else:
 	raise Exception("should not happen - unsupported reference genome");
 
+
+#if the path begins with a tilde - expand it to the user's homedir
+args.diretoryToProcess = os.path.expanduser(args.diretoryToProcess);
+if(not(args.output_folder)):
+	#user did not specify an output folder
+	args.output_folder = os.path.join(args.diretoryToProcess, "rsem")
+else:
+	#if the path begins with a tilde - expand it to the user's homedir
+	args.output_folder = os.path.expanduser(args.output_folder);
+
+
 if not os.path.exists(args.output_folder):
-        os.makedirs(args.output_folder);
+	os.makedirs(args.output_folder);
         
 
 
@@ -91,12 +117,12 @@ if not os.path.exists(args.output_folder):
 GeneRecord = namedtuple('GeneRecord', 'geneID, geneName, geneNirType')
 
 with open(rsemDictionaryFile) as fin:
-    # skip the 3 header lines
-    for i in xrange(3):
-        next(fin)
+	# skip the 3 header lines
+	for i in xrange(3):
+		next(fin)
 
-    rows = ( line.split('\t') for line in fin )
-    rsemAnnotations = map(GeneRecord._make, rows)
+	rows = ( line.split('\t') for line in fin )
+	rsemAnnotations = map(GeneRecord._make, rows)
 
 rsemGeneList = [record.geneID for record in rsemAnnotations];
 NUM_RSEM_GENES = len(rsemGeneList);
