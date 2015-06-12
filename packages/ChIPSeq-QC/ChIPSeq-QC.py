@@ -40,7 +40,7 @@ parser.set_defaults(fRemoveDup=False)
 
 grpParam = parser.add_argument_group('If you are not running this on the YosefLab system, please enter full paths to the \
 bioinformatics programs and directories below.')
-grpParam.add_argument('--picard_dir', type=str, dest='dirPicard', default="/opt/pkg/picard-tools-1.108/lib", help='Please enter the full path for where you have stored Picard tools, default is /opt/pkg/picard-tools-1.108/lib')
+grpParam.add_argument('--picard_dir', type=str, dest='dirPicard', default="/opt/genomics/bin", help='Please enter the full path for where you have stored Picard tools, default is /opt/pkg/picard-tools-1.108/lib')
 grpParam.add_argument('--samtools', type=str, dest='cmdSamtools', default="/opt/genomics/bin/samtools", help='Please enter the full path for where you have stored samtools, default is /opt/genomics/bin/samtools')
 grpParam.add_argument('--bowtie', type=str, dest='cmdBowtie', default="/data/yosef/CD8_effector_diff/programs/bowtie-1.1.1/bowtie", help='Please enter the full path for where you have stored bowtie, default is /data/yosef/CD8_effector_diff/programs/bowtie-1.1.1/bowtie')
 grpParam.add_argument('--igvtools', type=str, dest='cmdIGV', default="/opt/pkg/IGVTools/igvtools", help='Please enter the full path for where you have stored igvtools, default is /opt/pkg/IGVTools/igvtools')
@@ -55,7 +55,7 @@ args = parser.parse_args()
 #c_dirGenomeIndex = "/data/yosef/index_files/mm9/genome/mm9"
 
 dirSrc = os.path.dirname(os.path.realpath(__file__))  + os.sep + "src"
-sys.stderr.write("Testing src path: " + dirSrc)
+sys.stderr.write("Testing src path: " + dirSrc + "\n")
 
 if args.dirTmp =="":
     args.dirTmp = args.dirOut + os.sep + "tmp"
@@ -63,10 +63,10 @@ if args.dirTmp =="":
 # Step 0: If needed, convert BAM to FASTQ. We run FASTQC on these files later.
 #   Input: Unaligned or aligned bam
 #   Output: 1 or 2 FASTQ files in dirOUT, depending on whether or not BAM is flagges as --paired
-    
+SeqQC.check_create_dir(args.dirOut)  
 fileLog = open(args.dirOut + os.sep + "ChipSeqQC.log","w")
 
-SeqQC.check_create_dir(args.dirOut)
+
 strGenome = os.path.split(args.dirRefGenome)[1]
 print "Preparing to run QC on your reads and align them to the " + strGenome + " genome."
 bSkipAln = False
@@ -76,7 +76,7 @@ if (args.strBAM!= "" and args.fPaired== False):
     strProjectStem = SeqQC.GetStem(os.path.basename(args.strBAM),"bam")
     strFASTQ_1 = args.dirOut + os.sep + strProjectStem + "_1.fastq"
     fPaired= False
-    sp.check_call(["java","-jar","-Xmx2g", args.cmdSamToFASTQ,"I="+args.strBAM, "F="+strFASTQ_1, "VALIDATION_STRINGENCY="+c_strStringency],stderr=fileLog)
+    sp.check_call(["java","-jar","-Xmx2g", args.dirPicard+os.sep+"SamToFastq.jar","I="+args.strBAM, "F="+strFASTQ_1, "VALIDATION_STRINGENCY="+c_strStringency],stderr=fileLog)
 
 elif (args.strBAM!= "" and args.fPaired== True):
     print "Converting BAM to FASTQ for pipeline, treating it as paired end data."
@@ -85,7 +85,10 @@ elif (args.strBAM!= "" and args.fPaired== True):
     strFASTQ_2 = args.dirOut + os.sep + strProjectStem + "_2.fastq"
     fPaired= True
    
-    sp.check_call(["java","-jar","-Xmx2g", args.dirPicard+os.sep+"SamToFastq.jar","I="+args.strBAM, "F="+strFASTQ_1, "F2="+strFASTQ_2, "VALIDATION_STRINGENCY="+c_strStringency],stderr=fileLog)    
+    #sp.check_call(["java","-jar","-Xmx2g", args.dirPicard+os.sep+"SamToFastq.jar","I="+args.strBAM, "F="+strFASTQ_1, "F2="+strFASTQ_2, "VALIDATION_STRINGENCY="+c_strStringency],stderr=fileLog)    
+ 
+    sp.check_call([args.dirPicard+os.sep+"SamToFastq.jar","I="+args.strBAM, "F="+strFASTQ_1, "F2="+strFASTQ_2, "VALIDATION_STRINGENCY="+c_strStringency],stderr=fileLog)    
+  
  
 elif (args.strFASTQ_1!="" and args.strFASTQ_2==""):
     print "Working with one FASTQ file, treating it as single end data."
@@ -114,8 +117,11 @@ elif (args.strPreAlignedBAM!=""):
     if fPaired == True:
         print "Converting aligned BAM to FASTQ for QC downstream, treating it as paired end data."
         strFASTQ_2 = args.dirOut + os.sep + strProjectStem + "_2.fastq"
-        sp.check_call(["java","-jar","-Xmx2g", args.dirPicard+os.sep+"SamToFastq.jar","I="+args.strPreAlignedBAM, 
-        "F="+strFASTQ_1, "F2="+strFASTQ_2,"VALIDATION_STRINGENCY="+c_strStringency],stderr=fileLog)    
+        print args.dirPicard+os.sep+"SamToFastq"
+        #sp.check_call(["java","-jar","-Xmx2g", args.dirPicard+os.sep+"SamToFastq.jar","I="+args.strPreAlignedBAM, 
+        #"F="+strFASTQ_1, "F2="+strFASTQ_2,"VALIDATION_STRINGENCY="+c_strStringency],stderr=fileLog)
+        sp.check_call([args.dirPicard+os.sep+"SamToFastq","I="+args.strPreAlignedBAM,"F="+strFASTQ_1, "F2="+strFASTQ_2,"VALIDATION_STRINGENCY="+c_strStringency],stderr=fileLog)    
+    
     else:
         print "Converting aligned BAM to FASTQ for QC downstream, treating it as single end data."
         sp.check_call(["java","-jar","-Xmx2g", args.dirPicard+os.sep+"SamToFastq.jar","I="+args.strPreAlignedBAM,
@@ -178,22 +184,24 @@ else:
 print "Step 3 -Sort and Remove Duplicates"
 print "Step 3 - Sorting..."
 strSortedBam = args.dirOut + os.sep + "aligned_sorted.bam"
-sp.check_call(["java","-Xmx1200m","-jar", args.dirPicard+os.sep+"SortSam.jar","I="+strAlignBam,
-"O="+strSortedBam, "SO=coordinate", "TMP_DIR="+args.dirTmp],stderr=fileLog)
+#sp.check_call(["java","-Xmx1200m","-jar", args.dirPicard+os.sep+"SortSam.jar","I="+strAlignBam,
+#"O="+strSortedBam, "SO=coordinate", "TMP_DIR="+args.dirTmp],stderr=fileLog)
 
+sp.check_call([ args.dirPicard+os.sep+"SortSam","I="+strAlignBam,
+"O="+strSortedBam, "SO=coordinate", "TMP_DIR="+args.dirTmp],stderr=fileLog)
 
 
 if args.fRemoveDup==True:
     print "Step 3 - Removing Duplicates...";
     strSortedNoDupBam = args.dirOut+os.sep + "aligned_sorted_no_duplicates.bam"
-    sp.check_call(["java","-Xmx1000m", "-jar",args.dirPicard+os.sep+"MarkDuplicates.jar","REMOVE_DUPLICATES=true",
+    sp.check_call([args.dirPicard+os.sep+"MarkDuplicates","REMOVE_DUPLICATES=true",
     "METRICS_FILE="+args.dirOut+os.sep+"duplicate_reads.txt","INPUT="+strSortedBam,
     "OUTPUT="+strSortedNoDupBam, "TMP_DIR="+args.dirTmp,"ASSUME_SORTED=true"],stderr=fileLog)
     strTDFfile =  args.dirOut + os.sep+"aligned_sorted_no_duplicates.tdf"
 else:
     print "Step 3 - Marking Duplicates...";
     strSortedNoDupBam = args.dirOut+os.sep + "aligned_sorted_marked_duplicates.bam"
-    sp.check_call(["java","-Xmx1000m", "-jar",args.dirPicard+os.sep+"MarkDuplicates.jar","REMOVE_DUPLICATES=false",
+    sp.check_call([args.dirPicard+os.sep+"MarkDuplicates","REMOVE_DUPLICATES=false",
     "METRICS_FILE="+args.dirOut+os.sep+"duplicate_reads.txt","INPUT="+strSortedBam,
     "OUTPUT="+strSortedNoDupBam, "TMP_DIR="+args.dirTmp,"ASSUME_SORTED=true"],stderr=fileLog)
     strTDFfile =  args.dirOut + os.sep+"aligned_sorted_marked_duplicates.tdf"
@@ -245,13 +253,13 @@ print "Step 6: Report Summary Information (alignment metrics, insert size metric
 
 
 #system("java -Xmx1000m -jar /opt/pkg/picard-tools-1.108/lib/CollectAlignmentSummaryMetrics.jar INPUT=$OUTPUT_FOLDER/sorted.bam OUTPUT=$OUTPUT_FOLDER/Fastqc/aln_metrics.txt\n");
-sp.call(["java","-Xmx1000m","-jar", args.dirPicard + os.sep + "CollectAlignmentSummaryMetrics.jar", "Input="+strSortedBam ,"OUTPUT="+dirFASTQC+os.sep+"aln_metrics.txt", "TMP_DIR="+args.dirTmp],stderr=fileLog)
+sp.call([args.dirPicard + os.sep + "CollectAlignmentSummaryMetrics", "Input="+strSortedBam ,"OUTPUT="+dirFASTQC+os.sep+"aln_metrics.txt", "TMP_DIR="+args.dirTmp],stderr=fileLog)
 
 #system("java -Xmx1000m -jar /opt/pkg/picard-tools-1.108/lib/CollectInsertSizeMetrics.jar INPUT=$OUTPUT_FOLDER/sorted.bam OUTPUT=$OUTPUT_FOLDER/Fastqc/aln_metrics1.txt H=$OUTPUT_FOLDER/Fastqc/ins_metrics.histogram.pdf\n");
-sp.call(["java","-Xmx1000m","-jar", args.dirPicard + os.sep + "CollectInsertSizeMetrics.jar", "Input="+strSortedBam,"OUTPUT="+dirFASTQC+os.sep+"insert_metrics.txt", "H="+dirFASTQC+os.sep+"ins_metrics.histogram.pdf", "TMP_DIR="+args.dirTmp],stderr=fileLog)
+sp.call([args.dirPicard + os.sep + "CollectInsertSizeMetrics", "Input="+strSortedBam,"OUTPUT="+dirFASTQC+os.sep+"insert_metrics.txt", "H="+dirFASTQC+os.sep+"ins_metrics.histogram.pdf", "TMP_DIR="+args.dirTmp],stderr=fileLog)
 
 #system("perl /data/yosef/CD8_effector_diff/scripts/preproc-jim/count_dup.pl $OUTPUT_FOLDER/sorted.bam $OUTPUT_FOLDER/Fastqc/dup.txt\n");
-sp.call(["perl",dirSrc + os.sep + "count_dup.pl",strSortedNoDupBam,dirFASTQC+os.sep+"dup.txt"])
+sp.call(["perl",dirSrc + os.sep + "count_dup.pl",strSortedNoDupBam,dirFASTQC+os.sep+"dup.txt"],stderr=fileLog)
 
 # add a Python script here like Nir's
 # Have it go through the bam file, line by line, check the flags on each, nd count:
@@ -264,7 +272,7 @@ strSummaryStats = args.dirOut+os.sep+"SummaryStats.tab"
 SeqQC.ParseFlagStatOutput(strAlignBamStats,strSummaryStats)
 
 ###############################################################################
-# Step 7: Add the FASTQ check results to SummaryStats.tab
+# Step 7: Add the FASTQ check results and other info to SummaryStats.tab
 
 
 astrPrimerFiles = [dirFASTQC+os.sep+"primer.1.txt"]
@@ -273,8 +281,8 @@ if fPaired==True:
 
 
 SeqQC.CheckPrimers(astrPrimerFiles,strSummaryStats)
-SeqQC.GetAlnData (dirFASTQC+os.sep+"aln_metrics.txt",strSummaryStats)
-
+SeqQC.GetAlnData(dirFASTQC+os.sep+"aln_metrics.txt",strSummaryStats)
+SeqQC.GetAlnData(args.dirOut  + os.sep + "duplicate_reads.txt",strSummaryStats,2,1)
 
 
 
@@ -299,9 +307,9 @@ if args.fRunMACS == True:
 os.remove(strSortedBam)
 
 #Remove FASTQ files if we did not start with FASTQ files.
-if (args.strFASTQ_1=="" and args.strFASTQ_2==""):
+if (args.strFASTQ_1==""):
     os.remove(strFASTQ_1)
-    if os.path.isfile(strFASTQ_2):
-        os.remove(strFASTQ_2)
+if (args.strFASTQ_1=="" and args.strFASTQ_2=="" and fPaired==True):
+    os.remove(strFASTQ_2)
         
 fileLog.close()
