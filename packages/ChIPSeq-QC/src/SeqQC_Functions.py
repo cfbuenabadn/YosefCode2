@@ -69,7 +69,7 @@ def ParseFlagStatOutput (strSAMOutput,strFormattedOut):
             fileOut.write('\t'.join(["PercentAligned","NA","\n"]))
         
         iIndex=1        
-        fileOut.write('\t'.join(["TotalDuplicates",AddStrings(astrQC[iIndex],astrNotQC[iIndex]),"\n"]))
+        #fileOut.write('\t'.join(["TotalDuplicates",AddStrings(astrQC[iIndex],astrNotQC[iIndex]),"\n"]))
     return
     
 def CheckPrimers (astrPrimerFiles,strFormattedOut):
@@ -87,7 +87,7 @@ def CheckPrimers (astrPrimerFiles,strFormattedOut):
     with open(strFormattedOut,'a') as fileOut:
         fileOut.write('\t'.join(["PercentPrimerHits",str(dPctPrimer),"\n"]))
         
-def GetAlnData (strAlnFile,strFormattedOut):
+def GetAlnData (strAlnFile,strFormattedOut,iLines=4,iKeep=3):
     iGetLines = 0
     aaData = []    
     with open(strAlnFile, 'rb') as fileAln:
@@ -98,15 +98,17 @@ def GetAlnData (strAlnFile,strFormattedOut):
                     iGetLines = iGetLines-1
                 if mtchName:
                     #print strLine
-                    iGetLines =4
+                    iGetLines =iLines
 
     aaTranspose = zip(*aaData)
     
     with open(strFormattedOut,'a') as fileOut:
         for tupData in aaTranspose:
-            fileOut.write('\t'.join([tupData[0].strip(),tupData[3].strip(),"\n"]))    
+            fileOut.write('\t'.join([tupData[0].strip(),tupData[iKeep].strip(),"\n"]))    
     
     return
+    
+
 
 def GetComplexity(strDupTxt,strFormattedOut):
     astrData = open(strDupTxt).readline().split('\t')

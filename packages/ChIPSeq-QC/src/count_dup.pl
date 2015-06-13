@@ -1,3 +1,5 @@
+# Program originally by Nir, additional comments added by Jim K.
+
 use strict;
 my($inp,$out)=@ARGV;
 ## "$inp" is bam filename
@@ -11,15 +13,19 @@ open (FD_sam, "/opt/genomics/bin/samtools view -h $inp |");
 while(<FD_sam>){
         if(/^\@/){next;}
         chomp;my ($nm,$bitmap,$chrom,$pos,$mapq,$cigar,$rnext,$pnext,@rest)=split(/\t/);
+	# If read mapped and passed QC, proceed.
         if(!($chrom=~/\*/ || $bitmap&0x200 || $bitmap&0x4 || $bitmap&0x8)){
-                my $strand=1;if($bitmap&0x10){$strand=0;};$npos_strand+=$strand;$counter++;
-                if($bitmap&0x40){
+		#  Check the strand, add 1 to counter.                
+		my $strand=1;if($bitmap&0x10){$strand=0;};$npos_strand+=$strand;$counter++;
+		# If it's the first segment of pair, and is not already in the hash (frag) add it.                
+		if($bitmap&0x40){
                         my $mate_strand=1;if($bitmap&0x20){$mate_strand=0;}
                         my $key="$chrom-$pos-$strand-$pnext-$mate_strand";
                         #my $key="$chrom-$pos-$pnext";
                         if(!exists($frag{"$nm-$key"})){$frag{"$nm-$key"}=1;$ufrag{$key}++;}
                 }
         }
+	# If we're on a new chromosome, sum up the number of unpaired fragments, dropping one from each key?
         if($prv_chrom ne $chrom && $prv_chrom ne "" && $chrom!~/\*/){
                 my $dfcounter1=0;foreach my $k(keys %ufrag){$dfcounter1+=$ufrag{$k}-1;}
                 print "In $prv_chrom :: Found $dfcounter1 duplicates from ".scalar(keys %ufrag)." unique fragments and ".scalar(keys %frag)." total fragments\n";
