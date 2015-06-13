@@ -10,9 +10,11 @@ perl /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collect_dat_cu
 Brain May 2015 runs:
 python ~/project/singleCell/allon_script/preproc/processFolder.py -N May21Brain --rsem_bowtie_maxins 1000 --kallisto_fragment_length 540 -p 1 -r mm10 -o /data/yosef/BRAIN/processed_15_05/150521_HS3A/ /data/yosef/BRAIN/sources/150521_HS3A/1_mismatch_better/Project_Ngai
 python ~/project/singleCell/allon_script/preproc/processFolder.py -N May21Olfa --rsem_bowtie_maxins 1000 --kallisto_fragment_length 540 -p 1 -r mm10 -o /data/yosef/BRAIN/processed_15_05/150515_HS3A /data/yosef/BRAIN/sources/150515_HS3A/Project_Ngai8by8
-python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collectRsem.py  --skip_collecting_dup_genes -r mm10 /data/yosef/BRAIN/processed_15_05/150521_HS3A/
 
-/data/yosef/BRAIN/sources/150521_HS3A/1_mismatch_better/Project_Ngai
+python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collectRsem.py  --skip_collecting_dup_genes -r mm10 /data/yosef/BRAIN/processed_15_05/150521_HS3A/
+python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collectRsem.py  --skip_collecting_dup_genes -r mm10 /data/yosef/BRAIN/processed_15_05/150515_HS3A/
+perl /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collect_dat_cufflinks.pl /data/yosef/BRAIN/processed_15_05/150521_HS3A/ /data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt 0
+perl /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collect_dat_cufflinks.pl /data/yosef/BRAIN/processed_15_05/150515_HS3A/ /data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt 0
 
 
 debug dup:
@@ -25,7 +27,8 @@ python ~/project/singleCell/allon_script/preproc/processSingleSample.py --kallis
 echo "" > /var/mail/allonwag; rm -f *zen*.OU; rm -f *zen*.ER; python ~/project/singleCell/allon_script/preproc/processFolder.py -N tryRnaPipe -r mm10 -o ~/archive/TFH/pipeout_single ~/data/BRAIN/sources/olfactory/truncated_GBC_L01
 
 
-python ~/project/singleCell/allon_script/preproc/processSingleSample.py --paired_end --kallisto_bootstrap_samples 100 -p 30 -r mm10 -o ~/archive/TFH/script/output_paired /data/yosef/BRAIN/sources/150202_HS2A/Project_Ngai/Sample_OEP02_N712_S504/OEP02_N712_S504_GTAGAGGA-AGAGTAGA_L002_R1_001.fastq.gz /data/yosef/BRAIN/sources/150202_HS2A/Project_Ngai/Sample_OEP02_N712_S504/OEP02_N712_S504_GTAGAGGA-AGAGTAGA_L002_R2_001.fastq.gz
+python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/processSingleSample.py --do_not_clean_intermediary_files --paired_end --skip_kallisto --skip_rsem --skip_qc -p 20 -r mm10 -o ~/archive/TFH/script/output_paired /data/yosef/BRAIN/sources/150202_HS2A/Project_Ngai/Sample_OEP02_N712_S504/OEP02_N712_S504_GTAGAGGA-AGAGTAGA_L002_R1_combined.fastq.gz /data/yosef/BRAIN/sources/150202_HS2A/Project_Ngai/Sample_OEP02_N712_S504/OEP02_N712_S504_GTAGAGGA-AGAGTAGA_L002_R2_combined.fastq.gz
+python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/processSingleSample.py --do_not_clean_intermediary_files --skip_kallisto --skip_rsem --skip_qc -p 20 -r mm10 -o ~/archive/TFH/script/output_single /data/yosef/BRAIN/sources/150202_HS2A/Project_Ngai/Sample_OEP02_N711_S502/OEP02_N711_S502_AAGAGGCA-CTCTCTAT_L002_R1_combined.fastq.gz
 
 
 on queue yosef:

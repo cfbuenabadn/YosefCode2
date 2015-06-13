@@ -379,6 +379,29 @@ if(RUN_CUFFLINKS_PIPELINE and not(args.skip_tophat)):
 	if(returnCode != 0):
 		raise Exception("cufflinks failed");
 
+
+	print("**********************************************************");
+	print("**********************************************************");
+	print("Counting features on the Tophat2 alignment");
+	#for featureCounts output, see: https://groups.google.com/forum/#!topic/subread/JPPw9lVfgpw
+
+	#IMPORTANT: I give the gtf file that was converted from the GFF3 with cufflink's gffread utilitiy (at least for the mm10_4brain),
+	# even though tophat itself used the gff3 annotation. This is because featureCounts wants a gtf file...
+
+	#-C: exclude chimeric fragments from the count (those fragments that have their two ends aligned to different chromosomes)
+	pairedEndFeatureCountArgs = "-p -C" if(args.paired_end) else ''
+	countCmd = Template("/opt/genomics/bin/featureCounts " + pairedEndFeatureCountArgs + " -R -T $NUM_THREADS -t exon -g gene_id -a $ANNOTATION" +
+						" -o $OUTPUT_FOLDER/tophat_output/feature_counts.txt $OUTPUT_FOLDER/tophat_output/picard_output/sorted.bam").substitute(NUM_THREADS=args.num_threads, ANNOTATION=RSEM_TRANSCRIPT_ANNOTATION, OUTPUT_FOLDER=args.output_folder)
+
+
+	print(countCmd)
+	sys.stdout.flush();
+	returnCode = subprocess.call(countCmd, shell=True);
+	if(returnCode != 0):
+		raise Exception("tophat2 count features failed");
+
+
+
 	print("**********************************************************");
 	print("**********************************************************");
 	print("cufflinks pipeline done!");
@@ -403,15 +426,17 @@ if(RUN_RSEM_PIPELINE and not(args.skip_rsem)):
 		print("Running rsem");
 		#Note that in rsem I use the --output-genome-bam flag to generate a genome bam (in addition to the transcriptome bam that is always created) - rsem will also sort this bam. This is necessary for the QC later.
 		if(args.paired_end):
-			rsemComand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --bowtie2 --estimate-rspd --output-genome-bam --sampling-for-bam --paired-end --fragment-length-max $RSEM_BOWTIE_MAXINS $SAMPLE_FILE1 $SAMPLE_FILE2 $RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder, RSEM_INDEX=RSEM_INDEX, SAMPLE_FILE1=args.sampleFile1, SAMPLE_FILE2=args.sampleFile2, NUM_THREADS=args.num_threads, RSEM_BOWTIE_MAXINS=args.rsem_bowtie_maxins);
+			rsemCommand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --bowtie2 --estimate-rspd --output-genome-bam --sampling-for-bam --paired-end --fragment-length-max $RSEM_BOWTIE_MAXINS $SAMPLE_FILE1 $SAMPLE_FILE2 $RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder, RSEM_INDEX=RSEM_INDEX, SAMPLE_FILE1=args.sampleFile1, SAMPLE_FILE2=args.sampleFile2, NUM_THREADS=args.num_threads, RSEM_BOWTIE_MAXINS=args.rsem_bowtie_maxins);
 		else:
-			rsemComand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --bowtie2 --estimate-rspd --output-genome-bam --sampling-for-bam $SAMPLE_FILE1 $RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder, RSEM_INDEX=RSEM_INDEX, SAMPLE_FILE1=args.sampleFile1, NUM_THREADS=args.num_threads);
+			rsemCommand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --bowtie2 --estimate-rspd --output-genome-bam --sampling-for-bam $SAMPLE_FILE1 $RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder, RSEM_INDEX=RSEM_INDEX, SAMPLE_FILE1=args.sampleFile1, NUM_THREADS=args.num_threads);
 
-		print(rsemComand)
+		print(rsemCommand)
 		sys.stdout.flush();
-		returnCode = subprocess.call(rsemComand, shell=True);
+		returnCode = subprocess.call(rsemCommand, shell=True);
 		if(returnCode != 0):
 			raise Exception("rsem failed");
+
+
 	else:
 		#I am running bowtie manually and then giving the output to rsem because sometimes the bowtie parameters need to be tweaked and rsem does not support changes of many of the parameters at present
 		print("Running bowtie for rsem")
@@ -440,7 +465,7 @@ if(RUN_RSEM_PIPELINE and not(args.skip_rsem)):
 		#params that are relevant only in paired_end run
 		rsemParamsOnlyForPairedEnd = Template("--fragment-length-max $RSEM_BOWTIE_MAXINS").substitute(RSEM_BOWTIE_MAXINS=args.rsem_bowtie_maxins) if args.paired_end else ""
 		#Note that in rsem I use the --output-genome-bam flag to generate a genome bam (in addition to the transcriptome bam that is always created) - rsem will also sort this bam. This is necessary for the QC later.
-		rsemComand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --estimate-rspd " +
+		rsemCommand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --estimate-rspd " +
 								"$RSEM_PARAMS_ONLY_FOR_PAIRED_END --output-genome-bam --sampling-for-bam --bam $IS_PAIRED_END $OUTPUT_FOLDER/rsem_output/aligned_by_bowtie2.bam " +
 								"$RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder,
 																										   RSEM_INDEX=RSEM_INDEX,
@@ -448,12 +473,41 @@ if(RUN_RSEM_PIPELINE and not(args.skip_rsem)):
 																										   RSEM_PARAMS_ONLY_FOR_PAIRED_END=rsemParamsOnlyForPairedEnd,
 																										   IS_PAIRED_END="--paired-end" if args.paired_end else "");
 
-		print(rsemComand)
+		print(rsemCommand)
 		sys.stdout.flush();
-		returnCode = subprocess.call(rsemComand, shell=True);
+		returnCode = subprocess.call(rsemCommand, shell=True);
 		if(returnCode != 0):
 			raise Exception("rsem failed");
 
+
+	print("**********************************************************");
+	print("**********************************************************");
+	print("Counting features on the Bowtie2-RSEM alignment");
+	#for featureCounts output, see: https://groups.google.com/forum/#!topic/subread/JPPw9lVfgpw
+
+	#-C: exclude chimeric fragments from the count (those fragments that have their two ends aligned to different chromosomes)
+	pairedEndFeatureCountArgs = "-p -C" if(args.paired_end) else ''
+	countCmd = Template("/opt/genomics/bin/featureCounts " + pairedEndFeatureCountArgs + " -R -T $NUM_THREADS -t exon -g gene_id -a $ANNOTATION" +
+						" -o $OUTPUT_FOLDER/rsem_output/feature_counts.txt $OUTPUT_FOLDER/rsem_output/rsem_output.genome.sorted.bam").substitute(NUM_THREADS=args.num_threads, ANNOTATION=RSEM_TRANSCRIPT_ANNOTATION, OUTPUT_FOLDER=args.output_folder)
+
+	if(False):
+		#IMPORTANT NOTE: running featureCounts on RSEM's output never gives Unassigned_MultiMapping. How come no reads are assigned across features?
+		#TURNS OUT that featureCounts identifies multiply-mapped reads by the presence of the NH sam tag. This flag is present in the tophat2 output, so
+		#featureCounts correctly identifies multiply-mapped reads there, but not in rsem genome output bam that does not have this tag... (no read has this tag, so all reads are considered as non-multiply mapped)
+
+		#THIS IS WHY I DISABLED featureCounts for RSEM - it didn't seem important enough to do that on top of the tophat feature counting. If it becomes important enough, this problem should be solved first
+
+		# ALSO: I checked htseq-count and it seemed to have the same problem - did not find multiply aligned reads in rsem's output, but many of them in tophat's output
+		# The command I used:
+		# htseq-count -f bam rsem_output.genome.sorted.bam /data/yosef/index_files/mm10_4brain/index/rsem_index/combinedGTF_4brain.gtf
+
+		print(countCmd)
+		sys.stdout.flush();
+		returnCode = subprocess.call(countCmd, shell=True);
+		if(returnCode != 0):
+			raise Exception("bowtie2-rsem count features failed");
+	else:
+		print("Skipping featureCounts with RSEM (rsem output bam doesn't have the NH tag that allows correct identification of multiply aligned reads")
 
 
 	print("**********************************************************");
