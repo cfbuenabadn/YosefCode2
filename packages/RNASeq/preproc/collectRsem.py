@@ -87,8 +87,10 @@ parser.add_argument('--skip_collecting_qc', action='store_true',
 	help="don't collect and overwrite the qc summary files")
 parser.add_argument('--skip_collecting_dup_genes', action='store_true',
 	help="don't collect and overwrite the dup genes summary files")
-          
+parser.add_argument('--skip_collecting_feature_counts', action='store_true',
+	help="don't collect and overwrite the feature counts (read counts per gene made with the featureCounts software) files")
 args = parser.parse_args();
+
 
 if(args.reference == "mm10"):
 		rsemDictionaryFile = "/data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt";
@@ -269,6 +271,59 @@ if (COLLECT_DUP_GENES and not(args.skip_collecting_dup_genes)):
 
 
 
+COLLECT_FEATURE_COUNTS = True
+if(COLLECT_FEATURE_COUNTS):
+	#*********************************
+	#IMPORTANT NOTE:
+
+	#featureCounts are produced on the tophat2 results (i.e., as part of the tophat2-cufflinks pipeline) and not as part of the rsem pipeline
+	#(because I found that rsem's alignments do not have the NH flag in the sam file, which does not allow featureCounts to identify
+	#the multiply-aligned reads).
+
+	#HOWEVER, I still collect the featureCounts in the rsem_collect because they are done with the rsem annotation, so it's convenient...
+	#This way it's easy to keep the gene order and the cell order
+	#*********************************
+
+	FeatureCountsResultRecord = namedtuple('FeatureCountsResultRecord', 'geneID, chr, start, end, strand, length, count');
+
+	cellsWithFeatureCountsErrors = []
+	featureCountsTable = numpy.empty((NUM_RSEM_GENES, NUM_CELLS));
+	featureCountsTable[:] = numpy.NAN;
+
+	print "starting to collect featureCounts..."
+	for cell_ind in xrange(NUM_CELLS):
+		d = subDirectoryList[cell_ind];
+		fullDirPath = os.path.join(args.diretoryToProcess, d);
+		print "Operating on single cell directory: " + fullDirPath;
+
+		featureCountsForGenes = os.path.join(fullDirPath, 'tophat_output/feature_counts.txt');
+
+		if(os.path.exists(featureCountsForGenes)):
+			with open(featureCountsForGenes) as fin:
+				next(fin); #skip the two first (header) lines
+				next(fin);
+
+				rows = ( line.split('\t') for line in fin )
+				cellFeatureCountTable = map(FeatureCountsResultRecord._make, rows)
+
+
+			for record in cellFeatureCountTable:
+				indInMatrix = mapGeneIDToInd[record.geneID];
+				featureCountsTable[indInMatrix, cell_ind] = float(record.count)
+
+
+		else:
+			#the featureCounts results for this folder do not exist for some reason
+
+			#the values were initialized to NaN so seemingly no reason to overwrite again, but I do this just to be on the safe side
+			featureCountsTable[:, cell_ind] = numpy.NAN;
+			cellsWithFeatureCountsErrors.append(featureCountsForGenes);
+
+
+	print "finished collecting data... writing results..."
+	numpy.savetxt(os.path.join(args.output_folder, 'tophat2_featureCountsTable.txt'), featureCountsTable, delimiter="\t", fmt="%g");
+
+
 
 print "done collecting all data!"
 
@@ -319,3 +374,10 @@ if (COLLECT_DUP_GENES and not(args.skip_collecting_dup_genes)):
 	#fpkmTable[:, cell_ind] = [float(record.FPKM) for record in cellGeneExpressionTable];
 
     
+if (COLLECT_FEATURE_COUNTS and not(args.skip_collecting_feature_counts)):
+	if(not(cellsWithFeatureCountsErrors)):
+		print "no cells had errors while collecting their featureCounts";
+	else:
+		print "the following cells had errors while collecting their featureCounts:";
+		for x in cellsWithFeatureCountsErrors:
+			print x;
