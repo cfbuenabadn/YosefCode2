@@ -1,25 +1,26 @@
 rm(list=ls())
 library(sva)
 library(optparse)
+library(preprocessCore)
 option_list <- list(
-  make_option("--collect", default="~/data/BRAIN/processed_15_05/150515_HS3A/rsem", type="character",
+  make_option("--collect", default="", type="character",
               help="Directory containing your RNA Seq results from the preproc pipeline."),
-  make_option("--config", default="~/data/BRAIN/processed_15_05/150515_HS3A/configOlfactory.xls", type="character",
+  make_option("--config", default="", type="character",
               help="Config file for your project (.xls or .xlsx)."),
-  make_option("--qcfields", default="~/YosefCode/packages/RNASeq/summary/TEXT/qc_fields.txt", type="character"),
-  make_option("--genefields", default="~/YosefCode/packages/RNASeq/summary/TEXT/gene_fields.txt", type="character",
+  make_option("--qcfields", default="/data/yosef/CD8_effector_diff/src/YosefCode/packages/RNASeq/summary/TEXT/qc_fields.txt", type="character"),
+  make_option("--genefields", default="/data/yosef/CD8_effector_diff/src/YosefCode/packages/RNASeq/summary/TEXT/gene_fields.txt", type="character",
               help=""),
-  make_option("--out", default="~/data/BRAIN/processed_15_05/150515_HS3A/rsem/summary", type="character",
+  make_option("--out", default="/data/yosef/CD8_effector_diff/out/SingleCell-RNA-Seq/05-26-2015_PipelineTest_4", type="character",
               help=""),
-  make_option("--lib", default="~/YosefCode/packages/RNASeq/summary/RCODE", type="character",
+  make_option("--lib", default="/data/yosef/CD8_effector_diff/src/YosefCode/packages/RNASeq/summary/RCODE", type="character",
               help=""),
-  make_option("--sigfile", default="~/YosefCode/packages/RNASeq/summary/EXAMPLE/reference_files/immsig.txt", type="character",
+  make_option("--sigfile", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline/immsig-ProperCase.txt", type="character",
               help=""),
-  make_option("--housekeeping", default="/home/eecs/allonwag/archive/users/allonwag/temp/house_keeping.txt", type="character",
+  make_option("--housekeeping", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline/house_keeping_mouse_TitleCase.txt", type="character",
               help=""),
   make_option("--combat", action="store_true", default=FALSE,
               help="This will run the ComBat package for batch correction on your data."),
-  make_option("--multiple_collect", type="character", default=FALSE,
+  make_option("--multiple_collect", type="character", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline/CollectFolders.txt",
               help="If you need to load multiple collect directories and config files, please supply a text file listing them here..")
 )
 
@@ -53,7 +54,7 @@ source(paste0(lib_dir,"/TechCorrect.R"))
 
 ## ----- Load Expression Set -----
 if(opt$multiple_collect != FALSE){
-  eSet = loadRSEMStudy(muliple_collect = opt$multiple_collect, qc_fields_file = qc_fields_file,gene_fields_file = gene_fields_file)
+  eSet = loadRSEMStudy(multiple_collect = opt$multiple_collect, qc_fields_file = qc_fields_file,gene_fields_file = gene_fields_file)
 }else{
   eSet = loadRSEM(collect_dir = collect_dir,config_file = config_file,qc_fields_file = qc_fields_file,gene_fields_file = gene_fields_file)
 }
@@ -121,14 +122,6 @@ gf.vec = GeneFilter(sf.sc.eSet,
                     prop.failed = .80,
                     verbose = T,
                     plot.dir = paste0(out_dir,"/genefilter"),"post_adapt_cell_filtering_2")
-
-
-#write names of cells that passed filter:
-write.table(colnames(sf.sc.eSet),file=paste0(out_dir,"/passedSampleFilter.txt"),row.names=F,col.names=F)
-write.table(colnames(tf.sc.eSet),file=paste0(out_dir,"/passedTechnicalFilter.txt"),row.names=F,col.names=F)
-                        
-# Allon: until here
-stop("here")
 
 ##----- Normalization
 if (!file.exists(paste0(out_dir,"/normalization/"))){dir.create(paste0(out_dir,"/normalization/"))}
