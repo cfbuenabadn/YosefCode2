@@ -23,7 +23,7 @@
 # 13. Broad's qc: http://www.broadinstitute.org/cancer/cga/rnaseqc_run
 # 14. Use Prinseq as another way to trim? (supports trimming low complexity reads,and other goodies see http://www.pnas.org/content/suppl/2015/05/14/1507125112.DCSupplemental/pnas.1507125112.sapp.pdf)
 # 15. Make sample name meaningful in processFolder: instead of the -N for the project, do -N for the sample name
-
+# 16. add gene coverage, uniformity etc. with bedtools, Shaked suggested the GINI coefficient as a measure of read uniformity dispersion across the transcript
 
 #and make the argparse parent: did this but still replicates command line arguments when writing the PBS script.
 #I should have used the: argparse.REMAINDER. All the remaining command-line arguments are gathered into a list. This is commonly useful for command line utilities that dispatch to other command line utilities:
