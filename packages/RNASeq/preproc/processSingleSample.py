@@ -498,7 +498,7 @@ if(RUN_RSEM_PIPELINE and not(args.skip_rsem)):
 		#THIS IS WHY I DISABLED featureCounts for RSEM - it didn't seem important enough to do that on top of the tophat feature counting. If it becomes important enough, this problem should be solved first
 
 		# ALSO: I checked htseq-count and it seemed to have the same problem - did not find multiply aligned reads in rsem's output, but many of them in tophat's output
-		# The command I used:
+		# The ht-seq command I used:
 		# htseq-count -f bam rsem_output.genome.sorted.bam /data/yosef/index_files/mm10_4brain/index/rsem_index/combinedGTF_4brain.gtf
 
 		print(countCmd)

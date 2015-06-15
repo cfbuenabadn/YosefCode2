@@ -2,10 +2,10 @@
 
 Brain June 2015 cleanslate:
 python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/processFolder.py -N JuneBrain --rsem_bowtie_maxins 1000 --kallisto_fragment_length 540 -p 1 -r mm10 -o /data/yosef/BRAIN/processed_June2015/150521_HS3A/ /data/yosef/BRAIN/sources/150521_HS3A/1_mismatch_better/Project_Ngai
-python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collectRsem.py --skip_collecting_dup_genes -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed_June2015/150521_HS3A/rsem /data/yosef/BRAIN/processed_June2015/150521_HS3A/
+python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collectRsem.py --skip_collecting_dup_genes -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed_June2015/rsem "/home/eecs/allonwag/data/BRAIN/processed_15_05/150515_HS3A;/home/eecs/allonwag/data/BRAIN/processed_15_05/150521_HS3A/;"
 
 
-
+perl /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collect_dat_cufflinks.pl "/home/eecs/allonwag/data/BRAIN/processed_15_05/150515_HS3A;/home/eecs/allonwag/data/BRAIN/processed_15_05/150521_HS3A/;" /home/eecs/allonwag/data/BRAIN/processed_June2015/cuff /data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt 0
 
 https://www.broadinstitute.org/~picard/picard_metric_definitions.html
 

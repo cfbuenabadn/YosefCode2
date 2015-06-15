@@ -49,8 +49,7 @@ def CollectDupGenesTable(dup_filename, NUM_RSEM_GENES, NUM_CELLS, subDirectoryLi
 
 	print ("starting to collect dup reads (%s) per gene..." % dup_filename)
 	for cell_ind in xrange(NUM_CELLS):
-		d = subDirectoryList[cell_ind];
-		fullDirPath = os.path.join(args.diretoryToProcess, d);
+		fullDirPath = subDirectoryList[cell_ind];
 		print "Operating on single cell directory: " + fullDirPath;
 
 		dupReadsPerGeneFile = os.path.join(fullDirPath, 'rsem_output/picard_output/%s.txt.genes.txt' % dup_filename);
@@ -74,12 +73,12 @@ def CollectDupGenesTable(dup_filename, NUM_RSEM_GENES, NUM_CELLS, subDirectoryLi
 
 
 parser = argparse.ArgumentParser(description="Collect RSEM output")
-parser.add_argument("diretoryToProcess", action="store",
-                    help="The folder to read (assumes the folder is a batch, with subdirectories for every cell)")
+parser.add_argument("directoriesToProcess", action="store",
+                    help="The folders to read (assumes each folder is a batch, with subdirectories for every cell). Folder are semi-colon (';') separated ")
 parser.add_argument("-r", "--reference", action="store", required=True,
 		    choices=["mm10", "hg38"],
                     help="The referernce genome against which to align. Currently supported: mm10 = mm10, with ERCC spike-ins, RefSeq annotations, compiled by Allon.\nhg38 = human, compiled by Michael")                
-parser.add_argument("-o", "--output_folder", action="store", required=False, default="",
+parser.add_argument("-o", "--output_folder", action="store", required=True, default="",
                     help="The directory to which output is written (if not specified: add a '/rsem' folder to the input directory's name)")
 parser.add_argument('--skip_collecting_expression', action='store_true',
 	help="don't collect and overwrite the gene expression matrices")                 
@@ -99,20 +98,10 @@ elif(args.reference == "hg38"):
 else:
 	raise Exception("should not happen - unsupported reference genome");
 
-
-#if the path begins with a tilde - expand it to the user's homedir
-args.diretoryToProcess = os.path.expanduser(args.diretoryToProcess);
-if(not(args.output_folder)):
-	#user did not specify an output folder
-	args.output_folder = os.path.join(args.diretoryToProcess, "rsem")
-else:
-	#if the path begins with a tilde - expand it to the user's homedir
-	args.output_folder = os.path.expanduser(args.output_folder);
-
-
+args.output_folder = os.path.expanduser(args.output_folder);
 if not os.path.exists(args.output_folder):
 	os.makedirs(args.output_folder);
-        
+
 
 
 #read the mapping I prepared from gene ID to gene name and gene Nir type
@@ -135,11 +124,20 @@ mapGeneIDToInd = {rsemGeneList[i]:i for i in xrange(NUM_RSEM_GENES)};
 
 GeneResultRecord = namedtuple('GeneResultRecord', 'geneID, transcriptIDs, length,  effective_length, expected_count, TPM, FPKM');
 
+#strip leading and trailing semicolons if they're present in the semicolon separated string so as not to confuse the split
+args.directoriesToProcess = args.directoriesToProcess.strip(';')
+#os.path.expanduser --> if the path begins with a tilde - expand it to the user's homedir
+directoriesToProcess = [os.path.expanduser(d) for d in args.directoriesToProcess.split(';')]
 
-#os.listdir lists files and directories, but not the '.' and '..' entries
-#for compatability with Nir's previous structure, I do not allow the cell directory name to be "cuff" or "rsem" (this is where Nir used to save the collect results of the folder)
-subDirectoryList = [x for x in os.listdir(args.diretoryToProcess) \
-	if (os.path.isdir(os.path.join(args.diretoryToProcess, x))) and (x != "cuff") and (x != "rsem")];
+subDirectoryList = []
+for d in directoriesToProcess:
+	#os.listdir lists files and directories, but not the '.' and '..' entries
+	#for compatability with Nir's previous structure, I do not allow the cell directory name to be "cuff" or "rsem" (this is where Nir used to save the collect results of the folder)
+	curSubDirectoryList = [os.path.join(d, x) for x in os.listdir(d) \
+		if (os.path.isdir(os.path.join(d, x))) and (x != "cuff") and (x != "rsem")];
+
+	subDirectoryList += curSubDirectoryList
+
 NUM_CELLS = len(subDirectoryList);
 
 COLLECT_GENE_EXPRESSION = True;
@@ -155,8 +153,7 @@ if (COLLECT_GENE_EXPRESSION and not(args.skip_collecting_expression)):
 
 	print "starting to collect gene expression data..."
 	for cell_ind in xrange(NUM_CELLS):
-		d = subDirectoryList[cell_ind];
-		fullDirPath = os.path.join(args.diretoryToProcess, d);
+		fullDirPath = subDirectoryList[cell_ind];
 		print "Operating on single cell directory: " + fullDirPath;
 		
 		rsemOutputGenes = os.path.join(fullDirPath, 'rsem_output/rsem_output.genes.results');
@@ -204,8 +201,7 @@ if (COLLECT_QC_SUMMARIES and not(args.skip_collecting_qc)):
 	
 	print "starting to collect QC metrics..."
 	for cell_ind in xrange(NUM_CELLS):
-		d = subDirectoryList[cell_ind];
-		fullDirPath = os.path.join(args.diretoryToProcess, d);
+		fullDirPath = subDirectoryList[cell_ind];
 		print "Operating on single cell directory: " + fullDirPath;
 		
 		rsemQCSummaryFile = os.path.join(fullDirPath, 'rsem_output/summary.txt');
@@ -245,8 +241,21 @@ if (COLLECT_QC_SUMMARIES and not(args.skip_collecting_qc)):
 print "writing cell list..."
 
 #write the ordered cell list file...
+#identify each cell by the last two dirs in the directory path, which are the batch name (parent dir) and the cell name (son dir)
 with open(os.path.join(args.output_folder, 'cell_list.txt'), 'wt') as fout:
-	 fout.writelines(subdir + '\n' for subdir in subDirectoryList);
+	for d in subDirectoryList:
+		#strip trailing slashes so as to not confuse the os.path.split command
+		cur_dir = d.rstrip('/')
+		parentDir, sonDir = os.path.split(cur_dir)
+		#take only the last element in the parent path, which is the direct parent dir of the cell
+		batchName = os.path.basename(parentDir)
+
+		#cell name is composed of the batch ID and the cellID within it
+		cellName = batchName + '/' + sonDir
+
+		fout.write(cellName + '\n')
+
+
 
 print "writing gene dictionary..."
 
@@ -292,8 +301,7 @@ if(COLLECT_FEATURE_COUNTS):
 
 	print "starting to collect featureCounts..."
 	for cell_ind in xrange(NUM_CELLS):
-		d = subDirectoryList[cell_ind];
-		fullDirPath = os.path.join(args.diretoryToProcess, d);
+		fullDirPath = subDirectoryList[cell_ind];
 		print "Operating on single cell directory: " + fullDirPath;
 
 		featureCountsForGenes = os.path.join(fullDirPath, 'tophat_output/feature_counts.txt');
