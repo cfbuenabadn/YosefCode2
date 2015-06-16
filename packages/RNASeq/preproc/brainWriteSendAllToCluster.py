@@ -18,6 +18,8 @@ sourceFolders = [("olfactory/GBC_L01", False),
 SEND_SCRIPT_FILE_NAME = "/project/eecs/yosef-archive/users/allonwag/temp/sendAllBrain.sh"
 COLLECT_SCRIPT_FILE_NAME = "/project/eecs/yosef-archive/users/allonwag/temp/collectAllBrain.sh"
 
+OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_June2015_b/"
+
 allBatchAliases = []
 with open(SEND_SCRIPT_FILE_NAME, "wt") as fout:
     fout.write("#!/bin/sh" + '\n\n\n')
@@ -28,7 +30,7 @@ with open(SEND_SCRIPT_FILE_NAME, "wt") as fout:
                             (" --paired_end" if isPairedEnd else "") +
                             " --rsem_bowtie_maxins 1000 --kallisto_fragment_length 540 -p 1 -r mm10" +
                             " -o $OUT_FOLDER $INPUT_FOLDER").substitute(
-                            OUT_FOLDER=os.path.join("/data/yosef/BRAIN/processed_June2015_b/", batchAlias),
+                            OUT_FOLDER=os.path.join(OUTPUT_FOLDER, batchAlias),
                             INPUT_FOLDER=os.path.join("/data/yosef/BRAIN/sources/", batchDir)
                             )
         fout.write(send_cmd + '\n\n')
@@ -38,11 +40,39 @@ with open(SEND_SCRIPT_FILE_NAME, "wt") as fout:
 with open(COLLECT_SCRIPT_FILE_NAME, "wt") as fout:
     fout.write("#!/bin/sh" + '\n\n\n')
 
-    collect_cmd = Template("python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collectRsem.py --skip_collecting_dup_genes" +
-                           " -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed_June2015/rsem" +
-                            " $DIRECTORORIES_TO_PROCESS").substitute(DIRECTORORIES_TO_PROCESS=';'.join(allBatchAliases))
+    fout.write("#Collect all batches together:\n\n")
 
-    fout.write(collect_cmd + '\n\n')
+    collect_rsem_cmd = Template("python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collectRsem.py --skip_collecting_dup_genes" +
+                           " -r mm10 -o $OUTPUT_FOLDER" +
+                            " \"$DIRECTORORIES_TO_PROCESS\"").substitute(OUTPUT_FOLDER=os.path.join(OUTPUT_FOLDER, "rsem"), DIRECTORORIES_TO_PROCESS=';'.join([OUTPUT_FOLDER + alias for alias in allBatchAliases]))
+
+    fout.write(collect_rsem_cmd + '\n\n')
+
+    collect_cuff_cmd = Template("perl /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collect_dat_cufflinks.pl" +
+    " \"$DIRECTORORIES_TO_PROCESS\" $OUTPUT_FOLDER" +
+    " /data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt 0").substitute(OUTPUT_FOLDER=OUTPUT_FOLDER, DIRECTORORIES_TO_PROCESS=';'.join([OUTPUT_FOLDER + alias for alias in allBatchAliases]))
+
+    fout.write(collect_cuff_cmd + '\n\n')
+    fout.write('###############################################################' + '\n')
+    fout.write('###############################################################' + '\n\n')
+    fout.write("#Collect each batch separately:\n\n")
+
+    #write individual collect commands for each of the libraries
+    for batchAlias in allBatchAliases:
+
+            currentFolder = OUTPUT_FOLDER + batchAlias
+            collect_rsem_cmd = Template("python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collectRsem.py --skip_collecting_dup_genes" +
+                           " -r mm10 -o $OUTPUT_FOLDER" +
+                            " $INPUT_FOLDER").substitute(OUTPUT_FOLDER=os.path.join(currentFolder, "rsem"), INPUT_FOLDER=currentFolder)
+
+            fout.write(collect_rsem_cmd + '\n\n')
+
+            collect_cuff_cmd = Template("perl /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collect_dat_cufflinks.pl" +
+                                        " $INPUT_FOLDER $OUTPUT_FOLDER" +
+                                        " /data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt 0").\
+                                        substitute(OUTPUT_FOLDER=currentFolder, INPUT_FOLDER=currentFolder)
+
+            fout.write(collect_cuff_cmd + '\n\n')
 
 
 

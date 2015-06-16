@@ -50,7 +50,7 @@ def CollectDupGenesTable(dup_filename, NUM_RSEM_GENES, NUM_CELLS, subDirectoryLi
 	print ("starting to collect dup reads (%s) per gene..." % dup_filename)
 	for cell_ind in xrange(NUM_CELLS):
 		fullDirPath = subDirectoryList[cell_ind];
-		print "Operating on single cell directory: " + fullDirPath;
+		print "Operating on single cell (%d / %d) directory: %s" % (cell_ind+1, NUM_CELLS, fullDirPath);
 
 		dupReadsPerGeneFile = os.path.join(fullDirPath, 'rsem_output/picard_output/%s.txt.genes.txt' % dup_filename);
 		if(os.path.exists(dupReadsPerGeneFile)):
@@ -154,7 +154,7 @@ if (COLLECT_GENE_EXPRESSION and not(args.skip_collecting_expression)):
 	print "starting to collect gene expression data..."
 	for cell_ind in xrange(NUM_CELLS):
 		fullDirPath = subDirectoryList[cell_ind];
-		print "Operating on single cell directory: " + fullDirPath;
+		print "Operating on single cell (%d / %d) directory: %s" % (cell_ind+1, NUM_CELLS, fullDirPath);
 		
 		rsemOutputGenes = os.path.join(fullDirPath, 'rsem_output/rsem_output.genes.results');
 		
@@ -202,7 +202,7 @@ if (COLLECT_QC_SUMMARIES and not(args.skip_collecting_qc)):
 	print "starting to collect QC metrics..."
 	for cell_ind in xrange(NUM_CELLS):
 		fullDirPath = subDirectoryList[cell_ind];
-		print "Operating on single cell directory: " + fullDirPath;
+		print "Operating on single cell (%d / %d) directory: %s" % (cell_ind+1, NUM_CELLS, fullDirPath);
 		
 		rsemQCSummaryFile = os.path.join(fullDirPath, 'rsem_output/summary.txt');
 		if(os.path.exists(rsemQCSummaryFile)):
@@ -302,7 +302,7 @@ if(COLLECT_FEATURE_COUNTS):
 	print "starting to collect featureCounts..."
 	for cell_ind in xrange(NUM_CELLS):
 		fullDirPath = subDirectoryList[cell_ind];
-		print "Operating on single cell directory: " + fullDirPath;
+		print "Operating on single cell (%d / %d) directory: %s" % (cell_ind+1, NUM_CELLS, fullDirPath);
 
 		featureCountsForGenes = os.path.join(fullDirPath, 'tophat_output/feature_counts.txt');
 

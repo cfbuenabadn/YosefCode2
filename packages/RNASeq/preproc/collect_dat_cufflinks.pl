@@ -109,7 +109,7 @@ if(!(-e "$OUT_FOLDER/cuff/")){system("mkdir -p $OUT_FOLDER/cuff/");}
 
 
 open h_out,">$OUT_FOLDER/cuff/cell_list.txt";
-print h_out join "\n",@cell_nm; print h_out "\n"; /close h_out;
+print h_out join "\n",@cell_nm; print h_out "\n"; close h_out;
 open h_out_qc,">$OUT_FOLDER/cuff/qc_table.txt";
 for(my $i=0;$i<scalar(@qc_info);$i++){
     if (scalar(@{$qc_info[0]})!=scalar(@{$qc_info[$i]})) {die "3: Integrity\n";}
