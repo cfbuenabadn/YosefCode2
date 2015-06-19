@@ -233,11 +233,15 @@ SampleFilter = function(eSet, gene.filter.vec = NULL, housekeeping_list, mixture
   
   sf.eSet = eSet[,!is.Low.Technical.Quality]
   
-  if (!is.null(plot.dir)){
+  if (!is.null(plot.dir) && any(is.Low.Technical.Quality)){
     
     report = cbind(colnames(eSet),is.Low.Reads,is.Low.Read.Rat,is.Low.Efficiency,is.FNR_nonconverge,!is.good_AUC)    
     report = report[is.Low.Technical.Quality,]
-    colnames(report) = c("Filtered_Sample","Low_Reads","Low_Aligned_Ratio","Low_Efficiency","FNR_Not_Converged","Low/Failed_FNR_AUC")
+    if(sum(is.Low.Technical.Quality) > 1){
+      colnames(report) = c("Filtered_Sample","Low_Reads","Low_Aligned_Ratio","Low_Efficiency","FNR_Not_Converged","Low/Failed_FNR_AUC")
+    }else{
+      names(report) = c("Filtered_Sample","Low_Reads","Low_Aligned_Ratio","Low_Efficiency","FNR_Not_Converged","Low/Failed_FNR_AUC")
+    }
     write.table(report,file = paste0(plot.dir,"/filter_report.txt"),quote = F,row.names = F,col.names = T,sep = "\t")
         
     pdf(paste0(plot.dir,"/filtering_per_criterion.pdf"))

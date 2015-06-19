@@ -58,9 +58,9 @@ loadRSEM = function(collect_dir,config_file,qc_fields_file,gene_fields_file){
   }
 
   # Names assigned by collect are based on preprocessing directory names
-  rownames(config_table) = gsub(".*/","",config_table$Preproc_Dir)
+  rownames(config_table) = gsub("(.*/)([^/]*/[^/]*$)","\\2",config_table$Preproc_Dir)
   sample.info = config_table[colnames(tpm_table),]
-
+  
   ##----- Generate eSet
   protoDat = new("AnnotatedDataFrame", data = qc_table)
   featureDat = new("AnnotatedDataFrame", data = gene_info)
