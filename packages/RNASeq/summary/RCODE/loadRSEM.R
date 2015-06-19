@@ -78,7 +78,7 @@ loadRSEM = function(collect_dir,config_file,qc_fields_file,gene_fields_file){
 # qc_fields_file = path to names of qc fields (one per line - no tabs!)
 # gene_fields_file = path to names of gene info fields (one per line - no tabs!)
 
-loadRSEMStudy = function(muliple_collect,qc_fields_file,gene_fields_file){
+loadRSEMStudy = function(multiple_collect,qc_fields_file,gene_fields_file){
   dfCollect <- read.table(multiple_collect,header=T,sep="\t")
   
   print("Combining multiple collects:")
