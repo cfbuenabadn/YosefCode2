@@ -110,7 +110,7 @@ for sample1 in sampleList:
 		SKIP_KALLISTO_QC="--skip_kallisto_qc" if args.skip_kallisto_qc else "",
 		DO_NOT_CLEAN_INTERMEDIARY_FILES="--do_not_clean_intermediary_files" if args.do_not_clean_intermediary_files else "",
 		RSEM_BOWTIE_MAXINS=("--rsem_bowtie_maxins %s" % args.rsem_bowtie_maxins) if args.paired_end else "",
-		RSEM_SAMTOOLS_SORT_MEM=("--rsem_samtools-sort-mem %s" % args.rsem_samtools_sort_mem) if args.rsem_samtools_sort_mem else "",
+		RSEM_SAMTOOLS_SORT_MEM=("--rsem_samtools_sort_mem %s" % args.rsem_samtools_sort_mem) if args.rsem_samtools_sort_mem else "",
 		TRIMMOMATIC_WINDOW=("--trimmomatic_window %s" % args.trimmomatic_window) if args.trimmomatic_window else "",
 		KALLISTO_BOOTSTRAP_SAMPLES=("--kallisto_bootstrap_samples %s" % args.kallisto_bootstrap_samples) if args.kallisto_bootstrap_samples else "",
 		KALLISTO_FRAGMENT_LENGTH=("--kallisto_fragment_length %s" % args.kallisto_fragment_length) if args.kallisto_fragment_length else "",

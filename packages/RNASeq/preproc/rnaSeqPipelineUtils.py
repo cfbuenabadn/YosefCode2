@@ -37,7 +37,7 @@ common_rnaseq_parser.add_argument('--do_not_clean_intermediary_files', action='s
                    help="If set, do not clean intermediary files that are produced in the course of running (default: off, i.e. clean the intermediary files)")
 common_rnaseq_parser.add_argument('--rsem_bowtie_maxins', action='store', default=1000,
                    help="For paired-end data only (ignored if --paired_end is not set): the maximum fragment length (this is the value of the --fragment-length-max in rsem and -X/--maxins in bowtie2). Defaults to 1000, which is the rsem default")
-common_rnaseq_parser.add_argument('--rsem_samtools-sort-mem', action='store', default=1000,
+common_rnaseq_parser.add_argument('--rsem_samtools_sort_mem', action='store', default=1000,
                    help="This is rsem's samtools-sort-mem argument. It controls the memory allocated per thread when samtools sort is run through rsem. Defaults to 1G, which is the rsem default")
 common_rnaseq_parser.add_argument('--trimmomatic_window', action='store', default='',
                    help="The trimmomatic sliding window argument. Format: '<windowSize>:<requiredQuality>' ")
