@@ -92,7 +92,7 @@ for sample1 in sampleList:
 	cmd = Template("python $SCRIPT_TO_RUN $IS_PAIRED_END \
 					-r $REFERENCE -p $NUM_THREADS -o $OUTPUT_FOLDER $SKIP_TRIMMOMATIC $DO_NOT_RELY_ON_PREVIOUS_TRIMMOMATIC \
 					$SKIP_TOPHAT $SKIP_RSEM $SKIP_KALLISTO $SKIP_QC $SKIP_TOPHAT_QC $SKIP_RSEM_QC $SKIP_KALLISTO_QC \
-					$DO_NOT_CLEAN_INTERMEDIARY_FILES $RSEM_BOWTIE_MAXINS $TRIMMOMATIC_WINDOW \
+					$DO_NOT_CLEAN_INTERMEDIARY_FILES $RSEM_BOWTIE_MAXINS $RSEM_SAMTOOLS_SORT_MEM $TRIMMOMATIC_WINDOW \
 					$KALLISTO_BOOTSTRAP_SAMPLES $KALLISTO_FRAGMENT_LENGTH $SAMPLE1 $SAMPLE2").substitute(
 		SCRIPT_TO_RUN=scriptToRun,
 		IS_PAIRED_END=("--paired_end" if args.paired_end else ""),
@@ -110,6 +110,7 @@ for sample1 in sampleList:
 		SKIP_KALLISTO_QC="--skip_kallisto_qc" if args.skip_kallisto_qc else "",
 		DO_NOT_CLEAN_INTERMEDIARY_FILES="--do_not_clean_intermediary_files" if args.do_not_clean_intermediary_files else "",
 		RSEM_BOWTIE_MAXINS=("--rsem_bowtie_maxins %s" % args.rsem_bowtie_maxins) if args.paired_end else "",
+		RSEM_SAMTOOLS_SORT_MEM=("--rsem_samtools-sort-mem %s" % args.rsem_samtools_sort_mem) if args.rsem_samtools_sort_mem else "",
 		TRIMMOMATIC_WINDOW=("--trimmomatic_window %s" % args.trimmomatic_window) if args.trimmomatic_window else "",
 		KALLISTO_BOOTSTRAP_SAMPLES=("--kallisto_bootstrap_samples %s" % args.kallisto_bootstrap_samples) if args.kallisto_bootstrap_samples else "",
 		KALLISTO_FRAGMENT_LENGTH=("--kallisto_fragment_length %s" % args.kallisto_fragment_length) if args.kallisto_fragment_length else "",

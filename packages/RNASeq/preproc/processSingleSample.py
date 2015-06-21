@@ -426,9 +426,9 @@ if(RUN_RSEM_PIPELINE and not(args.skip_rsem)):
 		print("Running rsem");
 		#Note that in rsem I use the --output-genome-bam flag to generate a genome bam (in addition to the transcriptome bam that is always created) - rsem will also sort this bam. This is necessary for the QC later.
 		if(args.paired_end):
-			rsemCommand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --bowtie2 --estimate-rspd --output-genome-bam --sampling-for-bam --paired-end --fragment-length-max $RSEM_BOWTIE_MAXINS $SAMPLE_FILE1 $SAMPLE_FILE2 $RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder, RSEM_INDEX=RSEM_INDEX, SAMPLE_FILE1=args.sampleFile1, SAMPLE_FILE2=args.sampleFile2, NUM_THREADS=args.num_threads, RSEM_BOWTIE_MAXINS=args.rsem_bowtie_maxins);
+			rsemCommand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --bowtie2 --estimate-rspd --output-genome-bam --sampling-for-bam --samtools-sort-mem $RSEM_SAMTOOLS_SORT_MEM --paired-end --fragment-length-max $RSEM_BOWTIE_MAXINS $SAMPLE_FILE1 $SAMPLE_FILE2 $RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder, RSEM_INDEX=RSEM_INDEX, SAMPLE_FILE1=args.sampleFile1, SAMPLE_FILE2=args.sampleFile2, NUM_THREADS=args.num_threads, RSEM_BOWTIE_MAXINS=args.rsem_bowtie_maxins, RSEM_SAMTOOLS_SORT_MEM=args.rsem_samtools_sort_mem);
 		else:
-			rsemCommand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --bowtie2 --estimate-rspd --output-genome-bam --sampling-for-bam $SAMPLE_FILE1 $RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder, RSEM_INDEX=RSEM_INDEX, SAMPLE_FILE1=args.sampleFile1, NUM_THREADS=args.num_threads);
+			rsemCommand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --bowtie2 --estimate-rspd --output-genome-bam --sampling-for-bam --samtools-sort-mem $RSEM_SAMTOOLS_SORT_MEM $SAMPLE_FILE1 $RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder, RSEM_INDEX=RSEM_INDEX, SAMPLE_FILE1=args.sampleFile1, NUM_THREADS=args.num_threads, RSEM_SAMTOOLS_SORT_MEM=args.rsem_samtools_sort_mem);
 
 		print(rsemCommand)
 		sys.stdout.flush();
@@ -466,12 +466,14 @@ if(RUN_RSEM_PIPELINE and not(args.skip_rsem)):
 		rsemParamsOnlyForPairedEnd = Template("--fragment-length-max $RSEM_BOWTIE_MAXINS").substitute(RSEM_BOWTIE_MAXINS=args.rsem_bowtie_maxins) if args.paired_end else ""
 		#Note that in rsem I use the --output-genome-bam flag to generate a genome bam (in addition to the transcriptome bam that is always created) - rsem will also sort this bam. This is necessary for the QC later.
 		rsemCommand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --estimate-rspd " +
+								"--samtools_sort_mem $RSEM_SAMTOOLS_SORT_MEM " +
 								"$RSEM_PARAMS_ONLY_FOR_PAIRED_END --output-genome-bam --sampling-for-bam --bam $IS_PAIRED_END $OUTPUT_FOLDER/rsem_output/aligned_by_bowtie2.bam " +
 								"$RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder,
 																										   RSEM_INDEX=RSEM_INDEX,
 																										   NUM_THREADS=args.num_threads,
 																										   RSEM_PARAMS_ONLY_FOR_PAIRED_END=rsemParamsOnlyForPairedEnd,
-																										   IS_PAIRED_END="--paired-end" if args.paired_end else "");
+																										   IS_PAIRED_END="--paired-end" if args.paired_end else "",
+																										   RSEM_SAMTOOLS_SORT_MEM=args.rsem_samtools_sort_mem);
 
 		print(rsemCommand)
 		sys.stdout.flush();
