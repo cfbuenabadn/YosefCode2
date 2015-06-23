@@ -56,9 +56,29 @@ loadRSEM = function(collect_dir,config_file,qc_fields_file,gene_fields_file){
     desc = map[as.character(codes),]$Description
     config_table[,colnames(config_table) == level] = as.factor(as.character(desc))
   }
-
+  
   # Names assigned by collect are based on preprocessing directory names
   rownames(config_table) = gsub("(.*/)([^/]*/[^/]*$)","\\2",config_table$Preproc_Dir)
+  
+  # exclude samples that appeared in the collected data but do not appear in the config file
+  if(sum(!(colnames(tpm_table) %in% rownames(config_table)))> 0)
+  {
+    print(paste(sum(!(colnames(tpm_table) %in% rownames(config_table))),"samples appear in the collected TPM table but not in the config file - excluding them..."),quote = F)
+  }
+  tpm_table = tpm_table[, colnames(tpm_table) %in% rownames(config_table)]
+  if(sum(!(rownames(qc_table) %in% rownames(config_table)))> 0)
+  {
+    print(paste(sum(!(rownames(qc_table) %in% rownames(config_table))),"samples appear in the collected QC table but not in the config file - excluding them..."),quote = F)
+  }
+  qc_table = qc_table[rownames(qc_table) %in% rownames(config_table), ]
+  
+  if(sum(!(rownames(config_table) %in% colnames(tpm_table))) > 0 || sum(!(rownames(config_table) %in% rownames(qc_table))) > 0)
+  {
+    stop("There are samples that appear in the config file but do not appear either in the collected TPM table or the collected QC table")
+  }
+  
+  
+  # order the config file in the same order as the collected data 
   sample.info = config_table[colnames(tpm_table),]
   
   ##----- Generate eSet
