@@ -2,25 +2,27 @@ rm(list=ls())
 library(sva)
 library(optparse)
 library(preprocessCore)
+
+source("defaultCommandLineArguments.R")
 option_list <- list(
-  make_option("--collect", default="", type="character",
+  make_option("--collect", default=default_cmd_line_args[["--collect"]], type="character",
               help="Directory containing your RNA Seq results from the preproc pipeline."),
-  make_option("--config", default="", type="character",
+  make_option("--config", default=default_cmd_line_args[["--config"]], type="character",
               help="Config file for your project (.xls or .xlsx)."),
-  make_option("--qcfields", default="/data/yosef/CD8_effector_diff/src/YosefCode/packages/RNASeq/summary/TEXT/qc_fields.txt", type="character"),
-  make_option("--genefields", default="/data/yosef/CD8_effector_diff/src/YosefCode/packages/RNASeq/summary/TEXT/gene_fields.txt", type="character",
+  make_option("--qcfields", default=default_cmd_line_args[["--qcfields"]], type="character"),
+  make_option("--genefields", default=default_cmd_line_args[["--genefields"]] , type="character",
               help=""),
-  make_option("--out", default="/data/yosef/CD8_effector_diff/out/SingleCell-RNA-Seq/05-26-2015_PipelineTest_4", type="character",
+  make_option("--out", default=default_cmd_line_args[["--out"]], type="character",
               help=""),
-  make_option("--lib", default="/data/yosef/CD8_effector_diff/src/YosefCode/packages/RNASeq/summary/RCODE", type="character",
+  make_option("--lib", default=default_cmd_line_args[["--lib"]], type="character",
               help=""),
-  make_option("--sigfile", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline/immsig-ProperCase.txt", type="character",
+  make_option("--sigfile", default=default_cmd_line_args[["--sigfile"]], type="character",
               help=""),
-  make_option("--housekeeping", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline/house_keeping_mouse_TitleCase.txt", type="character",
+  make_option("--housekeeping", default=default_cmd_line_args[["--housekeeping"]], type="character",
               help=""),
-  make_option("--combat", action="store_true", default=FALSE,
+  make_option("--combat", action="store_true", default=default_cmd_line_args[["--combat"]],
               help="This will run the ComBat package for batch correction on your data."),
-  make_option("--multiple_collect", type="character", default="/data/yosef/CD8_effector_diff/src/SummaryPipeline/CollectFolders.txt",
+  make_option("--multiple_collect", type="character", default=default_cmd_line_args[["--multiple_collect"]],
               help="If you need to load multiple collect directories and config files, please supply a text file listing them here..")
 )
 
