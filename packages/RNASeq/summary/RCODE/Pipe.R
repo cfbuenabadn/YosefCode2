@@ -63,14 +63,16 @@ if(opt$multiple_collect != FALSE){
 
 ## ----- Pre-Filtering of Failed Samples -----
 # Remove all samples failing the preprocessing step, based on config file. 
-# Note: These should have all NA TPM from collect.
+# Note: These should have all NA/0 TPM from collect OR all NaNs as their quality metrics
 
-is.failed = grepl("Failure",phenoData(eSet)$Preproc_Code)
+is.failed = grepl("Failure",phenoData(eSet)$Preproc_Code) |
+              apply(is.na(exprs(eSet)) | (exprs(eSet) == 0), 2, all) |
+              apply(is.na(pData(protocolData(eSet))), 1, all)
 print(paste(sum(is.failed),"samples failed pipeline:"),quote = F)
 write.table(matrix(colnames(eSet)[is.failed],ncol = 1),file = paste0(out_dir,"/failed_preproc_list.txt"),row.names=F, col.names=F,quote = F)
 
 prefilt.eSet = eSet[,!is.failed]
-print("Removed failed samples.")
+print(sprintf("Removed %d failed samples.", sum(is.failed)))
 
 ## ----- Pre-Filtering of Transcripts: Coding + Detected ----
 # Select only type 1 transcripts (Coding)

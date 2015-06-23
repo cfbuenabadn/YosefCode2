@@ -226,9 +226,9 @@ SampleFilter = function(eSet, gene.filter.vec = NULL, housekeeping_list, mixture
   
   is.good_AUC = T # OVERRIDE
   
-  is.Low.Reads = logr < LOGR_CUTOFF
-  is.Low.Read.Rat = ralign < RALIGN_CUTOFF
-  is.Low.Efficiency = efficiency < EFF_CUTOFF
+  is.Low.Reads = (logr < LOGR_CUTOFF) | is.na(logr)
+  is.Low.Read.Rat = ralign < RALIGN_CUTOFF | is.na(ralign)
+  is.Low.Efficiency = efficiency < EFF_CUTOFF | is.na(efficiency)
   is.Low.Technical.Quality = is.Low.Reads | is.Low.Read.Rat | is.Low.Efficiency | !is.good_AUC
   
   sf.eSet = eSet[,!is.Low.Technical.Quality]
