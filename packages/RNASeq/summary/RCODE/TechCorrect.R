@@ -14,7 +14,12 @@ TechCorrect = function(eSet,gf.vec = NULL, NUM_CELLS_PER_BIN = 10, MAX_NUM_BINS 
   
   # Process Quality Features (Log, Abs-Log, etc...)
   qual = processQf(pData(protocolData(eSet)),rownames(protocolData(eSet)))
+  #remove every qual metric that has at least one NA
   qual = t(na.omit(t(qual)))
+  #beside NA, remove every qual metric that has at least one infinite value (sometime, for example, MEDIAN_5PRIME_TO_3PRIME_BIAS gets an INF value)
+  qual = qual[, apply(is.finite(qual), 2, all)]
+  
+  
   print(summary(qual))
   
   # Initialize Corrected TPM Matrix
