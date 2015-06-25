@@ -17,11 +17,14 @@ FILES_TO_REMOVE = [os.path.join('fastqc_output', '1.Ptrim_fastqc'),
                    os.path.join('rsem_output', 'accepted_hits_noMultiple.bam'),
                    os.path.join('rsem_output', 'accepted_hits.bam'),
                    os.path.join('rsem_output', 'unmapped.bam'),
+                   os.path.join('rsem_output', 'rsem_output.genome.bam'),
+                   os.path.join('rsem_output', 'rsem_output.transcript.bam'),
                    os.path.join('tophat_output', 'accepted_hits.bam'),
                    os.path.join('tophat_output', 'accepted_hits_noMultiple.bam')
                    ]
 
-FILES_TO_COMPRESS = [os.path.join('trimmomatic_output', 'trimmomatic_log.txt')]
+FILES_TO_COMPRESS = [os.path.join('trimmomatic_output', 'trimmomatic_log.txt'),
+                     os.path.join('tophat_output', 'cuff_output', 'transcripts.gtf')]
 
 
 def cleanTemporaryFiles(folder):
@@ -58,7 +61,7 @@ def cleanTemporaryFiles(folder):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Process one single cell sample")
+    parser = argparse.ArgumentParser(description="Cleanup intermediate files of preproc")
     parser.add_argument('folder', action='store',
                    help='the folder to clean')
     parser.add_argument('-r', '--recursive', action='store_true',

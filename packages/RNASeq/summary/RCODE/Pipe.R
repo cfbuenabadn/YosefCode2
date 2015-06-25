@@ -144,7 +144,7 @@ gf.vec = gf.vec & (apply(exprs(nrm.sc.eSet),1,sd) > 10^(-10))
 tc.sc.matrix = TechCorrect(nrm.sc.eSet,ignore.zeroes = F,QTHRESH = .01, gf.vec = gf.vec,PROP_CUTOFF = .9, plot.dir = paste0(out_dir,"/normalization/tech"))
 tc.sc.eSet = sf.sc.eSet
 exprs(tc.sc.eSet) = tc.sc.matrix
-
+write.table(tc.sc.matrix, file=paste0(out_dir,"/exprsAfterTechCorrect.txt"), sep = "\t", col.names = NA)
 ##----- Projections: Weighted PCA
 
 # Weights
