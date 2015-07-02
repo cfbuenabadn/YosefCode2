@@ -93,6 +93,20 @@ elif(args.reference == "hg38"):
 	RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM ="/data/yosef/index_files/hg38/index/gencode/rRNA.rsem.interval";
 	RSEM_DICTIONARY = "/data/yosef/index_files/hg38/index/rsem_dict.txt";
 
+elif(args.reference == "hg38_HIV"):
+	#settings for hg38 with HIV and GFP Sequences
+	KALLISTO_INDEX_FILE = "";
+	GENOME_REFERENCE_FILE = "/data/yosef/index_files/hg38_HIV/index/GRCh38_p2_HIV_pCmGFP.fna";
+	BOWTIE2_INDEX = "/data/yosef/index_files/hg38_HIV/index/GRCh38.p2";
+	TOPHAT2_TRANSCRIPTOME_INDEX = "/data/yosef/index_files/hg38_HIV/index/tophat_transcriptome_data/GRCh38.p2";
+	RSEM_TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/hg38_HIV/index/rsem_index/GRCh38.p2.gtf";
+	TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/hg38_HIV/index/GRCh38.p2.gtf";
+	RSEM_INDEX ="/data/yosef/index_files/hg38_HIV/index/rsem_index/GRCh38.p2_rsem";
+	REF_FLAT_INDEX ="/data/yosef/index_files/hg38_HIV/index/refFlat/refFlat.txt";
+	RIBOSOMAL_INTERVALS_INDEX ="null";
+	RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM ="null";
+	RSEM_DICTIONARY = "/data/yosef/index_files/hg38_HIV/index/rsem_dict.txt";
+
 else:
 	raise Exception("should not happen - unsupported reference genome");
 
