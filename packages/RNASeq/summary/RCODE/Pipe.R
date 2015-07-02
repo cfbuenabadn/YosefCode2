@@ -23,7 +23,10 @@ option_list <- list(
   make_option("--combat", action="store_true", default=default_cmd_line_args[["--combat"]],
               help="This will run the ComBat package for batch correction on your data."),
   make_option("--multiple_collect", type="character", default=default_cmd_line_args[["--multiple_collect"]],
-              help="If you need to load multiple collect directories and config files, please supply a text file listing them here..")
+              help="If you need to load multiple collect directories and config files, please supply a text file listing them here.."),
+  make_option("--save_intermediate_files", action="store_true", default=default_cmd_line_args[["--save_intermediate_files"]],
+             help="If the flag is set, more intermediate files are saved during the operation, which allows tracing and debugging of the script")
+  
 )
 
 ## ----- Parse Arguments -----
@@ -38,6 +41,7 @@ lib_dir = opt$lib
 sig_file = opt$sigfile
 # Point to all sig files
 housekeeping_list = opt$housekeeping
+save_intermediate_files = opt$save_intermediate_files
 
 ## ----- Produce Output Directory
 if (file.exists(out_dir)){
@@ -127,6 +131,11 @@ gf.vec = GeneFilter(sf.sc.eSet,
                     verbose = T,
                     plot.dir = paste0(out_dir,"/genefilter"),"post_adapt_cell_filtering_2")
 
+if(save_intermediate_files) 
+{
+  write.table(exprs(tf.sc.eSet), file=paste0(out_dir,"/exprsAfterTechFilter.txt"), sep = "\t", col.names = NA)
+}
+
 ##----- Normalization
 if (!file.exists(paste0(out_dir,"/normalization/"))){dir.create(paste0(out_dir,"/normalization/"))}
 
@@ -144,7 +153,11 @@ gf.vec = gf.vec & (apply(exprs(nrm.sc.eSet),1,sd) > 10^(-10))
 tc.sc.matrix = TechCorrect(nrm.sc.eSet,ignore.zeroes = F,QTHRESH = .01, gf.vec = gf.vec,PROP_CUTOFF = .9, plot.dir = paste0(out_dir,"/normalization/tech"))
 tc.sc.eSet = sf.sc.eSet
 exprs(tc.sc.eSet) = tc.sc.matrix
-write.table(tc.sc.matrix, file=paste0(out_dir,"/exprsAfterTechCorrect.txt"), sep = "\t", col.names = NA)
+if(save_intermediate_files) 
+{
+  write.table(tc.sc.matrix, file=paste0(out_dir,"/exprsAfterTechCorrect.txt"), sep = "\t", col.names = NA)
+}
+  
 ##----- Projections: Weighted PCA
 
 # Weights
