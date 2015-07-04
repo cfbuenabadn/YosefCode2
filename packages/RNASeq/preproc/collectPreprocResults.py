@@ -140,7 +140,7 @@ args = parser.parse_args();
 
 if(args.reference == "mm10"):
 	rsemDictionaryFile = "/data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt";
-	cuffDictionaryFile = "/home/eecs/allonwag/data/index_files/mm10_4brain/index/cuffDictionary/mm10_4brain_cuffGeneMapping.txt"
+	cuffDictionaryFile = "/home/eecs/allonwag/data/index_files/mm10_4brain/index/cuffDictionary/mm10_4brain_cuffGeneMapping_noLoci.txt"
 elif(args.reference == "hg38"):	
 	rsemDictionaryFile="/data/yosef/index_files/hg38/index/rsem_dict.txt";
 else:
@@ -183,7 +183,7 @@ if not(args.skip_collecting_tophat):
 
 
 	#read the mapping I prepared from gene ID to gene name and gene biotype
-	cuffGeneRecord = namedtuple('cuffGeneRecord', 'geneID, geneName, locus, geneBiotype')
+	cuffGeneRecord = namedtuple('cuffGeneRecord', 'geneID, geneName, geneBiotype')
 
 	with open(cuffDictionaryFile) as fin:
 		# skip the 3 header lines
