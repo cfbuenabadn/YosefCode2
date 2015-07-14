@@ -103,8 +103,8 @@ elif(args.reference == "hg38_HIV"):
 	TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/hg38_HIV/index/GRCh38.p2.gtf";
 	RSEM_INDEX ="/data/yosef/index_files/hg38_HIV/index/rsem_index/GRCh38.p2_rsem";
 	REF_FLAT_INDEX ="/data/yosef/index_files/hg38_HIV/index/refFlat/refFlat.txt";
-	RIBOSOMAL_INTERVALS_INDEX ="null";
-	RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM ="null";
+ 	RIBOSOMAL_INTERVALS_INDEX ="/data/yosef/index_files/hg38_HIV/index/gencode/rRNA.interval";
+	RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM ="/data/yosef/index_files/hg38_HIV/index/gencode/rRNA.rsem.interval";	
 	RSEM_DICTIONARY = "/data/yosef/index_files/hg38_HIV/index/rsem_dict.txt";
 
 else:
