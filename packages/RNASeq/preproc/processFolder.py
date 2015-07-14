@@ -135,7 +135,7 @@ for sample1 in sampleList:
 		
 		#IMPORTANT NOTE: All of the ### and #PBS lines forming the job header need to be collected at the top of the batch file and *not* interspersed with blank lines or shell command lines. qsub seems to only properly parses the top of the file.
 		fout.write("#!/bin/sh\n");
-		
+		fout.write("# *** \"#PBS\" lines must come before any non-blank, non-comment lines ***")
 		fout.write("### Set the job name\n");
 		fout.write(Template("#PBS -N $JOB_NAME\n").substitute(JOB_NAME=args.job_name));
 		
