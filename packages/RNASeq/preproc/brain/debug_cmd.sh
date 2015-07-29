@@ -4,6 +4,8 @@ Brain June 2015 cleanslate:
 python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/processFolder.py -N JuneBrain --rsem_bowtie_maxins 1000 --kallisto_fragment_length 540 -p 1 -r mm10 -o /data/yosef/BRAIN/processed_June2015/150521_HS3A/ /data/yosef/BRAIN/sources/150521_HS3A/1_mismatch_better/Project_Ngai
 python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collectRsem.py --skip_collecting_dup_genes -r mm10 -o /home/eecs/allonwag/data/BRAIN/processed_June2015/rsem "/home/eecs/allonwag/data/BRAIN/processed_15_05/150515_HS3A;/home/eecs/allonwag/data/BRAIN/processed_15_05/150521_HS3A/;"
 
+July 2015:
+python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/processFolder.py -N JuneBrain --rsem_bowtie_maxins 1000 --kallisto_fragment_length 540 -p 1 -r mm10 -o /data/yosef/BRAIN/processed_June2015/150702_JGI2/ /data/yosef/BRAIN/sources/150702_JGI2/Lane1/Project_Ngai
 
 perl /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collect_dat_cufflinks.pl "/data/yosef/BRAIN/processed_June2015_b/olfactory-GBC_L01;/data/yosef/BRAIN/processed_June2015_b/olfactory-GBC_L02;/data/yosef/BRAIN/processed_June2015_b/olfactory-GBC_P02-P03;/data/yosef/BRAIN/processed_June2015_b/olfactory-HBC;/data/yosef/BRAIN/processed_June2015_b/150202_HS2A-Project_Ngai;/data/yosef/BRAIN/processed_June2015_b/150309_HS1A;/data/yosef/BRAIN/processed_June2015_b/150309_HS3A-Project_Ngai_new;/data/yosef/BRAIN/processed_June2015_b/150515_HS3A-Project_Ngai8by8;/data/yosef/BRAIN/processed_June2015_b/150521_HS3A-1_mismatch_better-Project_Ngai" /home/eecs/allonwag/data/BRAIN/processed_June2015/cuff /data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt 0
 

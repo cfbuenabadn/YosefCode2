@@ -1,14 +1,18 @@
 from string import Template
 import os
 import stat
-from brainSources import sourceFolders
+from brainSources import cortical_sourceFolders, olfactory_sourceFolders
 
 #TODO: change process folder to detect automatically if this is single end or paired-end?
 
 SEND_SCRIPT_FILE_NAME = "/project/eecs/yosef-archive/users/allonwag/temp/sendAllBrain.sh"
 COLLECT_SCRIPT_FILE_NAME = "/project/eecs/yosef-archive/users/allonwag/temp/collectAllBrain.sh"
 
-OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_June2015_b/"
+OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_June_2015b/"
+
+#cortical or olfactory
+DO_CORTICAL = False
+sourceFolders = cortical_sourceFolders if DO_CORTICAL else olfactory_sourceFolders
 
 allBatchAliases = []
 with open(SEND_SCRIPT_FILE_NAME, "wt") as fout:

@@ -197,7 +197,7 @@ loadCommonPreprocOutput = function(collect_dir ,config_file, qc_fields_file, gen
 }
 
 # example for debug:
-# collect_dir="/data/yosef/BRAIN/processed_June2015_b/collect2"
+# collect_dir="/data/yosef/BRAIN/processed_June2015_b/collect"
 # collectedRNASeqStudy = loadProcessedRNASeq_NG(collect_dir=collect_dir,
 #                               config_file=file.path(collect_dir, "config_brain.xlsx"),
 #                              qc_fields_file="/data/yosef/CD8_effector_diff/src/YosefCode/packages/RNASeq/summary/TEXT/qc_fields.txt",
