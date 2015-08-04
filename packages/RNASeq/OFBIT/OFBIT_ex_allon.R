@@ -41,7 +41,7 @@ if (!file.exists(plot.dir)){
 
 
 
-OFBIT(e = e,type = "TPM",q = q,techbatch = techbatch,biobatch = biobatch ,hk_genes = hk_names %in% rownames(e),out.file=out.file, plot.dir=plot.dir,
+OFBIT(e = e,type = "TPM",q = q,techbatch = techbatch,biobatch = biobatch ,hk_genes =  rownames(e) %in% hk_names ,out.file=out.file, plot.dir=plot.dir,
       binned.norm.methods=c("LocScale","GlobScale","AdjEig"),
       combat.methods="no") #I removed combat from the norm.methods because the technical covariates so much correlates with the biological ones there's no solution...
 

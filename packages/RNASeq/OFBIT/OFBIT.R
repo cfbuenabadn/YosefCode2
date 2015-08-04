@@ -78,8 +78,16 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, pro
             score_obj = QPCScores(e = sce,q = q,sig.test = qfilt_flag,tf.vec = tf.vec)
             K = which(cumsum(score_obj$sdev^2/(sum(score_obj$sdev^2))) > prop.q)[1]
             
+            # Nothing
+            norm_method = NA
+            alt_method = NA
+            bin_method = NA
+            strout = paste(filt_method,combat_method,scale_method, quantile_method,qfilt_flag,norm_method,alt_method,bin_method,sep = "|")
+            print(strout)
+            ScoreLeaf(sce,q,tf.vec = tf.vec,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file, plot.dir = plot.dir)
+            
             #RUV
-            if(!is.null(hk_genes)){
+            if(!is.null(hk_genes) ){
               norm_method = "RUVg"
               alt_method = NA
               bin_method = NA
