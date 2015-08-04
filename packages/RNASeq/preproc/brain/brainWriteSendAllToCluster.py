@@ -8,10 +8,11 @@ from brainSources import cortical_sourceFolders, olfactory_sourceFolders
 SEND_SCRIPT_FILE_NAME = "/project/eecs/yosef-archive/users/allonwag/temp/sendAllBrain.sh"
 COLLECT_SCRIPT_FILE_NAME = "/project/eecs/yosef-archive/users/allonwag/temp/collectAllBrain.sh"
 
-OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_June_2015b/"
+OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_June2015_b/"
+OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_July2015/"
 
 #cortical or olfactory
-DO_CORTICAL = False
+DO_CORTICAL = True
 sourceFolders = cortical_sourceFolders if DO_CORTICAL else olfactory_sourceFolders
 
 allBatchAliases = []

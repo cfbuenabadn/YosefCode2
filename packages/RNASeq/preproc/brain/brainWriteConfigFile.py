@@ -9,8 +9,8 @@ from collections import namedtuple
 #The sourceFolders is a tuple of dir and bool (isPairedEnd) - get rid of the latter field which is not needed here
 
 SOURCES_DIR = "/data/yosef/BRAIN/sources"
-PROCESSED_DIR = "/data/yosef/BRAIN/processed_June2015_b"
-#PROCESSED_DIR = "/data/yosef/BRAIN/processed_July2015"
+#PROCESSED_DIR = "/data/yosef/BRAIN/processed_June2015_b"
+PROCESSED_DIR = "/data/yosef/BRAIN/processed_July2015"
 
 
 #cortical or olfactory
