@@ -43,7 +43,7 @@ FastComBat = function(e,batch,biobatch = NULL,par.prior=T,prior.plots=F,to.log =
   }
   require(sva)
   if(is.null(biobatch)){
-    is_var = apply(e,1,sd) > 0
+    is_var = apply(e,1,sd) > SD_EPSILON
     pheno = as.data.frame(cbind(batch))
     colnames(pheno) = c("batch")
     batch = pheno$batch
@@ -54,7 +54,7 @@ FastComBat = function(e,batch,biobatch = NULL,par.prior=T,prior.plots=F,to.log =
   }else{
     is_var = T
     for (p in unique(biobatch)){
-      is_var = is_var & (apply(e[,biobatch == p],1,sd) > 0)
+      is_var = is_var & (apply(e[,biobatch == p],1,sd) > SD_EPSILON)
     }
     pheno = as.data.frame(cbind(batch,biobatch))
     colnames(pheno) = c("batch","phenotype")
@@ -279,7 +279,7 @@ PPQual = function(q, to.log = c("NREADS", "NALIGNED"),
   
   ## ----- Remove NA, Constants, and scale
   quality.features = t(na.omit(t(quality.features)))
-  quality.features = quality.features[,apply(quality.features,2,sd) > 0]
+  quality.features = quality.features[,apply(quality.features,2,sd) > SD_EPSILON]
   quality.features = scale(quality.features,center = T,scale = T)
   
   return(quality.features)
@@ -289,8 +289,7 @@ PPQual = function(q, to.log = c("NREADS", "NALIGNED"),
 QSel = function(e, ppq, tf.vec = T, MAX_EXP_PCS = 5, qval_thresh = .01, method = c("spearman","pearson")){
   method <- match.arg(method)
   
-  EPSILON = 100 * .Machine$double.eps
-  tf.vec = tf.vec & (apply(e,1,sd) > EPSILON) # Only consider variable genes for PCA
+  tf.vec = tf.vec & (apply(e,1,sd) > SD_EPSILON) # Only consider variable genes for PCA
   epc = prcomp(t(log(e[tf.vec,] + 1)), center = TRUE, scale = TRUE)
   epc_q_cor = cor(epc$x[,1:MAX_EXP_PCS],ppq, method = method)
   fish = (1/2)*log((1+epc_q_cor)/(1-epc_q_cor))
@@ -417,7 +416,7 @@ AdjEig = function(e,batch, method = c("median","mean"), to.log = T, EPSILON = 1)
   method <- match.arg(method)
   batches = unique(batch)
   
-  is_var = apply(e,1,sd) > 0
+  is_var = apply(e,1,sd) > SD_EPSILON
   oe = e
   if(to.log){
     pc = prcomp(t(log(e[is_var,]+EPSILON)),center = F,scale = F)
@@ -488,7 +487,7 @@ QPCResEig = function(e,scores, EPSILON = 1, to.log = T){
   }
   
   oe = e
-  is_var = apply(e,1,sd) > 0
+  is_var = apply(e,1,sd) > SD_EPSILON
   pc = prcomp(t(e[is_var,]),center = F,scale = F)
   oe[!is_var,] = 0
   
@@ -580,7 +579,7 @@ MetNorm = function(e,scores,to.log = T, K = 50){
   ## Generate Normalized Expression Matrix
   # Start with eigengenes
   oe = e
-  is_var = apply(oe,1,sd) > 0
+  is_var = apply(oe,1,sd) > SD_EPSILON
   pc = prcomp(t(oe[is_var,]),center = F,scale = F)
   x = t(pc$x)
   px = x

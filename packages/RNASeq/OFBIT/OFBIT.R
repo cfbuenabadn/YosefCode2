@@ -1,10 +1,14 @@
 source("RNASeqNorm.R")
+SD_EPSILON = 1e6 * .Machine$double.eps #~2.2e-8
+
 # hk_genes = boolean vector tagging housekeeping genes in rows of e
 # prop.q = proportion of variance in preprocessed quality matrix that you wish to retain in producing quality scores (pca)
 ## ===== OFBIT: OverFitting By Iterative Testing =====
 OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, prop.q = 0.80, out.file,plot.dir,
                  binned.norm.methods=c("ComBat","LocScale","GlobScale","AdjEig"),
-                 combat.methods=c("yes","no")){
+                 combat.methods=c("yes","no"),
+                 regression.norm.methods=c("QPCResLoc","QPCResEig","QPCResGlob"),
+                 error.file="/dev/null", log.file="/dev/null"){
   
   # Make plot directory
   if (file.exists(plot.dir)){
@@ -74,10 +78,6 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, pro
               break
             }
             
-            # Calculate scores
-            score_obj = QPCScores(e = sce,q = q,sig.test = qfilt_flag,tf.vec = tf.vec)
-            K = which(cumsum(score_obj$sdev^2/(sum(score_obj$sdev^2))) > prop.q)[1]
-            
             # Nothing
             norm_method = NA
             alt_method = NA
@@ -86,19 +86,50 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, pro
             print(strout)
             ScoreLeaf(sce,q,tf.vec = tf.vec,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file, plot.dir = plot.dir)
             
+            
+            
+            # Calculate scores
+            # Allon: this often throws exceptions of cannot scale a constant factor in QSel (line:  epc = prcomp(t(log(e[tf.vec,] + 1)), center = TRUE, scale = TRUE)) (yes, even though I filter in advance to exclude rows with small SD) so I put it in a try-catch and take a default K in these cases
+            K = tryCatch({
+                score_obj = QPCScores(e = sce,q = q,sig.test = qfilt_flag,tf.vec = tf.vec)
+                innerK = which(cumsum(score_obj$sdev^2/(sum(score_obj$sdev^2))) > prop.q)[1]
+                },
+                error=function(err) {
+                  innerK = 3
+                  error.msg = paste0("Error in computing QPCs (", err, ")! Taking default K=", innerK)
+                  ReportError(leaf.name=strout, error.file=error.file, error.msg=error.msg)
+                  innerK
+                  
+                  DEBUG = T
+                  if(DEBUG)
+                  {
+                    save.image(paste0(out.file, 'hello.Rdata'))
+                    stop(paste0('awful error K=',K))
+                  }
+                  
+                  return(innerK)
+                }
+            )
+            ReportError(leaf.name=strout, error.file=log.file, error.msg=paste0("K=", K))
+            
+
             #RUV
             if(!is.null(hk_genes) ){
-              norm_method = "RUVg"
+              
               alt_method = NA
               bin_method = NA
-              strout = paste(filt_method,combat_method,scale_method, quantile_method,qfilt_flag,norm_method,alt_method,bin_method,sep = "|")
-              print(strout)
-              nsce = runRUVg(e = sce,hk_genes,K = K)
-              ScoreLeaf(nsce,q,tf.vec = tf.vec,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file, plot.dir = plot.dir)
+              
+              for (curK in 1:min(5, K)) {
+                norm_method = paste0("RUVg", "(k=", curK, ")")
+                strout = paste(filt_method,combat_method,scale_method, quantile_method,qfilt_flag,norm_method,alt_method,bin_method,sep = "|")
+                print(strout)
+                nsce = runRUVg(e = sce,hk_genes,K = curK)
+                ScoreLeaf(nsce,q,tf.vec = tf.vec,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file, plot.dir = plot.dir)    
+              }
             }
             
             #Regression
-            for (norm_method in c("QPCResLoc","QPCResEig","QPCResGlob")){
+            for (norm_method in regression.norm.methods){
               alt_method = NA
               bin_method = NA
               strout = paste(filt_method,combat_method,scale_method, quantile_method,qfilt_flag,norm_method,alt_method,bin_method,sep = "|")
@@ -161,9 +192,17 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, pro
   }
 }
 
+
+ReportError = function(leaf.name, error.file, error.msg){
+  
+  out = cbind(leaf.name, error.msg)
+  write.table(out,file = error.file,append = T,quote = F,sep = "\t",row.names = F,col.names = F)
+  
+}
+
 ScoreLeaf = function(e,q,tf.vec = T,techbatch = NULL,biobatch = NULL, knn = 10, leaf.name, out.file,plot.dir,EPSILON = 1){
   
-  epc = prcomp(t(log(e[tf.vec,][apply(e[tf.vec,],1,sd)>0,]+EPSILON)),center = T,scale. = T)
+  epc = prcomp(t(log(e[tf.vec,][apply(e[tf.vec,],1,sd)>SD_EPSILON,]+EPSILON)),center = T,scale. = T)
   ppq = PPQual(q)
   qpc = prcomp(ppq)
   cor_pearson = cor(epc$x[,1],qpc$x[,1], method = "pearson")
