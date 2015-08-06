@@ -1,5 +1,5 @@
 source("RNASeqNorm.R")
-SD_EPSILON = 1e6 * .Machine$double.eps #~2.2e-8
+SD_EPSILON = 1e10 * .Machine$double.eps #~2.2e-6
 
 # hk_genes = boolean vector tagging housekeeping genes in rows of e
 # prop.q = proportion of variance in preprocessed quality matrix that you wish to retain in producing quality scores (pca)
