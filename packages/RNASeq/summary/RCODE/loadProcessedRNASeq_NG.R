@@ -157,7 +157,7 @@ loadCommonPreprocOutput = function(collect_dir ,config_file, qc_fields_file, gen
   }
   
   #name the rows after the sequencing ID of each sample
-  rownames(config_table) = config_table$sequencing_id;
+  rownames(config_table) = config_table$sample_sequencing_id;
   
   #there are rows in the collected data that do not appear in the config --> discard them
   samplesInCollectedDataButNotInConfig = !(cell_list %in% config_table$output_name);
@@ -182,15 +182,17 @@ loadCommonPreprocOutput = function(collect_dir ,config_file, qc_fields_file, gen
   
   #once the config_table is in the same order of the collected data (which is also the order of the QC table)
   #we can make the uniqueIDs also the sample names of the QC table
-  rownames(qc_table) = config_table$sequencing_id;
+  rownames(qc_table) = config_table$sample_sequencing_id;
   
   
-  
+  KEEP_ONLY_MD_COLS = F #at first I kept only metadata cols, but Russell asked to keep all cols
+  if(KEEP_ONLY_MD_COLS) {
   #keep only metadata (MD) fields from the config file.
   #You don't need the unique IDs --> these are the row names of the table
   #you don't need the output file name --> we've already ordered the config table to be at the same order as the collected data (i.e., the order of cell_list)
   is_metadata_col = startsWith(colnames(config_table), "MD_", trim=FALSE, ignore.case=FALSE)
   config_table = config_table[,is_metadata_col]
+  }
   
   #the samplesInCollectedDataButNotInConfig logical vector is also returned so that the calling function will be able to exclude cells as well from the rsem-specific, cuff-specific etc. matrices that it reads 
   return(list("config_table"=config_table, "qc_table"=qc_table, "gene_info"=gene_info, "samplesInCollectedDataButNotInConfig"=samplesInCollectedDataButNotInConfig))

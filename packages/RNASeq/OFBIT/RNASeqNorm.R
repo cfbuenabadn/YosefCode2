@@ -1,5 +1,5 @@
 ## 2) ===== Transcript Filtering =====
-TFilter = function(e,cov = NULL, 
+TFilter = function(e,cov = NULL,
                    type = c("count","TPM"), 
                    method = c("strong","weak","coverage")){
   if(any(is.na(e))){

@@ -7,6 +7,7 @@ SD_EPSILON = 1e10 * .Machine$double.eps #~2.2e-6
 OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, prop.q = 0.80, out.file,plot.dir,
                  binned.norm.methods=c("ComBat","LocScale","GlobScale","AdjEig"),
                  combat.methods=c("yes","no"),
+                 filtering.methods=c("strong","weak"),
                  regression.norm.methods=c("QPCResLoc","QPCResEig","QPCResGlob"),
                  error.file="/dev/null", log.file="/dev/null"){
   
@@ -35,8 +36,8 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, pro
   write.table(out,file = out.file,quote = F,sep = "\t",row.names = F,col.names = F)
   
   # 1) Strong vs weak filtering
-  for (filt_method in c("strong","weak")){
-    tf.vec = TFilter(e=e, type=type)
+  for (filt_method in filtering.methods){
+    tf.vec = TFilter(e=e, type=type, method=filt_method)
     print(filt_method)
     
     # 2) ComBat method: Use or don't use...
@@ -202,60 +203,87 @@ ReportError = function(leaf.name, error.file, error.msg){
 
 ScoreLeaf = function(e,q,tf.vec = T,techbatch = NULL,biobatch = NULL, knn = 10, leaf.name, out.file,plot.dir,EPSILON = 1){
   
-  epc = prcomp(t(log(e[tf.vec,][apply(e[tf.vec,],1,sd)>SD_EPSILON,]+EPSILON)),center = T,scale. = T)
-  ppq = PPQual(q)
-  qpc = prcomp(ppq)
-  cor_pearson = cor(epc$x[,1],qpc$x[,1], method = "pearson")
-  cor_spearman = cor(epc$x[,1],qpc$x[,1], method = "spearman")
+  tf.vec = tf.vec & (apply(e,1,sd) > SD_EPSILON) # Only consider variable genes for PCA
   
-  if(!(is.null(techbatch))){
+  prcompSuccess = tryCatch({
+    epc = prcomp(t(log(e[tf.vec,]+EPSILON)),center = T,scale. = T)
+    TRUE
+  }, error=function(err) {
     
-    pdf(paste0(plot.dir,"/",leaf.name,"_epc1vqpc1_techcol.pdf"))
-    cols = rainbow(length(levels(as.factor(techbatch))))[as.factor(techbatch)]
-    plot(epc$x[,1],qpc$x[,1],pch = 16, col = cols,xlab = "EPC1",ylab = "QPC1")
-    dev.off()
+    error.msg = paste0("Error in computing EPC while scoring leaf (", err, ")!")
+    ReportError(leaf.name=leaf.name, error.file=error.file, error.msg=error.msg)
     
-    pdf(paste0(plot.dir,"/",leaf.name,"_epc1vepc2_techcol.pdf"))
-    cols = rainbow(length(levels(as.factor(techbatch))))[as.factor(techbatch)]
-    plot(epc$x[,1],epc$x[,2],pch = 16, col = cols,xlab = "EPC1",ylab = "EPC2")
-    dev.off()
     
-    d = as.matrix(dist(epc$x[,1:2],method = "euclidean"))
-    m = NULL
-    for(s in 1:dim(d)[1]){
-      ds = d[,s]
-      ra = rank(ds)
-      m[s] = mean(techbatch[(ra <= knn+1) & (ra != 1)] == techbatch[s])
+    DEBUG = T
+    if(DEBUG)
+    {
+      save.image(paste0(out.file, 'hello.Rdata'))
+      stop(paste0('awful error in score leaf while computing EPCs'))
     }
-    tech_concord = mean(m)
+    
+    return(FALSE)
+  })
+  
+  if(prcompSuccess)
+  {
+    ppq = PPQual(q)
+    qpc = prcomp(ppq)
+    cor_pearson = cor(epc$x[,1],qpc$x[,1], method = "pearson")
+    cor_spearman = cor(epc$x[,1],qpc$x[,1], method = "spearman")
+    
+    if(!(is.null(techbatch))){
+      
+      pdf(paste0(plot.dir,"/",leaf.name,"_epc1vqpc1_techcol.pdf"))
+      cols = rainbow(length(levels(as.factor(techbatch))))[as.factor(techbatch)]
+      plot(epc$x[,1],qpc$x[,1],pch = 16, col = cols,xlab = "EPC1",ylab = "QPC1")
+      dev.off()
+      
+      pdf(paste0(plot.dir,"/",leaf.name,"_epc1vepc2_techcol.pdf"))
+      cols = rainbow(length(levels(as.factor(techbatch))))[as.factor(techbatch)]
+      plot(epc$x[,1],epc$x[,2],pch = 16, col = cols,xlab = "EPC1",ylab = "EPC2")
+      dev.off()
+      
+      d = as.matrix(dist(epc$x[,1:2],method = "euclidean"))
+      m = NULL
+      for(s in 1:dim(d)[1]){
+        ds = d[,s]
+        ra = rank(ds)
+        m[s] = mean(techbatch[(ra <= knn+1) & (ra != 1)] == techbatch[s])
+      }
+      tech_concord = mean(m)
+    }else{
+      tech_concord = NA
+    }
+    
+    if(!(is.null(biobatch))){
+      pdf(paste0(plot.dir,"/",leaf.name,"_epc1vqpc1_biocol.pdf"))
+      cols = rainbow(length(levels(as.factor(biobatch))))[as.factor(biobatch)]
+      plot(epc$x[,1],qpc$x[,1],pch = 16, col = cols, xlab = "EPC1",ylab = "QPC1")
+      dev.off()
+      
+      pdf(paste0(plot.dir,"/",leaf.name,"_epc1vepc2_biocol.pdf"))
+      cols = rainbow(length(levels(as.factor(biobatch))))[as.factor(biobatch)]
+      plot(epc$x[,1],epc$x[,2],pch = 16, col = cols, xlab = "EPC1",ylab = "EPC2")
+      dev.off()
+      
+      d = as.matrix(dist(epc$x[,1:2],method = "euclidean"))
+      m = NULL
+      for(s in 1:dim(d)[1]){
+        ds = d[,s]
+        ra = rank(ds)
+        m[s] = mean(biobatch[(ra <= knn+1) & (ra != 1)] == biobatch[s])
+      }
+      bio_concord = mean(m)
+    }else{
+      bio_concord = NA
+    }
+    
+    
+    out = cbind(leaf.name,cor_pearson,cor_spearman,tech_concord,bio_concord)
   }else{
-    tech_concord = NA
+    out = cbind(leaf.name,NA,NA,NA,NA)
   }
   
-  if(!(is.null(biobatch))){
-    pdf(paste0(plot.dir,"/",leaf.name,"_epc1vqpc1_biocol.pdf"))
-    cols = rainbow(length(levels(as.factor(biobatch))))[as.factor(biobatch)]
-    plot(epc$x[,1],qpc$x[,1],pch = 16, col = cols, xlab = "EPC1",ylab = "QPC1")
-    dev.off()
-    
-    pdf(paste0(plot.dir,"/",leaf.name,"_epc1vepc2_biocol.pdf"))
-    cols = rainbow(length(levels(as.factor(biobatch))))[as.factor(biobatch)]
-    plot(epc$x[,1],epc$x[,2],pch = 16, col = cols, xlab = "EPC1",ylab = "EPC2")
-    dev.off()
-    
-    d = as.matrix(dist(epc$x[,1:2],method = "euclidean"))
-    m = NULL
-    for(s in 1:dim(d)[1]){
-      ds = d[,s]
-      ra = rank(ds)
-      m[s] = mean(biobatch[(ra <= knn+1) & (ra != 1)] == biobatch[s])
-    }
-    bio_concord = mean(m)
-  }else{
-    bio_concord = NA
-  }
-  
-  
-  out = cbind(leaf.name,cor_pearson,cor_spearman,tech_concord,bio_concord)
   write.table(out,file = out.file,append = T,quote = F,sep = "\t",row.names = F,col.names = F)
+  
 }

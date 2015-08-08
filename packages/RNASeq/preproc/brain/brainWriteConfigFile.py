@@ -9,12 +9,12 @@ from collections import namedtuple
 #The sourceFolders is a tuple of dir and bool (isPairedEnd) - get rid of the latter field which is not needed here
 
 SOURCES_DIR = "/data/yosef/BRAIN/sources"
-#PROCESSED_DIR = "/data/yosef/BRAIN/processed_June2015_b"
-PROCESSED_DIR = "/data/yosef/BRAIN/processed_July2015"
+PROCESSED_DIR = "/data/yosef/BRAIN/processed_June2015_b"
+#PROCESSED_DIR = "/data/yosef/BRAIN/processed_July2015"
 
 
 #cortical or olfactory
-DO_CORTICAL = True
+DO_CORTICAL = False
 if(DO_CORTICAL):
     METADATA_DIR = "/data/yosef/BRAIN/sources/metadata/cortical"
     CONFIG_OUTPUT_FILE = os.path.join(PROCESSED_DIR, 'collect/config_cortical.xlsx')
@@ -31,7 +31,7 @@ sourceFolders = [x[0] for x in sourceFolders]
 outputCellListFileName = os.path.join(PROCESSED_DIR, 'collect/cuff/cell_list.txt')
 
 MD_FIELDS = [fieldname.replace(' ', '_').lower() for fieldname in \
-    ['Expt_condition', 'sample_id', 'sequencing_id', 'C1_run_id', 'Single_Bulk_Pool', 'Dilution plate coordinate', 'C1 position', 'library plate name', 'library plate position', 'Barcode', 'Index set', 'Lane', 'cDNA concentration', 'number_of_animals', 'DOB', 'Sex', 'Age', 'FACS_C1_date', 'C1_chip', 'Cell type', 'Cell description', 'C1', 'Capture program temp', 'spikein_dilution']]
+    ['Expt_condition', 'sample_id', 'sample_sequencing_id', 'sequencing_run_id', 'C1_run_id', 'Single_Bulk_Pool', 'Dilution plate coordinate', 'C1 position', 'library plate name', 'library plate position', 'Barcode', 'Index set', 'Lane', 'cDNA concentration', 'number_of_animals', 'DOB', 'Sex', 'Age', 'FACS_C1_date', 'C1_chip', 'Cell type', 'Cell description', 'C1', 'Capture program temp', 'spikein_dilution']]
 md_record = namedtuple('md_record', MD_FIELDS)
 
 
@@ -62,10 +62,10 @@ def ReadOneMetadataFile(md_file):
 
         cur_cell_md_record = md_record._make(row_metadata)
 
-        if not(cur_cell_md_record.sample_id) or not(cur_cell_md_record.sequencing_id):
+        if not(cur_cell_md_record.sample_id) or not(cur_cell_md_record.sample_sequencing_id):
             raise Exception("cannot have an empty cell id")
 
-        md_dict_for_file[cur_cell_md_record.sequencing_id] = cur_cell_md_record
+        md_dict_for_file[cur_cell_md_record.sample_sequencing_id] = cur_cell_md_record
 
         #print "read row %d" % count #for debug
         count += 1

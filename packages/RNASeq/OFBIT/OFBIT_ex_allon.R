@@ -56,6 +56,6 @@ OFBIT(e = e,type = "TPM",q = q,techbatch = techbatch,biobatch = biobatch ,hk_gen
       log.file=log.file)
 
 
-
+#filtering.methods=c("weak","strong"),
 #binned.norm.methods=list(), 
 #regression.norm.methods=list(),
