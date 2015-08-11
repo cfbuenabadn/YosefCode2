@@ -22,7 +22,7 @@ wcor = function(x,w){
 # Weighted PCA
 # Rows = features
 # Columns = experiments
-wPCA = function(x,w){
+wPCA = function(x,w,nu = min(dim(x))){
   
   # Weighted Covariance/Correlation Matrix
   cov = wcov(t(x),t(w))
@@ -30,7 +30,7 @@ wPCA = function(x,w){
   cor = cov/sqrt(var%*%t(var))
   
   # SVD of Weighted Correlation Matrix
-  svd_obj = svd(cor)
+  svd_obj = svd(cor,nu = nu)
   eigvecs = svd_obj$u # SVD Takes a while!
   
   #  Projection (Weighted)

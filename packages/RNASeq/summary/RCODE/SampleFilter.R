@@ -25,7 +25,7 @@ FNR = function(eSet, bulk.eSet,ref_list, FN_thresh = 0, report_miss = T, out.dir
       dir.create(out.dir)
     }
     
-    common_symbols = gsub("_variant[[:digit:]]*","",featureData(eSet)$Gene_Symbol)
+    common_symbols = gsub("_ID=.*","",featureData(eSet)$Symbol)
     is.shared = toupper(ref.genes) %in% toupper(common_symbols)
     
     # Report missing reference genes

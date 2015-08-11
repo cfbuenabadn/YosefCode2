@@ -22,7 +22,7 @@ processQf = function(raw.quality.data, row.names, to.log = c("NREADS", "NALIGNED
 
 
 # Cell filtering According to QC Summary Score
-TechFilter = function(eSet,gf.vec = NULL, Z_CUTOFF = 2.3, mixture = T,PROP_CUTOFF = .90, plot.dir = NULL, plot.prefix = NULL, MAX_QUAL_PCS = 5, MAX_EXP_PCS = 5, MIN_VAR = .7, good.metrics = c("NREADS","NALIGNED","RALIGN") , force.metrics = NULL, DIP_THRESH = .01){
+TechFilter = function(eSet,gf.vec = NULL, Z_CUTOFF = 2.3, mixture = T,PROP_CUTOFF = .90, plot.dir = NULL, plot.prefix = NULL, MAX_QUAL_PCS = 5, MAX_EXP_PCS = 5, MIN_VAR = .7, good.metrics = c("NREADS","NALIGNED","RALIGN","PCT_CODING_BASES") , force.metrics = NULL, DIP_THRESH = .01){
   
   ##-----Correcting for Technical Quality Measures----
   
@@ -120,6 +120,7 @@ TechFilter = function(eSet,gf.vec = NULL, Z_CUTOFF = 2.3, mixture = T,PROP_CUTOF
       CUTOFF = median(qscore) - Z_CUTOFF*mad(qscore)
       CUTOFF = max(mean(qscore) - Z_CUTOFF*sd(qscore), CUTOFF)
       
+      
       # Reverse thresholds
       if(!is.signed){
         RCUTOFF = median(qscore) + Z_CUTOFF*mad(qscore)
@@ -133,8 +134,10 @@ TechFilter = function(eSet,gf.vec = NULL, Z_CUTOFF = 2.3, mixture = T,PROP_CUTOF
         if(is.multimodal){
           print(paste0("Multimodality detected in Quality Score ",i))
           mixmdl = normalmixEM(qscore,k=2)
+          plot(mixmdl,2)
           component = which(mixmdl$mu %in% max(mixmdl$mu))
           CUTOFF = max(mixmdl$mu[component] - Z_CUTOFF*mixmdl$sigma[component], CUTOFF)
+          
         }
       }
       
