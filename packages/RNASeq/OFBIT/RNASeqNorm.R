@@ -163,30 +163,32 @@ ExtendRat = function(raw, norm){
   
   o = order(raw) # Order of raw data 
   r = norm[o]/raw[o] # Ordered Normalization Ratio Vector
-  is_zero = (raw[o] == 0)
-  r = r[!is_zero] # Remove Zeroes on the left
-  len = length(r) # Number of ratios for non-zero data                                                            
+  is_zero = (raw[o] == 0) # Data that is zero in raw
+  r = r[!is_zero] # Remove Zeroes (these sit on the left in the ordered vector)
+  len = length(r) # Number of ratios for non-zero data values
   
-  # Leading NA propagates as -1 (No information gained from this entry)
+  # Leading NA propagates as -1 (No information will be gained from -1 entries)
   if(is.na(r[1])){
     r[1] = -1
   }
   
-  # Left Ratio
-  left.r = r[2:len] # Ratios that could be NA - remember that r[1] would have been converted to -1 if it was NA
-  na.index = which(is.na(left.r)) # Track NA/undefined ratios (missing data)
+  # Left Ratio - For all data, define the left adjustment ratio for missing data as the nearest adjustment ratio on the left
+  left.r = r[2:len] # Only consider ratios that could be NA after modifying leading value - remember that r[1] would have been converted to -1 if it was NA!
+  na.index = which(is.na(left.r)) # Track whether NA/undefined ratios still persist
   while(length(na.index) > 0){
     left.r[na.index] = c(r[1],left.r)[na.index] # Replace undefined ratio with ratio on the left
     na.index = which(is.na(left.r)) # Update undefined left ratios
   }
   # Produce final left ratio
-  left.r = c(r[1],left.r) 
-  left.r[left.r == -1] = NA
+  left.r = c(r[1],left.r)  # Restore leading value to the left ratio vector
+  left.r[left.r == -1] = NA # If it is -1, restore it's value to NA
   
   # Restore Leading NA
   if(r[1] == -1){
     r[1] = NA
   }
+  
+  ## Same thing, now on the right!
   
   # Tail NA propagates as -1 (No Information Gained From this Entry)
   if(is.na(r[len])){
@@ -203,11 +205,11 @@ ExtendRat = function(raw, norm){
   # Produce final right ratio
   right.r = c(right.r,r[len])
   right.r[right.r == -1] = NA
-  
-  # Compute ratio from mean of left and right (Add Zeroes Back In!)
+
+  # Compute final adjustment ratio as mean of left and right, ignoring NA, and add zeroes back in!
   new.r = c(rep(0,sum(is_zero)),rowMeans(cbind(left.r,right.r),na.rm = T))
   
-  # Apply ratio
+  # Apply ratio to raw data to produce final normalized data - note that zeroes MUST have been restored.
   return((new.r*raw[o])[order(o)])
 } 
 
