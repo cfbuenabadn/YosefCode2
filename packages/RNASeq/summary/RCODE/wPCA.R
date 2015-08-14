@@ -1,3 +1,5 @@
+require(rARPACK)
+
 # Weighted mean
 wmean = function(x,w){
   return(sum(x*w)/sum(w))
@@ -22,7 +24,7 @@ wcor = function(x,w){
 # Weighted PCA
 # Rows = features
 # Columns = experiments
-wPCA = function(x,w,nu = min(dim(x))){
+wPCA = function(x,w,nu = min(dim(x)),niter = 100){
   
   # Weighted Covariance/Correlation Matrix
   cov = wcov(t(x),t(w))
@@ -30,8 +32,8 @@ wPCA = function(x,w,nu = min(dim(x))){
   cor = cov/sqrt(var%*%t(var))
   
   # SVD of Weighted Correlation Matrix
-  svd_obj = svd(cor,nu = nu)
-  eigvecs = svd_obj$u # SVD Takes a while!
+  eig_obj = eigs(cor,k = nu,which = "LM")
+  eigvecs = eig_obj$vectors
   
   #  Projection (Weighted)
   z = (x - rowSums(x*w)/rowSums(w))/sqrt(var) # Weighted mean-subtracted and scaled to weighted variance
@@ -39,8 +41,8 @@ wPCA = function(x,w,nu = min(dim(x))){
   
   # Results
   res = list()
-  res$sdev = svd_obj$d
-  res$rotation = svd_obj$u
+  res$sdev = eig_obj$values
+  res$rotation = eig_obj$vectors
   res$x = wpc
   return(res)
   
