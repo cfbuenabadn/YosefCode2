@@ -1,7 +1,7 @@
 from string import Template
 import os
 import stat
-from brainSources import cortical_sourceFolders, olfactory_sourceFolders
+from brainSources import cortical_sourceFolders, olfactory_sourceFolders, bateup_sourceFolders
 
 #TODO: change process folder to detect automatically if this is single end or paired-end?
 
@@ -10,10 +10,20 @@ COLLECT_SCRIPT_FILE_NAME = "/project/eecs/yosef-archive/users/allonwag/temp/coll
 
 OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_June2015_b/"
 OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_July2015/"
+OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_Bateup_Aug2015/"
 
-#cortical or olfactory
-DO_CORTICAL = True
-sourceFolders = cortical_sourceFolders if DO_CORTICAL else olfactory_sourceFolders
+#cortical / olfactory / Bateup
+PROJECT = "Bateup"
+if PROJECT == "Cortical":
+    sourceFolders = cortical_sourceFolders
+elif PROJECT == "Olfactory":
+    sourceFolders = olfactory_sourceFolders
+elif PROJECT == "Bateup":
+    sourceFolders = bateup_sourceFolders
+else:
+    raise Exception("unrecognized project!")
+
+
 
 allBatchAliases = []
 with open(SEND_SCRIPT_FILE_NAME, "wt") as fout:

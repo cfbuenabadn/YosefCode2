@@ -1,4 +1,4 @@
-from brainSources import cortical_sourceFolders, olfactory_sourceFolders
+from brainSources import cortical_sourceFolders, olfactory_sourceFolders, bateup_sourceFolders
 import os
 import os.path
 import glob
@@ -9,20 +9,29 @@ from collections import namedtuple
 #The sourceFolders is a tuple of dir and bool (isPairedEnd) - get rid of the latter field which is not needed here
 
 SOURCES_DIR = "/data/yosef/BRAIN/sources"
-PROCESSED_DIR = "/data/yosef/BRAIN/processed_June2015_b"
+#PROCESSED_DIR = "/data/yosef/BRAIN/processed_June2015_b"
 #PROCESSED_DIR = "/data/yosef/BRAIN/processed_July2015"
+PROCESSED_DIR = "/data/yosef/BRAIN/processed_Bateup_Aug2015"
 
 
-#cortical or olfactory
-DO_CORTICAL = False
-if(DO_CORTICAL):
+
+#cortical / olfactory / Bateup
+PROJECT = "Bateup"
+if PROJECT == "Cortical":
+    sourceFolders = cortical_sourceFolders
     METADATA_DIR = "/data/yosef/BRAIN/sources/metadata/cortical"
     CONFIG_OUTPUT_FILE = os.path.join(PROCESSED_DIR, 'collect/config_cortical.xlsx')
-    sourceFolders = cortical_sourceFolders
-else:
+elif PROJECT == "Olfactory":
+    sourceFolders = olfactory_sourceFolders
     METADATA_DIR = "/data/yosef/BRAIN/sources/metadata/olfactory"
     CONFIG_OUTPUT_FILE = os.path.join(PROCESSED_DIR, 'collect/config_olfactory.xlsx')
-    sourceFolders = olfactory_sourceFolders
+elif PROJECT == "Bateup":
+    sourceFolders = bateup_sourceFolders
+    METADATA_DIR = "/data/yosef/BRAIN/sources/metadata/bateup"
+    CONFIG_OUTPUT_FILE = os.path.join(PROCESSED_DIR, 'collect/config_bateup.xlsx')
+else:
+    raise Exception("unrecognized project!")
+
 
 
 sourceFolders = [x[0] for x in sourceFolders]

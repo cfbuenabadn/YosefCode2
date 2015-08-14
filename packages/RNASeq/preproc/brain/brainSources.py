@@ -16,3 +16,7 @@ olfactory_sourceFolders = [
     ("150515_HS3A/Project_Ngai8by8", False),
     ("150612_HS1A/UnalignedL34/Project_Ngai", False)
 ]
+
+bateup_sourceFolders = [
+    ("150710_JGI2/Lane78/Project_Bateup", False)
+]
