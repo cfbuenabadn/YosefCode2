@@ -37,7 +37,7 @@ TFilter = function(e,cov = NULL,
 }
 
 ## 3) ===== ComBat without Covariates =====
-FastComBat = function(e,batch,biobatch = NULL,par.prior=T,prior.plots=F,to.log = T){
+FastComBat = function(e,batch,biobatch = NULL,par.prior=T,prior.plots=F,to.log = T,SD_EPSILON = 0){
   if(to.log){
     e = log(e + 1)
   }
@@ -74,7 +74,7 @@ UQ = function(x, to.log = F ){
   if(to.log){
     x = log(x + 1)
   }
-  q = apply(x,2,quantile)[4,]
+  q = apply(x,2,quantile,na.rm = T)[4,]
   y = t(t(x)/q)*mean(q)
   if(to.log){
     y = exp(y) - 1
@@ -253,7 +253,8 @@ PPQual = function(q, to.log = c("NREADS", "NALIGNED"),
                   to.abs.log = c("MEDIAN_5PRIME_TO_3PRIME_BIAS","MEDIAN_5PRIME_BIAS","MEDIAN_3PRIME_BIAS"),
                   to.logit.one = c("PCT_RIBOSOMAL_BASES","PCT_CODING_BASES","PCT_UTR_BASES",
                                    "PCT_INTRONIC_BASES","PCT_INTERGENIC_BASES","PCT_MRNA_BASES"),
-                  to.logit.hund = c("RALIGN")){
+                  to.logit.hund = c("RALIGN"),
+                  SD_EPSILON = 0){
   
   if(any(is.null(colnames(q)))){
     stop("No quality parameter names.")
@@ -288,7 +289,7 @@ PPQual = function(q, to.log = c("NREADS", "NALIGNED"),
 }
 
 ## ===== Select Processed Quality Features showing Significant Association w/ Expression =====
-QSel = function(e, ppq, tf.vec = T, MAX_EXP_PCS = 5, qval_thresh = .01, method = c("spearman","pearson")){
+QSel = function(e, ppq, tf.vec = T, MAX_EXP_PCS = 5, qval_thresh = .01, method = c("spearman","pearson"),SD_EPSILON = 0){
   method <- match.arg(method)
   
   tf.vec = tf.vec & (apply(e,1,sd) > SD_EPSILON) # Only consider variable genes for PCA
@@ -414,7 +415,7 @@ GlobScale = function(e,batch, method = c("median","mean","UQ"), EPSILON = 1){
 }
 
 ## ===== Re-Centering Eigen-Genes By Batch =====
-AdjEig = function(e,batch, method = c("median","mean"), to.log = T, EPSILON = 1){
+AdjEig = function(e,batch, method = c("median","mean"), to.log = T, EPSILON = 1,SD_EPSILON = 0){
   method <- match.arg(method)
   batches = unique(batch)
   
@@ -483,7 +484,7 @@ QPCResLoc = function(e,scores, EPSILON = 1, to.log = T){
 }
 
 ## ===== Residuals of Log-Linear Fit to EigenGenes =====
-QPCResEig = function(e,scores, EPSILON = 1, to.log = T){
+QPCResEig = function(e,scores, EPSILON = 1, to.log = T,SD_EPSILON = 0){
   if (to.log){
     e = log(e + EPSILON)
   }
@@ -546,7 +547,7 @@ runRUVg <- function(e, control_vec = NULL,K) {
 
 # ===== Metric Normalization =====
 library(far)
-MetNorm = function(e,scores,to.log = T, K = 50){
+MetNorm = function(e,scores,to.log = T, K = 50, SD_EPSILON = 0){
   if(to.log){
     e = log(e+1)
   }
