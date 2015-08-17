@@ -56,6 +56,11 @@ loadCuff = function(collect_dir ,config_file, qc_fields_file, gene_fields_file)
   fpkm_table = loadExpressionMatrix(file.path(collect_dir, "cuff_fpkmTable.txt"), commonOutput)
   print("Cufflinks FPKM table loaded successfully")
   
+  ##compute TPM data for cufflinks based on the FPKM data
+  ##see https://haroldpimentel.wordpress.com/2014/05/08/what-the-fpkm-a-review-rna-seq-expression-units/
+  ##for the formula: TPM_i = (FPKM_i / (sum_j{FPKM_j})) * 10^6
+  tpm_table = sweep(fpkm_table, 2, colSums(fpkm_table, na.rm=T), '/') * (10^6)
+  
   #load counts (real counts, produced by featureCounts, in contrast to cufflink's expected counts)
   counts_table = loadExpressionMatrix(file.path(collect_dir, "tophat2_featureCountsTable.txt"), commonOutput)
   print("FeatureCounts table loaded successfully")
@@ -66,6 +71,7 @@ loadCuff = function(collect_dir ,config_file, qc_fields_file, gene_fields_file)
   phenoData = new("AnnotatedDataFrame", commonOutput$config_table)
   assayData <- new.env(parent = emptyenv())
   assayData$fpkm_table = data.matrix(fpkm_table)
+  assayData$tpm_table = data.matrix(tpm_table)
   assayData$expectedCounts_table = data.matrix(counts_table)
   #by default: use FPKMs for the expression
   assayData$exprs = assayData$fpkm_table
