@@ -36,8 +36,9 @@ wcov = function(x,w){
 # w = weight matrix
 # nu = number of eigenvectors to compute
 # filt = whether columns should be filtered to prevent weightless products
+# scale. = if true, scaling is performed for PCA on correlation, vs covariance
 
-wPCA = function(x,w,nu = min(dim(x)), filt = F){
+wPCA = function(x,w,nu = min(dim(x)), filt = F, scale. = T){
   
   # No negative weights allowed.
   stopifnot(!any(w < 0))
@@ -52,16 +53,24 @@ wPCA = function(x,w,nu = min(dim(x)), filt = F){
   # Weighted Covariance/Correlation Matrix
   cov = wcov(t(x),t(w))
   stopifnot(!any(is.na(cov))) # Stop if covariance matrix is undefined
-  var = diag(cov)
-  cor = cov/sqrt(var%*%t(var))
+  if(scale.){
+    var = diag(cov)
+    cor = cov/sqrt(var%*%t(var))
+  }else{
+    cor = cov
+  }
   
   # Eigenvectors of Weighted Correlation Matrix
   eig_obj = eigs(cor,k = nu,which = "LM")
   eigvecs = eig_obj$vectors
   
-  # Project scaled data (weighted moments) along principal eigenvectors
+  # Project centered and scaled(?) data along principal eigenvectors
   # to compute weighted principal components
-  z = (x - rowSums(x*w)/rowSums(w))/sqrt(var)
+  if(scale.){
+    z = (x - rowSums(x*w)/rowSums(w))/sqrt(var)
+  }else{
+    z = (x - rowSums(x*w)/rowSums(w))
+  }
   wpc = t(z*w) %*% eigvecs
   
   # Output Results (prcomp convention)
