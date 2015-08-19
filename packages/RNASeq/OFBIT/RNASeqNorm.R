@@ -1,8 +1,11 @@
-source("wPCA.R")
+source("../summary/RCODE/wPCA.R")
 library(sva)
 library(preprocessCore)
 library(mixtools)
 library(diptest)
+
+## ===== SD_EPSILON: Constant for purpose of correlation computation =====
+SD_EPSILON = 1e10 * .Machine$double.eps #~2.2e-6
 
 ## ----- TFilter: Transcript Filtering Wrapper Function -----
 # Perform transcript filtering on expression matrix, producing boolean vector annotating genes that pass filter (T) and fail filter (F)
@@ -62,11 +65,10 @@ TFilter = function(e,cov = NULL,
 # par.prior = use parametric prior? ComBat argument
 # prior.plots = plot priors? ComBat argument
 # to.log = should data be logged prior to adjustment? Recommended for expression data.
-# SD_EPSILON = Lower limit on transcript-wise SD for inclusion in the modeling (rejected transcripts are not adjusted)
 
 # WARNING! ComBat will adjust zero data to non-zero values
 
-FastComBat = function(e,batch,biobatch = NULL,par.prior=T,prior.plots=F,to.log = T,SD_EPSILON = 0){
+FastComBat = function(e,batch,biobatch = NULL,par.prior=T,prior.plots=F,to.log = T){
   # Log-Transform Data
   if(to.log){
     e = log(e + 1)
@@ -75,8 +77,8 @@ FastComBat = function(e,batch,biobatch = NULL,par.prior=T,prior.plots=F,to.log =
   # Pheno Data
   pheno = as.data.frame(cbind(batch,biobatch))
   
-  if(is.null(biobatch)){
-    # If no biobatch, use a constant model
+  if(is.null(biobatch) || any(is.na(biobatch))){
+    # If no biobatch or some samples are not catgorized, use a constant model
     colnames(pheno) = c("batch")
     is_var = apply(e,1,sd) > SD_EPSILON
     mod = model.matrix(~ 1, data = pheno)
@@ -312,14 +314,12 @@ EScale = function(e, tf.vec = T, method = c("FQ","UQ","DESeq"), zero.method = c(
 # Standardize quality metric
 # q = quality metric matrix (columns = named features, rows = samples)
 # ... = lists for specific transformations (see below)
-# SD_EPSILON = Lower limit on standardized (un-scaled) SD for inclusion in final matrix
 
 PPQual = function(q, to.log = c("NREADS", "NALIGNED"), 
                   to.abs.log = c("MEDIAN_5PRIME_TO_3PRIME_BIAS","MEDIAN_5PRIME_BIAS","MEDIAN_3PRIME_BIAS"),
                   to.logit.one = c("PCT_RIBOSOMAL_BASES","PCT_CODING_BASES","PCT_UTR_BASES",
                                    "PCT_INTRONIC_BASES","PCT_INTERGENIC_BASES","PCT_MRNA_BASES"),
-                  to.logit.hund = c("RALIGN"),
-                  SD_EPSILON = 0){
+                  to.logit.hund = c("RALIGN")){
   
   if(any(is.null(colnames(q)))){
     stop("No quality parameter names.")
@@ -361,9 +361,8 @@ PPQual = function(q, to.log = c("NREADS", "NALIGNED"),
 # MAX_EXP_PCS = max number of expression PCs tested for correlations
 # qval_thresh = FDR q-value threshold used for assigning significant association between expression PCs and quality metrics
 # method = correlation computation method, "spearman" or "pearson"
-# SD_EPSILON = Lower limit on expression SD for inclusion in expression PCA
 
-QSel = function(e, ppq, tf.vec = T, MAX_EXP_PCS = 5, qval_thresh = .01, method = c("spearman","pearson"),SD_EPSILON = 0){
+QSel = function(e, ppq, tf.vec = T, MAX_EXP_PCS = 5, qval_thresh = .01, method = c("spearman","pearson")){
   method <- match.arg(method)
   
   tf.vec = tf.vec & (apply(e,1,sd) > SD_EPSILON) # Only consider variable genes for PCA
@@ -417,18 +416,23 @@ QPCScores = function(e,q,sig.test = T,tf.vec = T){
 
 QBins = function(score,method = c("quantiles","mix_norm"), 
                  mix_k = 2, 
-                 quantile_bins = 2){
+                 quantile_bins = 2,
+                 dip_thresh = .01){
   
   method <- match.arg(method)
   if(method == "mix_norm" ){
-    # Membership to Mixture Components 
-    nmem = normalmixEM(score,k = mix_k)
-    mp = apply(nmem$posterior,1,max)
-    memb = NULL
-    for (i in 1:length(mp)){
-      memb[i] = which(nmem$posterior[i,] == mp[i]) 
+    if(dip.test(score)$p.value < dip_thresh){
+      # Membership to Mixture Components 
+      nmem = normalmixEM(score,k = mix_k,)
+      mp = apply(nmem$posterior,1,max)
+      memb = NULL
+      for (i in 1:length(mp)){
+        memb[i] = which(nmem$posterior[i,] == mp[i]) 
+      }
+      return(memb)
+    }else{
+      return(rep(1,length(score)))
     }
-    return(memb)
   }else{
     # Membership to Partitions
     memb = cut(rank(score),quantile_bins,labels = F)
@@ -521,8 +525,10 @@ ResLoc = function(e,scores, EPSILON = 1, zero.method = c("all","positive")){
 
   re = log(e + EPSILON)
   for (g in 1:dim(e)[1]){
-    lin.mod = lm(re[g,] ~ scores,weights = w[g,])
-    re[g,] = lin.mod$coefficients[1] + lin.mod$residuals
+    if(sum(w[g,]) > 0){
+      lin.mod = lm(re[g,] ~ scores,weights = w[g,])
+      re[g,] = lin.mod$coefficients[1] + lin.mod$residuals
+    }
   }
   
 
@@ -556,10 +562,10 @@ YL_RUVg <- function(e, control_vec = NULL,K, zero.method = c("all","positive")) 
   zero.method <- match.arg(zero.method)
   if(zero.method == "positive"){
     # Hidden factors in non-zero space
-    W = wPCA(cmat,0 + (cmat > 0),filt = T,nu = K,scale. = F)$x
+    W = wPCA(log(cmat+1),0 + (cmat > 0),filt = T,nu = K,scale. = F)$x
   }else{
     # Hidden factors in full space
-    W = prcomp(t(cmat),center = T,scale. = F)$x[,1:K]
+    W = prcomp(t(log(cmat+1)),center = T,scale. = F)$x[,1:K]
   }
   
   return(ResLoc(e = e,scores = W,zero.method = zero.method ))
