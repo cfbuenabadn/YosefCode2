@@ -142,6 +142,7 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, pro
                     strout = paste(filt_method,scale_method, zero_method,combat_method,qfilt_flag,norm_method,alt_method,bin_method,sep = "|")
                     print(strout)
                     ne = YL_RUVg(e = ce,hk_genes & tf.vec,K = curK,zero.method = alt_method)
+                    ne[ce == 0] = 0
                     ScoreLeaf(ne,q,tf.vec = tf.vec,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file, plot.dir = plot.dir)  
                   }
                 }
@@ -159,6 +160,7 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, pro
                       strout = paste(filt_method,scale_method, zero_method,combat_method,qfilt_flag,norm_method2,alt_method,bin_method,sep = "|")
                       print(strout)
                       ne = ResLoc(e = ce,scores = score_obj$x[,1:curK],zero.method = alt_method)
+                      ne[ce == 0] = 0
                       ScoreLeaf(ne,q,tf.vec = tf.vec,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file,plot.dir = plot.dir)
                     }
                   }
