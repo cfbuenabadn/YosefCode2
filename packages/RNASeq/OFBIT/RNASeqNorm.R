@@ -118,12 +118,45 @@ UQ = function(x){
 ## ----- DESeq Normalization by Size Factors ------
 # Returns DESeq-scaled normalized matrix
 # x = expression matrix (rows = transcripts, cols = samples)
-DESeqNorm = function(x){
-  geom_mean = apply(x,1,prod)^(1/dim(x)[2]) # Compute Geometric Mean of Expression for Each Gene
-  stopifnot(any(geom_mean > 0))
+# singlecell = if True, compute geometric means of positive data only
+
+DESeqNorm = function(x, singlecell = F){
+  
+  if(any(x < 0)){
+    stop("Negative values in input.")
+  }
+  
+  if(!is.null(dim(x))){
+    if(singlecell){
+      y = x
+      y[y == 0] = NA # Matrix with zeroes replaced w/ NA
+      geom_mean = apply(y,1,prod,na.rm = T)^(1/rowSums(!is.na(y))) # Compute Geometric Mean of Expression for Each Gene (Use positive data only)
+    }else{
+      geom_mean = apply(x,1,prod)^(1/dim(x)[2]) # Compute Geometric Mean of Expression for Each Gene
+    }
+  }else{
+    stop("Null imput matrix dimension.")
+  }
+  
+  if(!any(geom_mean > 0)){
+    stop("Geometric mean zero for all genes.")
+  }
+  
   ratios = x / geom_mean # Divide each Expression Value by Geometric Mean of Corresponding Gene
   ratios = ratios[geom_mean > 0,] # Ignore Genes with Zero Mean
-  size = apply(ratios,2,median) # Size factor taken as median of ratios
+  
+  if(singlecell){
+    y = ratios
+    y[y == 0] = NA
+    size = apply(y,2,median,na.rm = T) # Size factor taken as median of ratios (positive data only)
+  }else{
+    size = apply(ratios,2,median) # Size factor taken as median of ratios
+  }
+  
+  if(any(size == 0)){
+    stop("Zero library size. Try singlecell mode :-)")
+  }
+  
   y = t(t(x)/size)
   return(y)
 }
