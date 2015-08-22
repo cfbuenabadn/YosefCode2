@@ -16,6 +16,7 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, pro
                  binned.norm.methods=c("ComBat","LocScale"),
                  combat.methods=c("yes","no"),
                  filtering.methods=c("strong","weak"),
+                 scaling.methods = c(NA,"FQ","UQ","DESeq"),
                  tf.vec = NULL,
                  regression.norm.methods=c("ResLoc"),
                  error.file="/dev/null", log.file="/dev/null"){
@@ -60,12 +61,11 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, pro
     
     # 2) Scale method: Scaling data globally / quantile-based
     
-    if(sum(rowSums(e == 0) == 0) > 1){
-      scaling.methods = c(NA,"FQ","UQ","DESeq")
-    }else{
-      scaling.methods = c(NA,"FQ","UQ")
+    if(sum(rowSums(e[tf.vec,] == 0) == 0) < 2){
+      scaling.methods = scaling.methods[scaling.methods != "DESeq"]
       print("< 2 genes are detected in all samples! DESeq will not be run.")
     }
+    
     for (scale_method in scaling.methods){
       print(scale_method)
       # 3) Zero-Handling Method
