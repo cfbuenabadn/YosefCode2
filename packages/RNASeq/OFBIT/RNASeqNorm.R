@@ -174,7 +174,7 @@ MeanQuant = function(x){
 # Full Quantile normalization applied to non-zero data, under assumption of no false-positives
 # x = expression matrix (rows = transcripts, cols = samples)
 
-ConQuant = function(x){
+ConQuant = function(x,v = F){
   
   # Vector used for computation
   base_rank = cumsum(rep(1,dim(x)[1]))
@@ -202,18 +202,22 @@ ConQuant = function(x){
   ## Interpolating Quantiles
   print("1/2: Interpolating Quantiles")
   # Interpolation Matrix
-  inter_mat = NULL
+  inter_mat = rep(0,length(quant_out))
+  ob_counts = rep(0,length(quant_out))
   # For each sample
   for (i in 1:dim(x)[2]){
+    if(v == T){print(i)}
     # Produce spline interpolation for that sample, value ~ quantile index
     x1 = na.omit(quant_mat[,i])
     y1 = na.omit(x_mat[,i])
     # Evaluated at all possible quantile indices
     inter = approx(x1,y1,xout = quant_out, rule = 2)$y
-    inter_mat =cbind(inter_mat,inter)
+    ob_counts = ob_counts + !is.na(inter)
+    inter[is.na(inter)] = 0
+    inter_mat = inter_mat + inter
   }
   # Average over the interpolated values from all samples
-  inter_mean = rowMeans(inter_mat,na.rm = T)
+  inter_mean = inter_mat/ob_counts
   
   ## Substituting Mean Interpolated Values for Expression Values and Return
   print("2/2: Substituting Expression Values")
