@@ -66,7 +66,7 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, pro
       print("< 2 genes are detected in all samples! DESeq will not be run.")
     }
     
-    if(any(apply(e[tf.vec,] == 0,MARGIN = 2,FUN = median))){
+    if(any(apply(e[tf.vec,][rowSums(e[tf.vec,] == 0) == 0,] == 0,MARGIN = 2,FUN = median))){
       scaling.methods = scaling.methods[scaling.methods != "DESeq"]
       print("Sample with zero median! DESeq will not be run.")
     }
