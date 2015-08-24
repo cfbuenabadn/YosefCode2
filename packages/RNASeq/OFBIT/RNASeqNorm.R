@@ -121,7 +121,6 @@ UQ = function(x){
 # singlecell = if True, compute geometric means of positive data only
 
 DESeqNorm = function(x, singlecell = F){
-  
   if(any(x < 0)){
     stop("Negative values in input.")
   }
@@ -130,19 +129,27 @@ DESeqNorm = function(x, singlecell = F){
     if(singlecell){
       y = x
       y[y == 0] = NA # Matrix with zeroes replaced w/ NA
-      geom_mean = apply(y,1,prod,na.rm = T)^(1/rowSums(!is.na(y))) # Compute Geometric Mean of Expression for Each Gene (Use positive data only)
+      geom_mean = exp(apply(log(y),1,sum,na.rm = T)/rowSums(!is.na(y))) # Compute Geometric Mean of Expression for Each Gene (Use positive data only)
     }else{
-      geom_mean = apply(x,1,prod)^(1/dim(x)[2]) # Compute Geometric Mean of Expression for Each Gene
+      y = x
+      y[y == 0] = NA # Matrix with zeroes replaced w/ NA
+      geom_mean = exp(apply(log(y),1,sum)/(dim(y)[2])) # Compute Geometric Mean of Expression for Each Gene
+      geom_mean[is.na(geom_mean)] = 0
     }
   }else{
     stop("Null imput matrix dimension.")
   }
   
   if(!any(geom_mean > 0)){
-    stop("Geometric mean zero for all genes.")
+    stop("Geometric mean non-positive for all genes.")
   }
   
   ratios = x / geom_mean # Divide each Expression Value by Geometric Mean of Corresponding Gene
+  
+  if(any(is.infinite(geom_mean))){
+    stop("Infinite mean! This should never happen :-<")
+  }
+  
   ratios = ratios[geom_mean > 0,] # Ignore Genes with Zero Mean
   
   if(singlecell){
@@ -154,7 +161,7 @@ DESeqNorm = function(x, singlecell = F){
   }
   
   if(any(size == 0)){
-    stop("Zero library size. Try singlecell mode :-)")
+    stop("Zero library size. This should never happen :-(")
   }
   
   y = t(t(x)/size)
