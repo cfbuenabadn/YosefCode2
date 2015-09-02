@@ -72,9 +72,11 @@ loadCuff = function(collect_dir ,config_file, qc_fields_file, gene_fields_file)
   assayData <- new.env(parent = emptyenv())
   assayData$fpkm_table = data.matrix(fpkm_table)
   assayData$tpm_table = data.matrix(tpm_table)
-  assayData$expectedCounts_table = data.matrix(counts_table)
+  assayData$counts_table = data.matrix(counts_table)
   #by default: use FPKMs for the expression
-  assayData$exprs = assayData$fpkm_table
+  #assayData$exprs = assayData$fpkm_table
+  #decided to change the default to TPM!
+  assayData$exprs = assayData$tpm_table
   eSet = ExpressionSet(assayData, featureData = featureDat, protocolData = protoDat, phenoData = phenoData)
   
 }
