@@ -118,12 +118,52 @@ UQ = function(x){
 ## ----- DESeq Normalization by Size Factors ------
 # Returns DESeq-scaled normalized matrix
 # x = expression matrix (rows = transcripts, cols = samples)
-DESeqNorm = function(x){
-  geom_mean = apply(x,1,prod)^(1/dim(x)[2]) # Compute Geometric Mean of Expression for Each Gene
-  stopifnot(any(geom_mean > 0))
+# singlecell = if True, compute geometric means of positive data only
+
+DESeqNorm = function(x, singlecell = F){
+  if(any(x < 0)){
+    stop("Negative values in input.")
+  }
+  
+  if(!is.null(dim(x))){
+    if(singlecell){
+      y = x
+      y[y == 0] = NA # Matrix with zeroes replaced w/ NA
+      geom_mean = exp(apply(log(y),1,sum,na.rm = T)/rowSums(!is.na(y))) # Compute Geometric Mean of Expression for Each Gene (Use positive data only)
+    }else{
+      y = x
+      y[y == 0] = NA # Matrix with zeroes replaced w/ NA
+      geom_mean = exp(apply(log(y),1,sum)/(dim(y)[2])) # Compute Geometric Mean of Expression for Each Gene
+      geom_mean[is.na(geom_mean)] = 0
+    }
+  }else{
+    stop("Null imput matrix dimension.")
+  }
+  
+  if(!any(geom_mean > 0)){
+    stop("Geometric mean non-positive for all genes.")
+  }
+  
   ratios = x / geom_mean # Divide each Expression Value by Geometric Mean of Corresponding Gene
+  
+  if(any(is.infinite(geom_mean))){
+    stop("Infinite mean! This should never happen :-<")
+  }
+  
   ratios = ratios[geom_mean > 0,] # Ignore Genes with Zero Mean
-  size = apply(ratios,2,median) # Size factor taken as median of ratios
+  
+  if(singlecell){
+    y = ratios
+    y[y == 0] = NA
+    size = apply(y,2,median,na.rm = T) # Size factor taken as median of ratios (positive data only)
+  }else{
+    size = apply(ratios,2,median) # Size factor taken as median of ratios
+  }
+  
+  if(any(size == 0)){
+    stop("Zero library size. This should never happen :-(")
+  }
+  
   y = t(t(x)/size)
   return(y)
 }
@@ -141,7 +181,7 @@ MeanQuant = function(x){
 # Full Quantile normalization applied to non-zero data, under assumption of no false-positives
 # x = expression matrix (rows = transcripts, cols = samples)
 
-ConQuant = function(x){
+ConQuant = function(x,v = F){
   
   # Vector used for computation
   base_rank = cumsum(rep(1,dim(x)[1]))
@@ -169,18 +209,22 @@ ConQuant = function(x){
   ## Interpolating Quantiles
   print("1/2: Interpolating Quantiles")
   # Interpolation Matrix
-  inter_mat = NULL
+  inter_mat = rep(0,length(quant_out))
+  ob_counts = rep(0,length(quant_out))
   # For each sample
   for (i in 1:dim(x)[2]){
+    if(v == T){print(i)}
     # Produce spline interpolation for that sample, value ~ quantile index
     x1 = na.omit(quant_mat[,i])
     y1 = na.omit(x_mat[,i])
     # Evaluated at all possible quantile indices
     inter = approx(x1,y1,xout = quant_out, rule = 2)$y
-    inter_mat =cbind(inter_mat,inter)
+    ob_counts = ob_counts + !is.na(inter)
+    inter[is.na(inter)] = 0
+    inter_mat = inter_mat + inter
   }
   # Average over the interpolated values from all samples
-  inter_mean = rowMeans(inter_mat,na.rm = T)
+  inter_mean = inter_mat/ob_counts
   
   ## Substituting Mean Interpolated Values for Expression Values and Return
   print("2/2: Substituting Expression Values")
