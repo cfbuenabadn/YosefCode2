@@ -24,10 +24,13 @@ FNR = function(eSet, bulk.eSet,ref_list, FN_thresh = 0, report_miss = T, out.dir
     if (!is.null(out.dir) && !file.exists(out.dir)){
       dir.create(out.dir)
     }
-    
-    common_symbols = gsub("_ID=.*","",featureData(eSet)$Symbol)
+    if("Gene_Symbol" %in% colnames(featureData(eSet))){
+      common_symbols = gsub("_ID=.*|_variant.*","",featureData(eSet)$Gene_Symbol)
+    }else{
+      common_symbols = gsub("_ID=.*|_variant.*","",featureData(eSet)$Symbol)
+    }
     is.shared = toupper(ref.genes) %in% toupper(common_symbols)
-    
+    print(sum(is.shared))
     # Report missing reference genes
     num_missing = sum(!is.shared)
     if (report_miss && (num_missing  > 0)){

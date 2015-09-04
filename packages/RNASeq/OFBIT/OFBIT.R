@@ -1,4 +1,5 @@
 source("RNASeqNorm.R")
+source("estimateFNR.R")
 
 ## ===== OFBIT: OverFitting By Iterative Testing =====
 # e = expression matrix (rows = transcripts, cols = samples)
@@ -6,13 +7,15 @@ source("RNASeqNorm.R")
 # techbatch = categorical batch variable - known
 # biobatch = categorical biological variable - known - NA is allowed, but NA samples will be disregarded in plots and KNN calculations
 # hk_genes = boolean vector tagging housekeeping genes in rows of e
+# estimate_fnr = output weighted results according to FNR model
 # prop.q = proportion of variance in preprocessed quality matrix that you wish to retain in producing quality scores (qPCA)
+# qk = # of quality scores used for evaluation - maximum correlation score will be reported
 # out.file = path to output file (scores etc.)
 # tf.vec = transcript filter vector - if not null, will override filtering step as option "user"
 # plot.dir = path to plot directory
 # ...
 
-OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, prop.q = 0.80, out.file,plot.dir,
+OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, estimate_fnr = F,prop.q = 0.80,qK = 1, out.file,plot.dir,
                  binned.norm.methods=c("ComBat","LocScale"),
                  combat.methods=c("yes","no"),
                  filtering.methods=c("strong","weak"),
@@ -42,7 +45,7 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, pro
   
   # Initialize Report
   strout = paste("filt_method","scale_method", "zero_method","combat_method","qfilt_flag","norm_method","alt_method","bin_method",sep = "|")
-  out = cbind(strout,"EPC12_QPC1_pearson","EPC12_QPC1_spearman","tech_batch_KNN_concordance","phenotype_KNN_concordance","WPC12_QPC1_pearson","WPC12_QPC1_spearman","weighted_tech_batch_KNN_concordance","weighted_phenotype_KNN_concordance")
+  out = cbind(strout,"EPC12_QPC_pearson","EPC12_QPC_spearman","tech_batch_KNN_concordance","phenotype_KNN_concordance","WPC12_QPC_pearson","WPC12_QPC_spearman","weighted_tech_batch_KNN_concordance","weighted_phenotype_KNN_concordance","FNR_Expected_Log_Lik")
   write.table(out,file = out.file,quote = F,sep = "\t",row.names = F,col.names = F)
   
   # 1) Strong vs weak transcript filtering
@@ -61,11 +64,6 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, pro
     
     # 2) Scale method: Scaling data globally / quantile-based
     
-    if(sum(rowSums(e[tf.vec,] == 0) == 0) < 2){
-      scaling.methods = scaling.methods[scaling.methods != "DESeq"]
-      print("< 2 genes are detected in all samples! DESeq will not be run.")
-    }
-    
     for (scale_method in scaling.methods){
       print(scale_method)
       # 3) Zero-Handling Method
@@ -79,9 +77,17 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, pro
             print("UQ = 0 for subset of samples! Only positive method will be used for UQ.")
             zero.methods = c("positive")
           }
+        }else if(!is.na(scale_method) && scale_method == "DESeq"){
+          if(sum(rowSums(e[tf.vec,] == 0) == 0) < 2){
+            print("< 2 genes are detected in all samples! Only positive method will be used for DESeq.")
+            zero.methods = c("positive")
+          }else{
+            zero.methods = c("all","positive")
+          }
         }else{
           zero.methods = NA
         }
+      
         for (zero_method in zero.methods){
           print(zero_method)
           if (!is.na(scale_method)){
@@ -114,7 +120,12 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, pro
                 bin_method = NA
                 strout = paste(filt_method,scale_method, zero_method,combat_method,qfilt_flag,norm_method,alt_method,bin_method,sep = "|")
                 print(strout)
-                ScoreLeaf(ce,q,tf.vec = tf.vec,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file, plot.dir = plot.dir)
+                if(sum(e == 0) != sum(ce == 0)){
+                  print("Zeroes from nowhere!")
+                  print(sum(e == 0) )
+                  print(sum(ce == 0) )
+                }
+                ScoreLeaf(ce,q,tf.vec = tf.vec,estimate_fnr = estimate_fnr,qK = qK,hk_genes = hk_genes, techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file, plot.dir = plot.dir)
               }
               
               # Calculate scores
@@ -143,7 +154,12 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, pro
                     print(strout)
                     ne = YL_RUVg(e = ce,hk_genes & tf.vec,K = curK,zero.method = alt_method)
                     ne[ce == 0] = 0
-                    ScoreLeaf(ne,q,tf.vec = tf.vec,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file, plot.dir = plot.dir)  
+                    if(sum(e == 0) != sum(ne == 0)){
+                      print("Zeroes from nowhere!")
+                      print(sum(e == 0) )
+                      print(sum(ne == 0) )
+                    }
+                    ScoreLeaf(ne,q,tf.vec = tf.vec,estimate_fnr = estimate_fnr,qK = qK,hk_genes = hk_genes,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file, plot.dir = plot.dir)  
                   }
                 }
               }
@@ -161,7 +177,12 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, pro
                       print(strout)
                       ne = ResLoc(e = ce,scores = score_obj$x[,1:curK],zero.method = alt_method)
                       ne[ce == 0] = 0
-                      ScoreLeaf(ne,q,tf.vec = tf.vec,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file,plot.dir = plot.dir)
+                      if(sum(e == 0) != sum(ne == 0)){
+                        print("Zeroes from nowhere!")
+                        print(sum(e == 0) )
+                        print(sum(ne == 0) )
+                      }
+                      ScoreLeaf(ne,q,tf.vec = tf.vec,estimate_fnr = estimate_fnr,qK = qK,hk_genes = hk_genes,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file,plot.dir = plot.dir)
                     }
                   }
                 }
@@ -194,7 +215,7 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, pro
                         norm_method2 = paste0("ComBat", "(k=", k, ")")
                         strout = paste(filt_method,scale_method, zero_method,combat_method,qfilt_flag,norm_method2,alt_method,bin_method,sep = "|")
                         print(strout)
-                        ScoreLeaf(ne,q,tf.vec = tf.vec,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file,plot.dir = plot.dir)
+                        ScoreLeaf(ne,q,tf.vec = tf.vec,estimate_fnr = estimate_fnr,qK = qK,hk_genes = hk_genes,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file,plot.dir = plot.dir)
                       }
                     }else{
                       if (length(unique(bins)) == 1){
@@ -206,7 +227,12 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, pro
                         norm_method2 = paste0("LocScale", "(k=", k, ")")
                         strout = paste(filt_method,scale_method, zero_method,combat_method,qfilt_flag,norm_method2,alt_method,bin_method,sep = "|")
                         print(strout)
-                        ScoreLeaf(ne,q,tf.vec = tf.vec,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file,plot.dir = plot.dir)
+                        if(sum(e == 0) != sum(ne == 0)){
+                          print("Zeroes from nowhere!")
+                          print(sum(e == 0) )
+                          print(sum(ne == 0) )
+                        }
+                        ScoreLeaf(ne,q,tf.vec = tf.vec,estimate_fnr = estimate_fnr,qK = qK,hk_genes = hk_genes,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file,plot.dir = plot.dir)
                       }
                     }
                   }
@@ -229,24 +255,61 @@ ReportError = function(leaf.name, error.file, error.msg){
   
 }
 
-ScoreLeaf = function(e,q,tf.vec = T,techbatch = NULL,biobatch = NULL, knn = 10, leaf.name, out.file,plot.dir,EPSILON = 1){
-  
+ScoreLeaf = function(e,q,tf.vec = T,estimate_fnr = F,qK ,hk_genes = NULL, techbatch = NULL,biobatch = NULL, knn = 10, leaf.name, out.file,plot.dir,EPSILON = 1){
+    
+  if(any(is.na(e))){
+      stop("NA Value Detected at Leaf!")
+  }
+    
     tf.vec = tf.vec & (apply(e,1,sd) > SD_EPSILON) # Only consider variable genes for PCA
   
-    epc = prcomp(t(log(e[tf.vec,]+EPSILON)),center = T,scale. = T)
-    wpc = wPCA(log(e[tf.vec,]+EPSILON),w = 0 + (e[tf.vec,] > 0), nu = 2,filt = T,scale. = T)
+    ## All-Data PCA (Potentially Weighted)
+    if(estimate_fnr){
+      w = 0 + (e[tf.vec,] > 0)
+      fnr_out = estimateFNR(e[tf.vec,],bulk_model = T,is.expressed = hk_genes[tf.vec])
+      EL = fnr_out$EL
+      w[e[tf.vec,] == 0] = 1-fnr_out$Z[e[tf.vec,] == 0]
+      epc = wPCA(log(e[tf.vec,]+EPSILON),w = w, nu = 2,filt = T,scale. = T)
+      
+    }else{
+      EL = NA
+      # Use SVD directly because prcomp is ... difficult
+      # epc = prcomp(t(log(e[tf.vec,]+EPSILON)),center = T,scale. = T)
+      te = log(e[tf.vec,]+EPSILON)
+      te = te - rowMeans(te)
+      te = te/apply(te,1,sd)
+      svd_obj = svd(te)
+      epc = list(x = t(svd_obj$d * t(svd_obj$v)))
+    }
+    
+    ## Zero-omitted PCA
+    w = 0 + (e[tf.vec,] > 0)
+    wpc = wPCA(log(e[tf.vec,]+EPSILON),w = w, nu = 2,filt = T,scale. = T)
     
     ppq = PPQual(q)
     qpc = prcomp(ppq)
-    cor_pearson = max(abs(cor(epc$x[,1:2],qpc$x[,1], method = "pearson")))
-    cor_spearman = max(abs(cor(epc$x[,1:2],qpc$x[,1], method = "spearman")))
-    wcor_pearson = max(abs(cor(wpc$x[,1:2],qpc$x[,1], method = "pearson")))
-    wcor_spearman = max(abs(cor(wpc$x[,1:2],qpc$x[,1], method = "spearman")))
+    cor_pearson = max(abs(cor(epc$x[,1:2],qpc$x[,1:qK], method = "pearson")))
+    cor_spearman = max(abs(cor(epc$x[,1:2],qpc$x[,1:qK], method = "spearman")))
+    wcor_pearson = max(abs(cor(wpc$x[,1:2],qpc$x[,1:qK], method = "pearson")))
+    wcor_spearman = max(abs(cor(wpc$x[,1:2],qpc$x[,1:qK], method = "spearman")))
     
     
     if(!(is.null(techbatch))){
       
       cols = rainbow(length(levels(as.factor(techbatch))))[as.factor(techbatch)]
+      
+      if(estimate_fnr){
+        pdf(paste0(plot.dir,"/",leaf.name,"_fnr_techcol.pdf"))
+        plot(0,type = 'n', xlim = c(0,6),ylim = c(0,1))
+        x2 = e[tf.vec,]
+        x2[x2 <= 0] = NA
+        o = order(t(matrix(log10(apply(x2,1,median,na.rm = T)))))
+        pm = sort(t(matrix(log10(apply(x2,1,median,na.rm = T)))))
+        for(i in 1:dim(x2)[2]){
+          lines(pm,fnr_out$P[,i][o],lty = 1, col = cols[i])        
+        }
+        dev.off()
+      }
       
       pdf(paste0(plot.dir,"/",leaf.name,"_epc1vqpc1_techcol.pdf"))
       plot(epc$x[,1],qpc$x[,1],pch = 16, col = cols,xlab = "EPC1",ylab = "QPC1")
@@ -291,6 +354,19 @@ ScoreLeaf = function(e,q,tf.vec = T,techbatch = NULL,biobatch = NULL, knn = 10, 
       cols = rainbow(length(levels(as.factor(biobatch))))[as.factor(biobatch)]
       cols[is.na(cols)] = "black"
       
+      if(estimate_fnr){
+        pdf(paste0(plot.dir,"/",leaf.name,"_fnr_biocol.pdf"))
+        plot(0,type = 'n', xlim = c(0,6),ylim = c(0,1))
+        x2 = e[tf.vec,]
+        x2[x2 <= 0] = NA
+        o = order(t(matrix(log10(apply(x2,1,median,na.rm = T)))))
+        pm = sort(t(matrix(log10(apply(x2,1,median,na.rm = T)))))
+        for(i in 1:dim(x2)[2]){
+          lines(pm,fnr_out$P[,i][o],lty = 1, col = cols[i])        
+        }
+        dev.off()
+      }
+      
       pdf(paste0(plot.dir,"/",leaf.name,"_epc1vqpc1_biocol.pdf"))
       plot(epc$x[,1],qpc$x[,1],pch = 16, col = cols,xlab = "EPC1",ylab = "QPC1")
       dev.off()
@@ -332,6 +408,6 @@ ScoreLeaf = function(e,q,tf.vec = T,techbatch = NULL,biobatch = NULL, knn = 10, 
       wbio_concord = NA
     }
     
-    out = cbind(leaf.name,cor_pearson,cor_spearman,tech_concord,bio_concord,wcor_pearson,wcor_spearman,wtech_concord,wbio_concord) 
+    out = cbind(leaf.name,cor_pearson,cor_spearman,tech_concord,bio_concord,wcor_pearson,wcor_spearman,wtech_concord,wbio_concord,EL) 
     write.table(out,file = out.file,append = T,quote = F,sep = "\t",row.names = F,col.names = F) 
 }

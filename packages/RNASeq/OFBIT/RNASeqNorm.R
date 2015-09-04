@@ -98,8 +98,8 @@ FastComBat = function(e,batch,biobatch = NULL,par.prior=T,prior.plots=F,to.log =
   
   # Exp-Transform Data
   if(to.log){
-    combat_edata = exp(combat_edata) - 1
-    combat_edata[combat_edata < 0] = 0
+    combat_edata = exp(combat_edata)
+    combat_edata[e == 0] = 0
   }
 
   return(combat_edata)
@@ -334,11 +334,16 @@ EScale = function(e, tf.vec = T, method = c("FQ","UQ","DESeq"), zero.method = c(
       de = e[tf.vec,]
       de[de == 0] = NA
       no = UQ(de)
-      no[de == 0] = 0
+      no[e[tf.vec,] == 0] = 0
     } 
   }else {
-    # DESeq Size Factor
-    no = DESeqNorm(e[tf.vec,])
+    zero.method <- match.arg(zero.method)
+    if(zero.method == "all"){
+      # DESeq Size Factor
+      no = DESeqNorm(e[tf.vec,])
+    }else{
+      no = DESeqNorm(e[tf.vec,],singlecell = T)
+    }
   }
   
   # Extend Ratios from Reference Genes
@@ -351,6 +356,9 @@ EScale = function(e, tf.vec = T, method = c("FQ","UQ","DESeq"), zero.method = c(
     }
     no = fno
   }
+ if(sum(e == 0) != sum(no == 0)){
+   stop("Zeroes from nowhere!")
+ }
   return(no)
 }
 
@@ -538,12 +546,12 @@ LocScale = function(e,batch, method = c("median","mean","UQ"), EPSILON = 1, zero
       }
     }
     new_values = log(e[,bin.samples]+EPSILON) + log(global.scales + EPSILON) - log(local.scales + EPSILON)
-    ce[,bin.samples] = exp(new_values) - EPSILON 
-    ce[,bin.samples][ce[,bin.samples] < 0] = 0
+    ce[,bin.samples] = exp(new_values) 
+    ce[,bin.samples][e[,bin.samples] == 0] = 0
   } 
   
   if(zero.method == "positive"){
-    ce[e == 0] = 0
+    ce[is.na(e)] = 0
   }
   
   return(ce)
@@ -576,12 +584,8 @@ ResLoc = function(e,scores, EPSILON = 1, zero.method = c("all","positive")){
   }
   
 
-  re = exp(re) - EPSILON
-  re[re < 0] = 0
-  
-  if(zero.method == "positive"){
-    re[e == 0] = 0
-  }
+  re = exp(re)
+  re[e == 0] = 0
   
   return(re)
 }
