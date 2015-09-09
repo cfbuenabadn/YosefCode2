@@ -382,6 +382,8 @@ def sigs_vs_projections(projections, sig_scores_dict, NEIGHBORHOOD_SIZE = 0.33, 
 
         mu = np.mean(random_scores);
         sigma = np.std(random_scores);
+        if(sigma == 0):
+            sigma = 1e-3;
 
         p_values = norm.cdf((med_dissimilarity - mu)/sigma);
 
@@ -464,9 +466,7 @@ def load_precomputed(filename, sample_labels):
 
     :param filename: signature score file name
     :param sample_labels: labels for which we want the signature scores
-    :return: a dictionary mapping signature names (string) to signature scores (np.ndarray)
-        Each signature score consists of an array with signatures corresponding, by position,
-        with the sample labels in the sample_labels argument.
+    :return: Dictionary of Signature Name (String) -> Signature (SignatureScores)
     """
 
     with open(filename, 'r') as fin:
@@ -504,7 +504,7 @@ def load_precomputed(filename, sample_labels):
             if(line == ""): continue;
             s_line = line.split("\t");
             sig_name = s_line[0];
-            sig_type = s_line[1].lower();
+            sig_type = s_line[1].strip().lower();
             sig_val_cells = s_line[2:];
 
             if(sig_type == 'numerical'):
@@ -526,7 +526,7 @@ def load_precomputed(filename, sample_labels):
                 sig_isFactor = True;
                 sig_vals = [sig_val_cells[i] for i in translation_indices];
             else:
-                raise ValueError('Column 2 of precomputed signature file should specity either "numerica" or "factor"');
+                raise ValueError('Column 2 of precomputed signature file should specify either "numerical" or "factor"');
 
             sig_scores[sig_name] = SignatureScores(sig_vals, sig_name, sample_labels, sig_isFactor, isPrecomputed=True);
 

@@ -12,7 +12,6 @@
 
     <!-- Bootstrap Stuff -->
     <link rel="stylesheet" href="_resources/bootstrap.css">
-    <link rel="stylesheet" href="_resources/bootstrap-theme.css">
     <script src="_resources/bootstrap.min.js"></script>
 
     <script type="text/javascript">
@@ -22,6 +21,7 @@
         global_status.plotted_signature = -1;
         global_status.sorted_column = -1;
         global_status.signature_filter = "";
+        global_status.scatterColorOption = "rank";
 
         var global_options = {};
         var global_scatter = {};
@@ -42,6 +42,30 @@
             $("#probability_checkbox").change(updateTable);
             $("#pca_checkbox").change(updateTable);
             $("#filter_dropdown").change(updateTable);
+
+            var filterSig = $('#sig_filt_input');
+            var filterSigTimer;
+            var filterSigTimer_Timeout = 500;
+
+            filterSig.on('input', function(){
+                global_status.signature_filter = this.value;
+                clearTimeout(filterSigTimer);
+                filterSigTimer = setTimeout(doneTyping, filterSigTimer_Timeout);
+            });
+
+            function doneTyping()
+            {
+                var val = global_status.signature_filter.toLowerCase();
+                var table = $('#table_div table');
+                table.find('tr').removeClass('hidden')
+                        .filter(function(i, element){
+                            if(i == 0){return false;}
+                            var sig_text = $(element).children('td').first().html().toLowerCase();
+                            return sig_text.indexOf(val) == -1;
+                        }).addClass('hidden');
+                table.find('tr').removeClass('altRow')
+                        .not('.hidden').filter(':odd').addClass('altRow');
+            }
             
             //Populate select dropdown
             var filter_options = {};
@@ -67,6 +91,13 @@
                 drawHeat();
             });
 
+            //Define color option (for scatter) change function
+            $('input[name=scatterColorButtons]').change(function(){
+                var val = $('input[name=scatterColorButtons]:checked').val();
+                global_status.scatterColorOption = val;
+                drawChart();
+            });
+
             //Sort the data initially by PC 1,2
             var data = getDataContext();
             global_status.sorted_column = data.ProjectionKeys.indexOf("PCA: 1,2");
@@ -82,12 +113,7 @@
 
         function updateTable()
         {
-            var data = getDataContext();
-            $('#sig_filt_input').detach(); //Save this for when the table is rebuilt.
-            $('#table_div').children('table').remove();
-            createTableFromData(data.SigProjMatrix_p, data.ProjectionKeys, data.SignatureKeys);
-            $('#sig_filt_input').change();
-            sortByColumn();
+            createTableFromData();
             drawChart();
             populateClusterDropdown();
             drawHeat();
@@ -166,71 +192,16 @@
             return out;
         };
 
-        function transpose(inputMatrix){
-            var IN_ROWS = inputMatrix.length;
-            var IN_COLS = inputMatrix[0].length;
-
-            var outputMatrix = new Array(IN_COLS);
-
-            //allocate arrays
-            for(var i = 0; i < IN_COLS; i++)
-            {
-                outputMatrix[i] = new Array(IN_ROWS);
-            }
-
-            for(var i = 0; i < IN_ROWS; i++)
-            {
-                for (var j = 0; j < IN_COLS; j++)
-                {
-                    outputMatrix[j][i] = inputMatrix[i][j];
-                }
-            }
-
-            return outputMatrix;
-        }
-
-        function median(inputArray){
-            var sorted_array = inputArray.slice().sort();
-            var center_i, med_val;
-            if(sorted_array.length%2 == 0){
-                center_i = (sorted_array.length-1)/2;
-                med_val = sorted_array[center_i];
-            }
-            else{
-                center_i = (sorted_array.length-1)/2;
-                med_val = sorted_array[center_i-1]/2 + sorted_array[center_i]/2;
-            }
-            return med_val;
-        }
-
-        function sortByColumn()
+        function sortByColumn(col_num)
         {
-            var j = global_status.sorted_column;
-            if(j == -1){return;}
-            var table = $('#table_div').children('table');
-
-            var sortFunction = function(a,b){
-                var a_val = $(a).children("td").eq(j+1).data("data_val");
-                var b_val = $(b).children("td").eq(j+1).data("data_val");
-                return a_val - b_val;
-            };
-
-            var unsorted_rows = table.children('tbody').children('tr:not(:first)');
-            var sorted_rows = unsorted_rows.sort(sortFunction);
-
-            unsorted_rows.detach();
-            table.children('tbody').append(sorted_rows);
-
-            $('#table_div').find('tr').removeClass('altRow')
-                    .not('.hidden').filter(':odd').addClass('altRow');
-
+            global_status.sorted_column = col_num;
+            createTableFromData();
         }
 
-        function tableClickFunction(event)
+        function tableClickFunction(row_num, col_num)
         {
-            var cell = $(event.target);
-            global_status.plotted_signature  = cell.data("row_num");
-            global_status.plotted_projection = cell.data("col_num");
+            global_status.plotted_signature  = row_num;
+            global_status.plotted_projection = col_num;
             drawChart();
             drawHeat();
         }
@@ -255,7 +226,10 @@
                 var sig_scores;
 
                 if(sig.isFactor) { sig_scores = sig.scores;}
-                else { sig_scores = sig.ranks;}
+                else { 
+                    if(global_status.scatterColorOption == "rank") {sig_scores = sig.ranks;}
+                    if(global_status.scatterColorOption == "value") {sig_scores = sig.scores;}
+                }
 
                 var xcoords = proj[0];
                 var ycoords = proj[1];
@@ -325,139 +299,85 @@
 
         }
 
-        function floatToColor(value, cmin, cmax, cmap)
+        function createTableFromData()
         {
-            var norm_val = (value - cmin) / (cmax-cmin); //Normalize to 0-1
-            norm_val = 1-norm_val;  //Invert
+            //Detach filter sig box for later
+            var filterSig = $('#sig_filt_input');
+            filterSig.detach();
 
-            //Old color values
-            /*blue = 4*(0.75-norm_val);
-             red = 4*(norm_val -.25);
-             green = 4*Math.abs(norm_val - 0.5)-1;*/
+            var data = getDataContext();
+            data_matrix = data.SigProjMatrix_p;
+            col_labels = data.ProjectionKeys;
+            row_labels = data.SignatureKeys;
 
-            var blue = 1-1*norm_val;
-            var red = norm_val;
-            var green = 1-Math.abs(norm_val - 0.5)*2;
+            var colorScale = d3.scale.linear()
+                .domain([0,-1,-3])
+                .range(["steelblue","white", "lightcoral"])
+                .clamp(true);
 
-            if(blue < 0) blue = 0;
-            if(blue > 1) blue = 1;
-            if(green < 0) green = 0;
-            if(green > 1) green = 1;
-            if(red < 0) red = 0;
-            if(red > 1) red = 1;
+            var header_row = d3.select('#table_div').select('thead').select('tr').selectAll('th')
+                .data([""].concat(col_labels));
 
-            //color maps
-            if(cmap == "light") {
-                blue = (blue / 2) + 0.5;
-                red = (red / 2) + 0.5;
-                green = (green / 2) + 0.5;
+            header_row.enter().append('th');
+            header_row.text(function(d){return d;})
+                .filter(function(d,i) {return i > 0;})
+                .on("click", function(d,i) { sortByColumn(i);});
+
+            header_row.exit().remove();
+
+            //Format cell data for better d3 binding
+            var formatted_data_matrix = data_matrix.map(function(row, i){
+                    return row.map(function(val, j){
+                        return {"val":val, "row":i, "col":j}
+                        });
+                    });
+
+            var formatted_data_w_row_labels = d3.zip(row_labels, formatted_data_matrix);
+
+            //Sort data if necessary
+            var sort_col = global_status.sorted_column;
+            if(sort_col > -1){
+                sortFun = function(a,b){
+                    a_precomp = data.SigScores[a[0]].isPrecomputed;
+                    b_precomp = data.SigScores[b[0]].isPrecomputed;
+                    if(a_precomp && b_precomp || !a_precomp && !b_precomp){
+                        return a[1][sort_col].val - b[1][sort_col].val;
+                    }
+                    else if (a_precomp) { return -1;}
+                    else {return 1;}
+                };
+                formatted_data_w_row_labels.sort(sortFun);
             }
 
-            blue = Math.round(blue*255);
-            red = Math.round(red*255);
-            green = Math.round(green*255);
+            var content_rows = d3.select('#table_div').select('tbody').selectAll('tr')
+                .data(formatted_data_w_row_labels);
 
-            //No good zero padding in JS?
-            var rpad = (red < 16) ? "0" : "";
-            var gpad = (green < 16) ? "0" : "";
-            var bpad = (blue < 16) ? "0" : "";
+            content_rows.enter().append('tr');
+            content_rows.exit().remove();
 
-            return "#" + rpad + red.toString(16) + gpad + green.toString(16) + bpad + blue.toString(16);
-        }
+            var content_row = content_rows.selectAll("td")
+                .data(function(d, row_num){return [d[0]].concat(d[1]);})
 
-        function createTableFromData(data_matrix, col_labels, row_labels)
-        {
-            var rowMin = function(row){return Math.min.apply(Math, row);};
-            var rowMax = function(row){return Math.max.apply(Math, row);};
-            var matrixMin = function(matrix){
-                return rowMin(matrix.map(rowMin));
-            };
-            var matrixMax = function(matrix){
-                return rowMax(matrix.map(rowMax));
-            };
+            content_row.enter().append('td');
+            content_row.exit().remove();
 
-            var tbl = document.createElement("table");
-            var tbody = document.createElement("tbody");
+            content_row
+                .filter(function(d,i) { return i > 0;})
+                .text(function(d){
+                        if(d.val > -50){return d.val.toPrecision(2);}
+                        else{return "< -50";}})
+                .style('background-color', function(d){return colorScale(d.val);})
+                .on("click", function(d){tableClickFunction(d.row, d.col)});
 
-            //Create column headers
-            function generateColSortFcn(col_num)
-            {
-                return function(){global_status.sorted_column=col_num; sortByColumn();};
-            }
-            var tr = document.createElement("tr");
-            var th = document.createElement("th");
-
+            //Make signature names click-able
+            content_row.filter(function(d,i) { return i == 0;})
+                .text(function(d){return d;})
+                .on("click", function(d){createSigModal(d)});
+                
             //Create filter signature box
-            var filterSig = $('<input/>').attr({type: 'text', id: 'sig_filt_input', placeholder: 'Filter Signatures...'});
-            filterSig.on('change textInput input', function(){
-                global_status.signature_filter = this.value;
-                var val = this.value.toLowerCase();
-                $('#table_div').find('tr').removeClass('hidden')
-                        .filter(function(i, element){
-                            if(i == 0){return false;}
-                            var sig_text = $(element).children('td').first().html().toLowerCase();
-                            return sig_text.indexOf(val) == -1;
-                        }).addClass('hidden');
-                $('#table_div').find('tr').removeClass('altRow')
-                        .not('.hidden').filter(':odd').addClass('altRow');
-
-            });
-            filterSig.val(global_status.signature_filter);
+            var th = $('#table_div').children('table').children('thead').children('tr').children('th:first-child');
             $(th).append(filterSig);
-
-            tr.appendChild(th); //Empty upper left cell
-            for(var j=0; j < col_labels.length; j++){
-                var th = document.createElement("th");
-                th.appendChild(document.createTextNode(col_labels[j]));
-                $(th).click(generateColSortFcn(j));
-                tr.appendChild(th);
-            }
-            tbody.appendChild(tr);
-
-            //Create color matrix
-            var dmT = transpose(data_matrix);
-            for(i = 0; i < dmT.length; i++){
-                dmT[i] = dmT[i].argSort().argSort();
-            }
-            var color_matrix = transpose(dmT);
-
-            for(var i=0; i < data_matrix.length; i++)
-            {
-                var tr = document.createElement("tr");
-
-                //Create row label
-                var label_td = document.createElement("td");
-                label_td.appendChild(document.createTextNode(row_labels[i]));
-                $(label_td).on("click", function(e){createSigModal($(this).html())});
-                tr.appendChild(label_td);
-
-                for(var j = 0; j < data_matrix[i].length; j++)
-                {
-                    var td = document.createElement("td");
-                    var td_text;
-                    if(data_matrix[i][j] > -20)
-                    {
-                        td_text = data_matrix[i][j].toString();
-                    }
-                    else
-                    {
-                        td_text = "< -20";
-                    }
-                    td.appendChild(document.createTextNode(td_text));
-                    tr.appendChild(td);
-                    td = $(td);
-                    td.data("row_num", i);
-                    td.data("col_num", j);
-                    td.data("data_val", data_matrix[i][j]);
-                    td.click(tableClickFunction);
-                    td.css("background-color", floatToColor(color_matrix[i][j], 0, data_matrix.length,"light"));
-                }
-                tbody.appendChild(tr);
-            }
-            tbl.appendChild(tbody);
-
-            var tbldiv = document.getElementById("table_div");
-            tbldiv.appendChild(tbl);
+            filterSig.trigger('input');
         }
 
         function createSigModal(signature_label){
@@ -558,26 +478,30 @@
         }
 
         #table_div table td:first-child{
-            max-width:450px;
-            width:450px;
+            max-width:350px;
+            width:350px;
+            font-size: 0.8em;
+            font-weight: bold;
             -ms-word-wrap: break-word;
             word-wrap: break-word;
             cursor: pointer;
         }
 
-        .altRow{
-            background-color: rgb(220,220,220);
-        }
-
         #table_div table td:not(:first-child), #table_div table th:not(:first-child){
             text-align: center;
-            width: 50px;
+            width: 35px;
             max-width: 50px;
             cursor: pointer;
+            font-size: 0.8em;
+        }
+        
+        #table_div table td:not(:first-child){
+            padding: 3px 0;
+            border: 1px solid black;
         }
 
-        #table_div table td:not(:first-child){
-            padding: 5px 0;
+        .altRow{
+            background-color: rgb(220,220,220);
         }
 
         .hidden {
@@ -588,7 +512,7 @@
             padding-top: 20px;
             overflow: auto;
             position: absolute;
-            top: 110px;
+            top: 130px;
             bottom: 0px;
         }
 
@@ -612,7 +536,6 @@
         }
 
         #scatter_div{
-            margin-left: 30px;
         }
 
         #heatmap_div{
@@ -620,27 +543,43 @@
 
         #plot_title_div{
             text-align: center;
-            width: 600px;
+            width: 500px;
             word-wrap: break-word;
             font-size: 18px;
+            margin-top: 30px;
         }
         
-        #plot_title_div div{
+        #plot_title_div .subtitle, #plot_title_div .title{
             margin: 5px 0;
         }
 
-        #plot_title_div div:not(:first-child){
+        #plot_title_div .subtitle{
             font-size: 13px;
+        }
+
+        #plot_title_div .colorOptions{
+            font-size: 13px;
+        }
+
+        #plot_title_div .colorOptions label{
+            padding: 0 6px;
+        }
+
+        #plot_title_div .colorOptions .btn-group{
+            vertical-align: bottom;
         }
         
         #spacer{
-            width: 1030px;
+            width: 830px;
             height: 800px;
+        }
+
+        .point-faded{
+            fill-opacity: 0.3;
         }
 
         .point-hover{
             fill-opacity: 1.0;
-            stroke: #444444;
         }
 
         .point-selected{
@@ -802,21 +741,39 @@
             </select>
         </span>
         <span>
-        <button class="btn btn-default" onclick=createGeneModal()>
+        <button type="button" class="btn btn-default" onclick=createGeneModal()>
             +Show Genes
         </button>
         </span>
     </div>
-    <div id="table_div"></div>
+    <div id="table_div">
+        <table>
+            <thead><tr></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
     <div id="spacer"></div>
 </div>
-<div id="plot_title_div" style="float: left">
-    <div></div>
-    <div></div>
-</div>
-<div id="scatter_div"  style="float: left"></div>
-<div id="heatmap_div"  style="float: left">
-    <select id="cluster_select" class="form-control" style="width: 200px; margin-bottom:10px"></select>
+<div style="float: left">
+    <div id="plot_title_div">
+        <div class="title"></div>
+        <div class="subtitle"></div>
+        <div class="colorOptions">
+            Signature Score Colors:
+            <div class="btn-group" data-toggle="buttons">
+                <label class="btn btn-default">
+                    <input type="radio" name="scatterColorButtons" id="valueoption" value="value" autocomplete="off"> Value
+                </label>
+                <label class="btn btn-default active">
+                    <input type="radio" name="scatterColorButtons" id="rankoption" value="rank" autocomplete="off" checked> Rank
+                </label>
+            </div>
+        </div>
+    </div>
+    <div id="scatter_div"></div>
+    <div id="heatmap_div">
+        <select id="cluster_select" class="form-control" style="width: 200px; margin-bottom:10px"></select>
+    </div>
 </div>
 <input id="sig_filt_input" type="text" placeholder="Filter Signatures...">
 </body>

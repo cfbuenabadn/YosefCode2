@@ -22,8 +22,26 @@ def FP_Output(*args):
     logging.info(logmessage);
 
 def FullOutput(options, args):
+    np.random.seed(0); #Set seed so outputs are repeatable
 
-    logging.basicConfig(format='%(asctime)s %(message)s', filename="FP.log", level=logging.INFO);
+    #Create directory for all outputs
+    if(options.output):
+        dir_name = options.output;
+    else:
+        default_dir_name = 'FastProject_Output';
+        if(os.path.isdir(default_dir_name)):
+            i = 1;
+            while(True):
+                dir_name = default_dir_name + str(i);
+                if(not os.path.isdir(dir_name)):
+                    break;
+                else:
+                    i = i+1;
+        else:
+            dir_name = default_dir_name;
+
+    FileIO.make_dirs(dir_name);
+    logging.basicConfig(format='%(asctime)s %(message)s', filename=os.path.join(dir_name, 'fastproject.log'), level=logging.INFO);
     logging.info("Running FastProject Analysis");
 
     start_time = time.time();
@@ -67,7 +85,7 @@ def FullOutput(options, args):
         raise ValueError("Option Error: Must specify either a signature file or a pre-computed signature file.\nExiting...");
 
 
-    #Wrap data in ExpressionData object
+    #Wrap data in ExpressionData object, add as a Model
     edata = ExpressionData(edata, genes, cells);
 
     if(options.subsample_size > edata.shape[1]):
@@ -76,31 +94,12 @@ def FullOutput(options, args):
     #Hold on to originals so we don't lose data after filtering in case it's needed later
     original_data = edata.copy();
 
-    #Create directory for all outputs
-    if(options.output):
-        dir_name = options.output;
-    else:
-        default_dir_name = 'FastProject_Output';
-        if(os.path.isdir(default_dir_name)):
-            i = 1;
-            while(True):
-                dir_name = default_dir_name + str(i);
-                if(not os.path.isdir(dir_name)):
-                    break;
-                else:
-                    i = i+1;
-        else:
-            dir_name = default_dir_name;
-
-    FileIO.make_dirs(dir_name);
-
-
     #Filtering
     filter_dict = {};
     if(options.nofilter):
         edata = Filters.filter_genes_novar(edata);
 
-        filter_dict.update({'None': set()});
+        filter_dict.update({'All': set(edata.row_labels)});
     else:
         edata = Filters.filter_genes_threshold(edata, 0.2);
 
@@ -118,50 +117,56 @@ def FullOutput(options, args):
         fano_mask = Filters.filter_genes_fano(fdata, 2);
 
         filter_dict.update({
-            'None': set(edata.row_labels), #None means 'use all genes'. This set only used when outputting filter
+            'All': set(edata.row_labels), #None means 'use all genes'. This set only used when outputting filter
             'HDT': set([edata.row_labels[i] for i,x in enumerate(hdt_mask) if x]),
             'Fano': set([edata.row_labels[i] for i,x in enumerate(fano_mask) if x])
         });
 
     edata.filters = filter_dict;
 
+    Models = dict();
+    Models.update({"Expression": edata});
+
     #%% Probability transform
-    housekeeping_filename = get_housekeeping_file();
+    if(not options.nomodel):
+        housekeeping_filename = get_housekeeping_file();
 
-    FP_Output('\nFitting expression data to exp/norm mixture model');
-    (pdata, mu_h) = Transforms.probability_of_expression(edata, options.subsample_size);
+        FP_Output('\nFitting expression data to exp/norm mixture model');
+        (pdata, mu_h) = Transforms.probability_of_expression(edata, options.subsample_size);
 
 
-    FP_Output('\nCorrecting for false-negatives using housekeeping gene levels');
-    (fit_func, params) = Transforms.create_false_neg_map(original_data, housekeeping_filename);
-    (pdata, fn_prob) = Transforms.correct_for_fn(pdata, mu_h, fit_func, params);
-    fn_prob[edata > 0] = 0;
+        FP_Output('\nCorrecting for false-negatives using housekeeping gene levels');
+        (fit_func, params) = Transforms.create_false_neg_map(original_data, housekeeping_filename);
+        (pdata, fn_prob) = Transforms.correct_for_fn(pdata, mu_h, fit_func, params);
+        fn_prob[edata > 0] = 0;
 
-    pdata = ProbabilityData(pdata, edata);
+        pdata = ProbabilityData(pdata, edata);
+        Models.update({"Probability": pdata});
 
-    edata.weights = 1-fn_prob;
-    pdata.weights = 1-fn_prob;
+        edata.weights = 1-fn_prob;
+        pdata.weights = 1-fn_prob;
 
-    sample_passes, sample_scores = Transforms.quality_check(params);
-    FileIO.write_qc_file(dir_name, sample_passes, sample_scores, edata.col_labels);
+        sample_passes_qc, sample_qc_scores = Transforms.quality_check(params);
+        FileIO.write_qc_file(dir_name, sample_passes_qc, sample_qc_scores, edata.col_labels);
 
-    if(options.qc):
-        pdata = pdata.subset_samples(sample_passes);
-        edata = edata.subset_samples(sample_passes);
-        sample_scores = sample_scores[sample_passes];
+        #If specified, remove items that did not pass qc check
+        if(options.qc):
+            for name, dataMatrix in Models.items():
+                Models[name] = dataMatrix.subset_samples(sample_passes_qc);
+
+            sample_qc_scores = sample_qc_scores[sample_passes_qc];
+    else:
+        sample_qc_scores = None;
 
     if(options.subsample_size > edata.shape[1]):
         options.subsample_size = None;
 
     Transforms.z_normalize(edata);
 
-    model_names = ['Expression', 'Probability'];
-    model_data = [edata, pdata];
-
     fout_js = HtmlViewer.get_output_js_handle(dir_name);
     js_models = [];
 
-    for name, data in zip(model_names, model_data):
+    for name, data in Models.items():
         model_dir = os.path.join(dir_name, name);
         try:
             os.makedirs(model_dir);
@@ -188,6 +193,10 @@ def FullOutput(options, args):
             precomputed_sig_scores = Signatures.load_precomputed(options.precomputed, data.col_labels);
             sig_scores_dict.update(precomputed_sig_scores);
 
+        #Adds in quality score as a pre-computed signature
+        if(sample_qc_scores is not None): #Might be None if --nomodel option is selected
+            sig_scores_dict["FP_Quality"] = Signatures.SignatureScores(sample_qc_scores,"FP_Quality",data.col_labels,isFactor=False, isPrecomputed=True);
+
         #Prompt to save data
         out_file = 'SignatureScores.txt';
         FileIO.write_signature_scores(os.path.join(model_dir, out_file), sig_scores_dict, data.col_labels);
@@ -200,7 +209,7 @@ def FullOutput(options, args):
         js_models.append(js_model_dict);
 
         for filter_name in filter_dict.keys():
-            if(filter_name == "None"):
+            if(filter_name == "All"):
                 filter_dir = os.path.join(model_dir, "No_Filter");
             else:
                 filter_dir = os.path.join(model_dir, filter_name + "_Filter");
@@ -252,7 +261,7 @@ def FullOutput(options, args):
 
             #Now do it all again using the principal component data
             if(options.pca_filter):
-                pcdata = Projections.filter_PCA(pcdata, scores=sample_scores, variance_proportion=0.25);
+                pcdata = Projections.filter_PCA(pcdata, scores=sample_qc_scores, variance_proportion=0.25);
             else:
                 pcdata = Projections.filter_PCA(pcdata, variance_proportion=0.25, min_components = 30);
 
@@ -291,6 +300,47 @@ def FullOutput(options, args):
             js_filt_dict.update({'signatureKeys': sp_row_labels});
             js_filt_dict.update({'clusters': clusters});
 
+    #Filter output signatures
+    for js_model in js_models:
+        signatureScores = js_model["signatureScores"];
+        signatures = signatureScores.keys()
+        signature_significance = np.zeros(len(signatures));
+        for js_filt in js_model['projectionData']:
+            sp = js_filt['sigProjMatrix_p'].min(axis=1);
+            signature_significance = np.min(np.vstack((sp, signature_significance)), axis=0);
+
+        #Determine a threshold of significance
+        #If too many samples, hard limit the number of output signatures to conserve file size
+        OUTPUT_SIGNATURE_LIMIT = 200;
+        if(Models["Expression"].shape[1] > 2000 and len(signatures) > OUTPUT_SIGNATURE_LIMIT):
+            aa = np.argsort(signature_significance);
+            threshold = signature_significance[aa[OUTPUT_SIGNATURE_LIMIT]];
+        else:
+            threshold = -1.301;
+
+        #Iterate back through and prune signatures worse than threshold
+        #Create a dictionary of sigs to keep
+        keep_sig = dict();
+        for i,sig in enumerate(signatures):
+            if(signature_significance[i] > threshold):
+                keep_sig.update({sig: False});
+            else:
+                keep_sig.update({sig: True});
+
+        #Remove values in the model's signatureScores dict
+        for sig in signatures:
+            if(keep_sig[sig] == False):
+                signatureScores.pop(sig);
+
+        #Remove values in each filters sigProjMatrix and the sigProjMatrix keys
+        for js_filt in js_model['projectionData']:
+            js_filt_keep_sig = np.array([keep_sig[sig] for sig in js_filt["signatureKeys"]]);
+            js_filt["sigProjMatrix"] = js_filt["sigProjMatrix"][js_filt_keep_sig,:];
+            js_filt["sigProjMatrix_p"] = js_filt["sigProjMatrix_p"][js_filt_keep_sig,:];
+            js_filt["signatureKeys"] = [x for x in js_filt["signatureKeys"] if keep_sig[x]];
+
+
+
 
     fout_js.write(HtmlViewer.toJS_variable("FP_Models", js_models));
 
@@ -309,6 +359,7 @@ def FullOutput(options, args):
     #Write the original data matrix to the javascript file.
     #First, cluster genes
     from scipy.cluster.hierarchy import leaves_list, linkage;
+    edata = Models["Expression"];
     linkage_matrix = linkage(edata);
     leaves_i = leaves_list(linkage_matrix);
     edata_clustered = edata[leaves_i, :];
