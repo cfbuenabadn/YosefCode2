@@ -104,8 +104,35 @@ parser.add_argument("diretoryToProcess", action="store",
                     help="The directory with the original files to normalize");
 parser.add_argument('-d', '--delete_originals', action="store_true",
                     help="delete the original split files that have just been merged");
+parser.add_argument('-n', '--new_format', action="store_true",
+                    help="Convert GSL's new format (all cells in one directory) to the old format (one directory per cell) before proceeding");
 
 args = parser.parse_args();
+
+if(args.new_format):
+    #remove the "R?_00?.fastq.gz" suffix to support multiple files from the same cell or paired-end sequencing
+    files = [re.sub(r"_R\d_\d\d\d\.fastq\.gz$", "", f) for f in os.listdir(args.diretoryToProcess) if os.path.isfile(os.path.join(args.diretoryToProcess, f)) and f.endswith(".fastq.gz") ]
+    #get unique values     re.sub('-', '_', f)
+    files = set(files)
+
+    for f in files:
+        print "Converting to new format single cell sample: " + f;
+        dirForCell = os.path.join(args.diretoryToProcess, "Sample_" + re.sub("-", "_", f))
+        if not os.path.exists(dirForCell):
+            os.mkdir(dirForCell)
+        filesToMoveToDir = glob.glob(os.path.join(args.diretoryToProcess, f + "*.fastq.gz"))
+        for ftm in filesToMoveToDir:
+            shutil.move(ftm, os.path.join(dirForCell, re.sub("-", "_", os.path.basename(ftm))))
+
+    # for root, dirs, files in os.walk(args.diretoryToProcess):
+    #     for f in files:
+    #         fullDirPath = os.path.join(args.diretoryToProcess, f);
+    #
+    #
+    #
+    #     break
+
+
 
 #In the batch of 3/16/2015 there were cells that were sequenced in two lanes
 #--> separate them into two different directories per cell. This operation ALWAYS deletes originals (no matter what the

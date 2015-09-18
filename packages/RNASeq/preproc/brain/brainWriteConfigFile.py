@@ -11,12 +11,12 @@ from collections import namedtuple
 SOURCES_DIR = "/data/yosef/BRAIN/sources"
 #PROCESSED_DIR = "/data/yosef/BRAIN/processed_June2015_b"
 #PROCESSED_DIR = "/data/yosef/BRAIN/processed_July2015"
-PROCESSED_DIR = "/data/yosef/BRAIN/processed_Bateup_Aug2015"
-
+#PROCESSED_DIR = "/data/yosef/BRAIN/processed_Bateup_Aug2015"
+PROCESSED_DIR = "/data/yosef/BRAIN/processed_Sep2015"
 
 
 #cortical / olfactory / Bateup
-PROJECT = "Bateup"
+PROJECT = "Olfactory"
 if PROJECT == "Cortical":
     sourceFolders = cortical_sourceFolders
     METADATA_DIR = "/data/yosef/BRAIN/sources/metadata/cortical"
@@ -105,7 +105,8 @@ def ProcessOutputCellList(outputCellListFileName):
     outputCellList = [row.strip() for row in open(outputCellListFileName).readlines()]
 
     #make the output cell list into a dictionary where the cells unique id points to its dir structure
-    extractUniqueIDFromCellName = re.compile(r"^(?P<path>[\d\w_\-]+)/(?P<uniqueID>[\w_]+)_[ACGT]+\-[ACGT]+_L\d\d\d$")
+    #the unique ID is non-greedy to make sure it does not swallow the optional barcode
+    extractUniqueIDFromCellName = re.compile(r"^(?P<path>[\d\w_\-]+)/(?P<uniqueID>[\w_]+?)(_[ACGT]+\-[ACGT]+)?_(?P<lane>L\d\d\d)$")
     for cell in outputCellList:
 
         m = re.match(extractUniqueIDFromCellName, cell)
@@ -114,6 +115,10 @@ def ProcessOutputCellList(outputCellListFileName):
             raise Exception("Reading collect output list: Cannot parse cell name from the output list! (cell name: %s)" % cell)
 
         cell_uniqueID = m.group("uniqueID")
+        #quick and dirty solution for the batch with the bad naming format
+        if(m.group("path") == "150904_JGI1-Ngai"):
+            cell_uniqueID += "_" + m.group("lane")
+
         if(cellID2outputName_dict.has_key(cell_uniqueID)):
             raise Exception("Reading collect output list: Same cell encountered twice in the output?! (cell name: %s)" % cell)
 
