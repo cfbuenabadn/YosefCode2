@@ -7,7 +7,7 @@ rm(list=ls())
 
 # Directory containing your RNA Seq results from the preproc pipeline, collected.
 # Example: /data/yosef/users/mbcole/Fluidigm/collect2/
-collect_dir = ""
+collect_dir = "/data/yosef/users/mbcole/Fluidigm/collect2/"
 
 # Config file for your project (.xls or .xlsx).
 # This file contains all of the phenotype / experimental details for the study at hand.
@@ -19,11 +19,11 @@ collect_dir = ""
 #         output_name = unique library names the come out of the collect script (in cell_list.txt)
 #           This field allows the load method (see below) to map all additional fields in the config file to the expression values for that library.
 # Note that these are the first three fields in the example excel document, but order does not matter.
-config_file = ""
+config_file = "/data/yosef/users/mbcole/Fluidigm/Fluidigm_config_NG.xlsx"
 
 # Output directory
 # Example: /data/yosef/users/mbcole/Fluidigm/out_test
-out_dir = ""
+out_dir = "/data/yosef/users/mbcole/Fluidigm/out_test"
 
 # Constant: Names of QC fields evaluated in preproc pipeline.
 qc_fields_file = "/home/eecs/mbcole/YosefCode/packages/RNASeq/summary/TEXT/qc_fields.txt"
@@ -38,7 +38,7 @@ lib_dir = "/home/eecs/mbcole/YosefCode/packages/RNASeq/summary/RCODE"
 # "robust" expression in population of interest: constitutive expression / minimal expression heterogeneity
 # Human example: /home/eecs/mbcole/YosefCode/packages/RNASeq/summary/EXAMPLE//reference_files//house_keeping_human_names.txt
 # Mouse example: /data/yosef/CD8_effector_diff/src/SummaryPipeline/house_keeping_mouse_TitleCase.txt
-housekeeping_list = ""
+housekeeping_list = "/home/eecs/mbcole/YosefCode/packages/RNASeq/summary/EXAMPLE//reference_files/house_keeping_human_names.txt"
 
 ## ----- Produce Output Directory -----
 if (file.exists(out_dir)){
@@ -54,6 +54,9 @@ dataSet = loadProcessedRNASeq_NG(collect_dir, config_file, qc_fields_file, gene_
 
 ## ----- Select RSEM TPM results - in an eSet object -----
 eSet = dataSet$rsem_eSet
+# Rsem results contain expectedCounts_table, exprs, fpkm_table, tpm_table 
+# Sets the default expression matrix to the tpm table
+exprs(eSet) <- assayData(eSet)$tpm_table
 
 ## ----- Pre-Filtering of Failed Trancripts -----
 # Remove all trancripts that fail in all samples (NA in all samples)
@@ -68,9 +71,8 @@ rm(eSet)
 
 ## ----- Pre-Filtering of Failed Samples -----
 # Remove all samples failing the preprocessing step:
-#   1) Sample has all NA values - all transcripts are quantified as NA for a failed run
-#   2) Sample has all 0 values - no transcripts have a non-zero expected abundance!
-#   3) All quality info is missing for the sample - all measures are NA for that sample
+#   1) Sample has all NA (or 0) values - all transcripts are quantified as NA for a failed run
+#   2) All quality info is missing for the sample - all measures are NA for that sample
 is.failed = apply(is.na(exprs(prefilt.eSet)) | (exprs(prefilt.eSet) == 0), 2, all) |
   apply(is.na(pData(protocolData(prefilt.eSet))), 1, all)
 

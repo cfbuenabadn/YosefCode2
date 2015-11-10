@@ -120,8 +120,8 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, est
                 bin_method = NA
                 strout = paste(filt_method,scale_method, zero_method,combat_method,qfilt_flag,norm_method,alt_method,bin_method,sep = "|")
                 print(strout)
-                if(sum(e == 0) != sum(ne == 0)){
-                  warning(paste("Zero excess:",sum(ne == 0) - sum(e == 0))
+                if(sum(e == 0) != sum(ce == 0)){
+                  warning(paste("Zero excess:",sum(ce == 0) - sum(e == 0)))
                 }
                 tryCatch(ScoreLeaf(ce,q,tf.vec = tf.vec,estimate_fnr = estimate_fnr,qK = qK,hk_genes = hk_genes,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file,plot.dir = plot.dir),
                          error = function(e){ReportError(strout, error.file, "ScoreLeaf Failure")})              }
@@ -153,7 +153,7 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, est
                     ne = YL_RUVg(e = ce,hk_genes & tf.vec,K = curK,zero.method = alt_method)
                     ne[ce == 0] = 0
                     if(sum(e == 0) != sum(ne == 0)){
-                      warning(paste("Zero excess:",sum(ne == 0) - sum(e == 0))
+                      warning(paste("Zero excess:",sum(ne == 0) - sum(e == 0)))
                     }
                     tryCatch(ScoreLeaf(ne,q,tf.vec = tf.vec,estimate_fnr = estimate_fnr,qK = qK,hk_genes = hk_genes,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file,plot.dir = plot.dir),
                              error = function(e){ReportError(strout, error.file, "ScoreLeaf Failure")})                  }
@@ -174,7 +174,7 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, est
                       ne = ResLoc(e = ce,scores = score_obj$x[,1:curK],zero.method = alt_method)
                       ne[ce == 0] = 0
                       if(sum(e == 0) != sum(ne == 0)){
-                        warning(paste("Zero excess:",sum(ne == 0) - sum(e == 0))
+                        warning(paste("Zero excess:",sum(ne == 0) - sum(e == 0)))
                       }
                       tryCatch(ScoreLeaf(ne,q,tf.vec = tf.vec,estimate_fnr = estimate_fnr,qK = qK,hk_genes = hk_genes,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file,plot.dir = plot.dir),
                                error = function(e){ReportError(strout, error.file, "ScoreLeaf Failure")})                    }
@@ -222,7 +222,7 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, est
                         strout = paste(filt_method,scale_method, zero_method,combat_method,qfilt_flag,norm_method2,alt_method,bin_method,sep = "|")
                         print(strout)
                         if(sum(e == 0) != sum(ne == 0)){
-                          warning(paste("Zero excess:",sum(ne == 0) - sum(e == 0))
+                          warning(paste("Zero excess:",sum(ne == 0) - sum(e == 0)))
                         }
                         tryCatch(ScoreLeaf(ne,q,tf.vec = tf.vec,estimate_fnr = estimate_fnr,qK = qK,hk_genes = hk_genes,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file,plot.dir = plot.dir),
                                  error = function(e){ReportError(strout, error.file, "ScoreLeaf Failure")})
@@ -253,6 +253,7 @@ ScoreLeaf = function(e,q,tf.vec = T,estimate_fnr = F,qK ,hk_genes = NULL, techba
   if(any(is.na(e))){
       stop("NA Value Detected at Leaf!")
   }
+  write.table(e,file = paste0(plot.dir,"/",leaf.name,"_matrix.tab"),sep = "\t")
     
     tf.vec = tf.vec & (apply(e,1,sd) > SD_EPSILON) # Only consider variable genes for PCA
   
