@@ -348,18 +348,18 @@ ScoreLeaf = function(e,q,tf.vec = T,estimate_fnr = F,qK ,hk_genes = NULL, techba
       cols = rainbow(length(levels(as.factor(biobatch))))[as.factor(biobatch)]
       cols[is.na(cols)] = "black"
       
-      if(estimate_fnr){
-        pdf(paste0(plot.dir,"/",leaf.name,"_fnr_biocol.pdf"))
-        plot(0,type = 'n', xlim = c(0,6),ylim = c(0,1))
-        x2 = e[tf.vec,]
-        x2[x2 <= 0] = NA
-        o = order(t(matrix(log10(apply(x2,1,median,na.rm = T)))))
-        pm = sort(t(matrix(log10(apply(x2,1,median,na.rm = T)))))
-        for(i in 1:dim(x2)[2]){
-          lines(pm,fnr_out$P[,i][o],lty = 1, col = cols[i])        
-        }
-        dev.off()
-      }
+#       if(estimate_fnr){
+#         pdf(paste0(plot.dir,"/",leaf.name,"_fnr_biocol.pdf"))
+#         plot(0,type = 'n', xlim = c(0,6),ylim = c(0,1))
+#         x2 = e[tf.vec,]
+#         x2[x2 <= 0] = NA
+#         o = order(t(matrix(log10(apply(x2,1,median,na.rm = T)))))
+#         pm = sort(t(matrix(log10(apply(x2,1,median,na.rm = T)))))
+#         for(i in 1:dim(x2)[2]){
+#           lines(pm,fnr_out$P[,i][o],lty = 1, col = cols[i])        
+#         }
+#         dev.off()
+#       }
       
       pdf(paste0(plot.dir,"/",leaf.name,"_epc1vqpc1_biocol.pdf"))
       plot(epc$x[,1],qpc$x[,1],pch = 16, col = cols,xlab = "EPC1",ylab = "QPC1")
