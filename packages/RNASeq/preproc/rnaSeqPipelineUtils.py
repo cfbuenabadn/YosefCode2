@@ -9,8 +9,8 @@ common_rnaseq_parser = argparse.ArgumentParser(add_help=False) #from https://doc
 common_rnaseq_parser.add_argument("--paired_end", action="store_true",
                     help="The sample is paired-end (if this flag is not given, single end is assumed)")
 common_rnaseq_parser.add_argument("-r", "--reference", action="store", required=True,
-		    choices=["mm10", "hg38", "hg19", "hg38_HIV"],
-                    help="The referernce genome against which to align. Currently supported: mm10 = mm10, with ERCC spike-ins, RefSeq annotations, compiled by Allon.\nhg38 = human, compiled by Michael")
+		    choices=["mm10", "hg38", "hg19", "hg38_HIV", "z10"],
+                    help="The referernce genome against which to align. Currently supported: mm10 = mm10, with ERCC spike-ins, RefSeq annotations, compiled by Allon.\nhg38 = human, compiled by Michael\nz10 = Zebrafish, GRCz10, compiled by Allon")
 common_rnaseq_parser.add_argument("-o", "--output_folder", action="store", required=True,
                     help="The directory to which output is written.")
 common_rnaseq_parser.add_argument("-p", "--num_threads", action="store", required=False, default=1,

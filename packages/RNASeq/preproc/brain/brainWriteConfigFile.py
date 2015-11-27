@@ -1,4 +1,4 @@
-from brainSources import cortical_sourceFolders, olfactory_sourceFolders, bateup_sourceFolders
+from brainSources import cortical_sourceFolders, olfactory_sourceFolders, bateup_sourceFolders, samIsrael_sourceFolders
 import os
 import os.path
 import glob
@@ -12,11 +12,11 @@ SOURCES_DIR = "/data/yosef/BRAIN/sources"
 #PROCESSED_DIR = "/data/yosef/BRAIN/processed_June2015_b"
 #PROCESSED_DIR = "/data/yosef/BRAIN/processed_July2015"
 #PROCESSED_DIR = "/data/yosef/BRAIN/processed_Bateup_Aug2015"
-PROCESSED_DIR = "/data/yosef/BRAIN/processed_Sep2015"
+#PROCESSED_DIR = "/data/yosef/BRAIN/processed_Sep2015"
+PROCESSED_DIR = "/data/yosef/BRAIN/processed_Zebrafish_Oct2015/"
 
-
-#cortical / olfactory / Bateup
-PROJECT = "Olfactory"
+#Cortical / Olfactory / Bateup / SamIsrael
+PROJECT = "SamIsrael"
 if PROJECT == "Cortical":
     sourceFolders = cortical_sourceFolders
     METADATA_DIR = "/data/yosef/BRAIN/sources/metadata/cortical"
@@ -29,6 +29,10 @@ elif PROJECT == "Bateup":
     sourceFolders = bateup_sourceFolders
     METADATA_DIR = "/data/yosef/BRAIN/sources/metadata/bateup"
     CONFIG_OUTPUT_FILE = os.path.join(PROCESSED_DIR, 'collect/config_bateup.xlsx')
+elif PROJECT == "SamIsrael":
+    sourceFolders = samIsrael_sourceFolders
+    METADATA_DIR = "/data/yosef/BRAIN/sources/metadata/samisrael"
+    CONFIG_OUTPUT_FILE = os.path.join(PROCESSED_DIR, 'collect/config_samisrael.xlsx')
 else:
     raise Exception("unrecognized project!")
 
@@ -53,31 +57,49 @@ def ReadOneMetadataFile(md_file):
     #ws.rows is an iterator over the worksheet's rows
     header_row = [cell.value.encode("ascii").strip().replace(' ', '_').lower() for cell in ws_rows_iterator.next()]
 
+    #Sam Israel adds more metadata after the standard colums. In the meantime - solve this by making away with these columns
+    header_row = header_row[0:len(MD_FIELDS)]
+
     #make sure that the excel contains the expected columns
     if(cmp(header_row, MD_FIELDS) != 0):
-        raise Exception("metadata excel file (%s) is not in the expected format" % md_file)
+        for col in xrange(0, len(MD_FIELDS)):
+            if header_row[col] != MD_FIELDS[col]:
+		        raise Exception("metadata excel file (%s) is not in the expected format\nColumn %d differs %s vs. %s" % md_file, col, header_row[col], MD_FIELDS[col])
+	raise Exception("metadata excel file (%s) is not in the expected format\nNot the same number of columns" % md_file)
+
 
     md_dict_for_file = {}
 
     #read the rest of the rows:
-    count = 1
+    count = 0
     for row in ws_rows_iterator:
         #I convert cell.value to unicode string because openpyxl reads int vals as ints, dates as dates etc.
         #(at first I converted to str(cell.value), which converts to an ascii string, but then I found that the degree symbol Dave uses in the  temperature field is unicode, so I cannot convert it to ascii)
         row_metadata = [unicode(cell.value).strip().replace(' ', '_').upper() for cell in row]
 
+        count += 1
+        #print "read row %d" % count #for debug
+
         #empty cells will become the string "NONE" replace those with "NA" for consistency:
         row_metadata = ["NA" if x == "NONE" else x for x in row_metadata]
 
+        #Sam Israel adds more metadata after the standard colums. In the meantime - solve this by making away with these columns
+        row_metadata = row_metadata[0:len(MD_FIELDS)]
+
+
         cur_cell_md_record = md_record._make(row_metadata)
+
+        if(all(r == "NA" for r in row_metadata)):
+            #this happens for some reason in some of the excel files - an entire row of Nones (that I transform to "NA" earlier in the loop) => maybe they correspond to an extra newline, i.e., empty line, in the excels?
+            continue
 
         if not(cur_cell_md_record.sample_id) or not(cur_cell_md_record.sample_sequencing_id):
             raise Exception("cannot have an empty cell id")
 
         md_dict_for_file[cur_cell_md_record.sample_sequencing_id] = cur_cell_md_record
 
-        #print "read row %d" % count #for debug
-        count += 1
+
+
 
     return md_dict_for_file
 
@@ -106,7 +128,8 @@ def ProcessOutputCellList(outputCellListFileName):
 
     #make the output cell list into a dictionary where the cells unique id points to its dir structure
     #the unique ID is non-greedy to make sure it does not swallow the optional barcode
-    extractUniqueIDFromCellName = re.compile(r"^(?P<path>[\d\w_\-]+)/(?P<uniqueID>[\w_]+?)(_[ACGT]+\-[ACGT]+)?_(?P<lane>L\d\d\d)$")
+    #Shana unique IDs were added after her change to the output format on Oct 2015
+    extractUniqueIDFromCellName = re.compile(r"^(?P<path>[\d\w_\-]+)/(?P<uniqueID>[\w_]+?)(_[ACGT]+\-[ACGT]+)?(_(?P<shana_unique_id>S(\d{1,4})))?(_(?P<lane>L\d\d\d))?$")
     for cell in outputCellList:
 
         m = re.match(extractUniqueIDFromCellName, cell)
@@ -116,7 +139,8 @@ def ProcessOutputCellList(outputCellListFileName):
 
         cell_uniqueID = m.group("uniqueID")
         #quick and dirty solution for the batch with the bad naming format
-        if(m.group("path") == "150904_JGI1-Ngai"):
+        #--> no longer needed after Shana revised the output format according to my requests, Oct 2015
+        if(False and m.group("path").startswith("150904_JGI1")):
             cell_uniqueID += "_" + m.group("lane")
 
         if(cellID2outputName_dict.has_key(cell_uniqueID)):

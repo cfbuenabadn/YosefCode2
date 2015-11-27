@@ -1,26 +1,29 @@
 from string import Template
 import os
 import stat
-from brainSources import cortical_sourceFolders, olfactory_sourceFolders, bateup_sourceFolders
+from brainSources import cortical_sourceFolders, olfactory_sourceFolders, bateup_sourceFolders, samIsrael_sourceFolders
 
 #TODO: change process folder to detect automatically if this is single end or paired-end?
 
 SEND_SCRIPT_FILE_NAME = "/project/eecs/yosef-archive/users/allonwag/temp/sendAllBrain.sh"
 COLLECT_SCRIPT_FILE_NAME = "/project/eecs/yosef-archive/users/allonwag/temp/collectAllBrain.sh"
 
-#OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_June2015_b2/"
-OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_Sep2015/"
+#OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_June2015_b/"
+#OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_Sep2015/"
 #OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_July2015/"
 #OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_Bateup_Aug2015/"
+OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_Zebrafish_Oct2015/"
 
-#cortical / olfactory / Bateup
-PROJECT = "Olfactory"
+#Cortical / Olfactory / Bateup / SamIsrael
+PROJECT = "SamIsrael"
 if PROJECT == "Cortical":
     sourceFolders = cortical_sourceFolders
 elif PROJECT == "Olfactory":
     sourceFolders = olfactory_sourceFolders
 elif PROJECT == "Bateup":
     sourceFolders = bateup_sourceFolders
+elif PROJECT == "SamIsrael":
+    sourceFolders = samIsrael_sourceFolders
 else:
     raise Exception("unrecognized project!")
 
@@ -68,7 +71,7 @@ with open(COLLECT_SCRIPT_FILE_NAME, "wt") as fout:
     for batchAlias in allBatchAliases:
 
             currentFolder = OUTPUT_FOLDER + batchAlias
-            collect_cmd = Template("python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collectPreprocResults.py --skip_collecting_dup_genes" +
+            collect_cmd = Template("# python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collectPreprocResults.py --skip_collecting_dup_genes" +
                            " -r mm10 -o $OUTPUT_FOLDER" +
                             " $INPUT_FOLDER").substitute(OUTPUT_FOLDER=os.path.join(currentFolder, "collect"), INPUT_FOLDER=currentFolder)
 

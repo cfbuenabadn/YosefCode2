@@ -217,7 +217,7 @@ for d in directoriesToProcess:
 	#os.listdir lists files and directories, but not the '.' and '..' entries
 	#for compatability with Nir's previous structure, I do not allow the cell directory name to be "cuff" or "rsem" (this is where Nir used to save the collect results of the folder)
 	curSubDirectoryList = [os.path.join(d, x) for x in os.listdir(d) \
-		if (os.path.isdir(os.path.join(d, x))) and (x != "cuff") and (x != "rsem")];
+		if (os.path.isdir(os.path.join(d, x))) and (x != "cuff") and (x != "rsem") and (x != "collect")];
 
 	subDirectoryList += curSubDirectoryList
 
