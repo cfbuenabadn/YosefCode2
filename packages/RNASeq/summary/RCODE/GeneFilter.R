@@ -39,7 +39,7 @@ plotDensities = function(x, xlim, ylim, main, xlab, ylab, zero.omit = F){
 # verbose = logical. If true, will print message describing filtering step
 # plot.dir = character. path to plot directory. No plots if NULL
 
-GeneFilter = function(eSet, count.cutoff, prop.failed, verbose = F, plot.dir = NULL, plot.prefix = NULL){
+GeneFilter = function(eSet, count.cutoff, prop.failed, verbose = F, plot.dir = NULL, plot.prefix = NULL, is_abs = F){
   
   # Create plot directory, if necessary
   if (!is.null(plot.dir) && !file.exists(plot.dir)){
@@ -60,7 +60,14 @@ GeneFilter = function(eSet, count.cutoff, prop.failed, verbose = F, plot.dir = N
   }
   
   # Implement cut
-  is.Cut.Gene = rowMeans(exprs(eSet) < count.cutoff) >= prop.failed
+  if(!is_abs) {
+    #relative (original) filter
+    is.Cut.Gene = rowMeans(exprs(eSet) < count.cutoff) >= prop.failed
+  } else {
+    #absolute filter
+    is.Cut.Gene = rowSums(exprs(eSet) < count.cutoff) >= prop.failed
+  }
+    
   #quick&dirty fix to cut by absolute values
   #is.Cut.Gene = !(rowSums(exprs(eSet) >= count.cutoff) >= 20) #has at least 20 cells in which expressed
   genefilter.eSet = eSet[!is.Cut.Gene,]
