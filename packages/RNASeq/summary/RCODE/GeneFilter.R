@@ -61,6 +61,8 @@ GeneFilter = function(eSet, count.cutoff, prop.failed, verbose = F, plot.dir = N
   
   # Implement cut
   is.Cut.Gene = rowMeans(exprs(eSet) < count.cutoff) >= prop.failed
+  #quick&dirty fix to cut by absolute values
+  #is.Cut.Gene = !(rowSums(exprs(eSet) >= count.cutoff) >= 20) #has at least 20 cells in which expressed
   genefilter.eSet = eSet[!is.Cut.Gene,]
   
   # Plot Cut Read distribution
