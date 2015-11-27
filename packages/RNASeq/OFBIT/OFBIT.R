@@ -121,12 +121,10 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, est
                 strout = paste(filt_method,scale_method, zero_method,combat_method,qfilt_flag,norm_method,alt_method,bin_method,sep = "|")
                 print(strout)
                 if(sum(e == 0) != sum(ce == 0)){
-                  print("Zeroes from nowhere!")
-                  print(sum(e == 0) )
-                  print(sum(ce == 0) )
+                  warning(paste("Zero excess:",sum(ce == 0) - sum(e == 0)))
                 }
-                ScoreLeaf(ce,q,tf.vec = tf.vec,estimate_fnr = estimate_fnr,qK = qK,hk_genes = hk_genes, techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file, plot.dir = plot.dir)
-              }
+                tryCatch(ScoreLeaf(ce,q,tf.vec = tf.vec,estimate_fnr = estimate_fnr,qK = qK,hk_genes = hk_genes,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file,plot.dir = plot.dir),
+                         error = function(e){ReportError(strout, error.file, "ScoreLeaf Failure")})              }
               
               # Calculate scores
               score_obj = QPCScores(e = ce,q = q,sig.test = qfilt_flag,tf.vec = tf.vec)            
@@ -155,12 +153,10 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, est
                     ne = YL_RUVg(e = ce,hk_genes & tf.vec,K = curK,zero.method = alt_method)
                     ne[ce == 0] = 0
                     if(sum(e == 0) != sum(ne == 0)){
-                      print("Zeroes from nowhere!")
-                      print(sum(e == 0) )
-                      print(sum(ne == 0) )
+                      warning(paste("Zero excess:",sum(ne == 0) - sum(e == 0)))
                     }
-                    ScoreLeaf(ne,q,tf.vec = tf.vec,estimate_fnr = estimate_fnr,qK = qK,hk_genes = hk_genes,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file, plot.dir = plot.dir)  
-                  }
+                    tryCatch(ScoreLeaf(ne,q,tf.vec = tf.vec,estimate_fnr = estimate_fnr,qK = qK,hk_genes = hk_genes,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file,plot.dir = plot.dir),
+                             error = function(e){ReportError(strout, error.file, "ScoreLeaf Failure")})                  }
                 }
               }
             
@@ -178,12 +174,10 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, est
                       ne = ResLoc(e = ce,scores = score_obj$x[,1:curK],zero.method = alt_method)
                       ne[ce == 0] = 0
                       if(sum(e == 0) != sum(ne == 0)){
-                        print("Zeroes from nowhere!")
-                        print(sum(e == 0) )
-                        print(sum(ne == 0) )
+                        warning(paste("Zero excess:",sum(ne == 0) - sum(e == 0)))
                       }
-                      ScoreLeaf(ne,q,tf.vec = tf.vec,estimate_fnr = estimate_fnr,qK = qK,hk_genes = hk_genes,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file,plot.dir = plot.dir)
-                    }
+                      tryCatch(ScoreLeaf(ne,q,tf.vec = tf.vec,estimate_fnr = estimate_fnr,qK = qK,hk_genes = hk_genes,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file,plot.dir = plot.dir),
+                               error = function(e){ReportError(strout, error.file, "ScoreLeaf Failure")})                    }
                   }
                 }
               }
@@ -215,8 +209,8 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, est
                         norm_method2 = paste0("ComBat", "(k=", k, ")")
                         strout = paste(filt_method,scale_method, zero_method,combat_method,qfilt_flag,norm_method2,alt_method,bin_method,sep = "|")
                         print(strout)
-                        ScoreLeaf(ne,q,tf.vec = tf.vec,estimate_fnr = estimate_fnr,qK = qK,hk_genes = hk_genes,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file,plot.dir = plot.dir)
-                      }
+                        tryCatch(ScoreLeaf(ne,q,tf.vec = tf.vec,estimate_fnr = estimate_fnr,qK = qK,hk_genes = hk_genes,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file,plot.dir = plot.dir),
+                                 error = function(e){ReportError(strout, error.file, "ScoreLeaf Failure")})                      }
                     }else{
                       if (length(unique(bins)) == 1){
                         print("Disqualified LocScale instance due to single bin...")
@@ -228,11 +222,10 @@ OFBIT = function(e,type,q,techbatch = NULL,biobatch = NULL, hk_genes = NULL, est
                         strout = paste(filt_method,scale_method, zero_method,combat_method,qfilt_flag,norm_method2,alt_method,bin_method,sep = "|")
                         print(strout)
                         if(sum(e == 0) != sum(ne == 0)){
-                          print("Zeroes from nowhere!")
-                          print(sum(e == 0) )
-                          print(sum(ne == 0) )
+                          warning(paste("Zero excess:",sum(ne == 0) - sum(e == 0)))
                         }
-                        ScoreLeaf(ne,q,tf.vec = tf.vec,estimate_fnr = estimate_fnr,qK = qK,hk_genes = hk_genes,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file,plot.dir = plot.dir)
+                        tryCatch(ScoreLeaf(ne,q,tf.vec = tf.vec,estimate_fnr = estimate_fnr,qK = qK,hk_genes = hk_genes,techbatch = techbatch,biobatch = biobatch,leaf.name =  strout,out.file = out.file,plot.dir = plot.dir),
+                                 error = function(e){ReportError(strout, error.file, "ScoreLeaf Failure")})
                       }
                     }
                   }
@@ -256,10 +249,11 @@ ReportError = function(leaf.name, error.file, error.msg){
 }
 
 ScoreLeaf = function(e,q,tf.vec = T,estimate_fnr = F,qK ,hk_genes = NULL, techbatch = NULL,biobatch = NULL, knn = 10, leaf.name, out.file,plot.dir,EPSILON = 1){
-    
+  
   if(any(is.na(e))){
       stop("NA Value Detected at Leaf!")
   }
+  write.table(e,file = paste0(plot.dir,"/",leaf.name,"_matrix.tab"),sep = "\t")
     
     tf.vec = tf.vec & (apply(e,1,sd) > SD_EPSILON) # Only consider variable genes for PCA
   
@@ -298,18 +292,18 @@ ScoreLeaf = function(e,q,tf.vec = T,estimate_fnr = F,qK ,hk_genes = NULL, techba
       
       cols = rainbow(length(levels(as.factor(techbatch))))[as.factor(techbatch)]
       
-      if(estimate_fnr){
-        pdf(paste0(plot.dir,"/",leaf.name,"_fnr_techcol.pdf"))
-        plot(0,type = 'n', xlim = c(0,6),ylim = c(0,1))
-        x2 = e[tf.vec,]
-        x2[x2 <= 0] = NA
-        o = order(t(matrix(log10(apply(x2,1,median,na.rm = T)))))
-        pm = sort(t(matrix(log10(apply(x2,1,median,na.rm = T)))))
-        for(i in 1:dim(x2)[2]){
-          lines(pm,fnr_out$P[,i][o],lty = 1, col = cols[i])        
-        }
-        dev.off()
-      }
+#       if(estimate_fnr){
+#         pdf(paste0(plot.dir,"/",leaf.name,"_fnr_techcol.pdf"))
+#         plot(0,type = 'n', xlim = c(0,6),ylim = c(0,1))
+#         x2 = e[tf.vec,]
+#         x2[x2 <= 0] = NA
+#         o = order(t(matrix(log10(apply(x2,1,median,na.rm = T)))))
+#         pm = sort(t(matrix(log10(apply(x2,1,median,na.rm = T)))))
+#         for(i in 1:dim(x2)[2]){
+#           lines(pm,fnr_out$P[,i][o],lty = 1, col = cols[i])        
+#         }
+#         dev.off()
+#       }
       
       pdf(paste0(plot.dir,"/",leaf.name,"_epc1vqpc1_techcol.pdf"))
       plot(epc$x[,1],qpc$x[,1],pch = 16, col = cols,xlab = "EPC1",ylab = "QPC1")
@@ -354,18 +348,18 @@ ScoreLeaf = function(e,q,tf.vec = T,estimate_fnr = F,qK ,hk_genes = NULL, techba
       cols = rainbow(length(levels(as.factor(biobatch))))[as.factor(biobatch)]
       cols[is.na(cols)] = "black"
       
-      if(estimate_fnr){
-        pdf(paste0(plot.dir,"/",leaf.name,"_fnr_biocol.pdf"))
-        plot(0,type = 'n', xlim = c(0,6),ylim = c(0,1))
-        x2 = e[tf.vec,]
-        x2[x2 <= 0] = NA
-        o = order(t(matrix(log10(apply(x2,1,median,na.rm = T)))))
-        pm = sort(t(matrix(log10(apply(x2,1,median,na.rm = T)))))
-        for(i in 1:dim(x2)[2]){
-          lines(pm,fnr_out$P[,i][o],lty = 1, col = cols[i])        
-        }
-        dev.off()
-      }
+#       if(estimate_fnr){
+#         pdf(paste0(plot.dir,"/",leaf.name,"_fnr_biocol.pdf"))
+#         plot(0,type = 'n', xlim = c(0,6),ylim = c(0,1))
+#         x2 = e[tf.vec,]
+#         x2[x2 <= 0] = NA
+#         o = order(t(matrix(log10(apply(x2,1,median,na.rm = T)))))
+#         pm = sort(t(matrix(log10(apply(x2,1,median,na.rm = T)))))
+#         for(i in 1:dim(x2)[2]){
+#           lines(pm,fnr_out$P[,i][o],lty = 1, col = cols[i])        
+#         }
+#         dev.off()
+#       }
       
       pdf(paste0(plot.dir,"/",leaf.name,"_epc1vqpc1_biocol.pdf"))
       plot(epc$x[,1],qpc$x[,1],pch = 16, col = cols,xlab = "EPC1",ylab = "QPC1")
