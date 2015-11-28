@@ -18,12 +18,16 @@ OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_Zebrafish_Oct2015/"
 PROJECT = "SamIsrael"
 if PROJECT == "Cortical":
     sourceFolders = cortical_sourceFolders
+    reference_genome = "mm10"
 elif PROJECT == "Olfactory":
     sourceFolders = olfactory_sourceFolders
+    reference_genome = "mm10"
 elif PROJECT == "Bateup":
     sourceFolders = bateup_sourceFolders
+    reference_genome = "mm10"
 elif PROJECT == "SamIsrael":
     sourceFolders = samIsrael_sourceFolders
+    reference_genome = "z10"
 else:
     raise Exception("unrecognized project!")
 
@@ -37,10 +41,11 @@ with open(SEND_SCRIPT_FILE_NAME, "wt") as fout:
         batchAlias = batchDir.replace("/", "-") #make a hierarchy of one batch folder and beneath it all the cell folders
         send_cmd = Template("python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/processFolder.py -N JuneBrain_b" +
                             (" --paired_end" if isPairedEnd else "") +
-                            " --rsem_bowtie_maxins 1000 --kallisto_fragment_length 540 -p 1 -r mm10" +
+                            " --rsem_bowtie_maxins 1000 --kallisto_fragment_length 540 -p 1 -r $REFERENCE_GENOME" +
                             " -o $OUT_FOLDER $INPUT_FOLDER").substitute(
                             OUT_FOLDER=os.path.join(OUTPUT_FOLDER, batchAlias),
-                            INPUT_FOLDER=os.path.join("/data/yosef/BRAIN/sources/", batchDir)
+                            INPUT_FOLDER=os.path.join("/data/yosef/BRAIN/sources/", batchDir),
+                            REFERENCE_GENOME = reference_genome
                             )
         fout.write(send_cmd + '\n\n')
 
@@ -52,8 +57,8 @@ with open(COLLECT_SCRIPT_FILE_NAME, "wt") as fout:
     fout.write("#Collect all batches together:\n\n")
 
     collect_cmd = Template("python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collectPreprocResults.py --skip_collecting_dup_genes" +
-                           " -r mm10 -o $OUTPUT_FOLDER" +
-                            " \"$DIRECTORORIES_TO_PROCESS\"").substitute(OUTPUT_FOLDER=os.path.join(OUTPUT_FOLDER, "collect"), DIRECTORORIES_TO_PROCESS=';'.join([OUTPUT_FOLDER + alias for alias in allBatchAliases]))
+                           " -r $REFERENCE_GENOME -o $OUTPUT_FOLDER" +
+                            " \"$DIRECTORORIES_TO_PROCESS\"").substitute(OUTPUT_FOLDER=os.path.join(OUTPUT_FOLDER, "collect"), DIRECTORORIES_TO_PROCESS=';'.join([OUTPUT_FOLDER + alias for alias in allBatchAliases]), REFERENCE_GENOME = reference_genome)
 
     fout.write(collect_cmd + '\n\n')
 
@@ -72,8 +77,8 @@ with open(COLLECT_SCRIPT_FILE_NAME, "wt") as fout:
 
             currentFolder = OUTPUT_FOLDER + batchAlias
             collect_cmd = Template("# python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/collectPreprocResults.py --skip_collecting_dup_genes" +
-                           " -r mm10 -o $OUTPUT_FOLDER" +
-                            " $INPUT_FOLDER").substitute(OUTPUT_FOLDER=os.path.join(currentFolder, "collect"), INPUT_FOLDER=currentFolder)
+                           " -r $REFERENCE_GENOME -o $OUTPUT_FOLDER" +
+                            " $INPUT_FOLDER").substitute(OUTPUT_FOLDER=os.path.join(currentFolder, "collect"), INPUT_FOLDER=currentFolder, REFERENCE_GENOME = reference_genome)
 
             fout.write(collect_cmd + '\n\n')
 

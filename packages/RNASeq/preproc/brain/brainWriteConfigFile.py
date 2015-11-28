@@ -55,7 +55,8 @@ def ReadOneMetadataFile(md_file):
     ws_rows_iterator = ws.rows
 
     #ws.rows is an iterator over the worksheet's rows
-    header_row = [cell.value.encode("ascii").strip().replace(' ', '_').lower() for cell in ws_rows_iterator.next()]
+    #the if cell makes sure that we're not reading empty cells
+    header_row = [cell.value.encode("ascii").strip().replace(' ', '_').lower() if cell.value else "NO_HEADER_VALUE_IN_CELL" for cell in ws_rows_iterator.next()]
 
     #Sam Israel adds more metadata after the standard colums. In the meantime - solve this by making away with these columns
     header_row = header_row[0:len(MD_FIELDS)]

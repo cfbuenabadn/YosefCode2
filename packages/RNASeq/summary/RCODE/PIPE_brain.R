@@ -61,7 +61,8 @@ source(paste0(lib_dir,"/TechCorrect.R"))
 #collect_dir = "/data/yosef/BRAIN/processed_June2015_b/collect"
 #collect_dir = "/data/yosef/BRAIN/processed_Bateup_Aug2015/collect"
 #collect_dir = "/data/yosef/BRAIN/processed_July2015/collect"
-collect_dir = "/data/yosef/BRAIN/processed_Sep2015/collect"
+#collect_dir = "/data/yosef/BRAIN/processed_Sep2015/collect"
+collect_dir = "/data/yosef/BRAIN/processed_Zebrafish_Oct2015/collect"
 load(file=file.path(collect_dir, "collectedRNASeqStudy.RData"))
 #load(file=file.path(collect_dir, "collectedRNASeqStudy_withRSEM.RData"))
 eSet = collectedRNASeqStudy$cuff_eSet
@@ -123,7 +124,7 @@ only_single_cell = phenoData(eSet)$MD_single_bulk_pool == "S"
 eSet = eSet[, only_single_cell]  
 
 excluded_samples_list = ""
-EXPERIMENT = "olfa_experiment3" #"cortical" #"olfa_experiment4" #bateup" #"olfa_experiment2" #
+EXPERIMENT = "samisrael" #  "olfa_experiment3" #"cortical" #"olfa_experiment4" #bateup" #"olfa_experiment2" #
 if(EXPERIMENT == "cortical") {
   
 } else if(startsWith(EXPERIMENT, "olfa_experiment")) {
@@ -152,7 +153,7 @@ if(EXPERIMENT == "cortical") {
   
   eSet = eSet[, desiredSamples]  
 } else if(EXPERIMENT == "bateup") {
-  
+} else if(EXPERIMENT == "samisrael")
 } else {
   stop("unrecognized experiment")
 }
@@ -160,7 +161,9 @@ if(EXPERIMENT == "cortical") {
 ## Exclude cells that a priori known to be bad
 if(excluded_samples_list != "")
 {
-  
+  seqIDsToExclude <- scan(excluded_samples_list, what="character", sep="\n", comment.char = '#')
+  desiredSamples = !(toupper(phenoData(eSet)$sample_sequencing_id) %in% toupper(seqIDsToExclude))
+  eSet = eSet[, desiredSamples]
 }
 
 
