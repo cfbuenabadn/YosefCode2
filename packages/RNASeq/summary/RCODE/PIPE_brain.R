@@ -153,7 +153,7 @@ if(EXPERIMENT == "cortical") {
   
   eSet = eSet[, desiredSamples]  
 } else if(EXPERIMENT == "bateup") {
-} else if(EXPERIMENT == "samisrael")
+} else if(EXPERIMENT == "samisrael"){
 } else {
   stop("unrecognized experiment")
 }
