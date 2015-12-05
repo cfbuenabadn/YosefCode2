@@ -66,7 +66,7 @@ source(paste0(lib_dir,"/TechCorrect.R"))
 # }
 #load(file=file.path("/data/yosef/TFH/processed/collect", "collectedRNASeqStudy.RData"))
 #load(file=file.path("/data/yosef/BRAIN/processed_June2015_b/collect2", "collectedRNASeqStudy_olfactory.RData"))
-load(file=file.path("/data/yosef/BRAIN/processed_July2015/collect", "collectedRNASeqStudy_withRSEM.RData"))
+load(file=file.path("/data/yosef/BRAIN/processed_July2015/collect", "collectedRNASeqStudy.RData"))
 eSet = collectedRNASeqStudy$cuff_eSet
 #collect_dir = "/data/yosef/TFH/processed/collect"
 #collect_dir = "/data/yosef/BRAIN/processed_June2015_b/collect"
@@ -147,8 +147,7 @@ gf.vec = GeneFilter(sf.sc.eSet,
 if(save_intermediate_files) 
 {
   write.table(exprs(tf.sc.eSet), file=paste0(out_dir,"/exprsAfterTechFilter.txt"), sep = "\t", col.names = NA, quote=F)
-  save(sf.sc.eSet, gf.vec, file=file.path(out_dir, "imageAfterFiltering.RData"))
-  
+  save.image(file=paste0(out_dir,"/imageAfterFiltering.RData"))
 }
 
 ##----- Normalization

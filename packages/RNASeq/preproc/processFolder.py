@@ -155,8 +155,8 @@ for sample1 in sampleList:
 		fout.write("### The format is:\n");
 		fout.write("### #PBS -l walltime=HH:MM:SS\n");
 		fout.write("### #PBS -l cput=HH:MM:SS\n");
-		fout.write("#PBS -l walltime=10:00:00\n");
-		fout.write("#PBS -l cput=10:00:00\n");
+		fout.write("#PBS -l walltime=36:00:00\n"); #changed from 10h to 36h because of the very long zebrafish runs
+		fout.write("#PBS -l cput=36:00:00\n"); #changed from 10h to 36h because of the very long zebrafish runs
 		
 		fout.write("### Move all your environment variables to the job\n");
 		fout.write("#PBS -V\n");
