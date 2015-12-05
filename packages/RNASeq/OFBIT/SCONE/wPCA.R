@@ -3,7 +3,7 @@
 # and weighted PCA
 # Author: Michael Cole, Yosef Lab 2015
 
-require(rARPACK) # ARPACK wrapper
+library(rARPACK,quietly = T) # ARPACK wrapper
 
 ## ----- Weighted Mean
 # Returns vector containing the weighted mean of an input vector
@@ -21,12 +21,15 @@ wmean = function(x,w){
 # Note: Function will return NA if the weight product of any two columns is zero, 
 # as covariance in undefined for the pair.
 wcov = function(x,w){
+  
+  SD_EPSILON = 1e10 * .Machine$double.eps #~2.2e-6
+  
   z = w*(t(t(x) - colSums(w*x)/colSums(w)))
   Z = t(z) %*% z
   W = t(w) %*% w
   out = Z/W
-  out[W == 0] = NA
-  return(Z/W)
+  out[W < SD_EPSILON] = NA
+  return(out)
 }
 
 ## ----- Weighted PCA
@@ -40,12 +43,14 @@ wcov = function(x,w){
 
 wPCA = function(x,w,nu = min(dim(x)), filt = F, scale = T){
   
+  SD_EPSILON = 1e10 * .Machine$double.eps #~2.2e-6
+  
   # No negative weights allowed.
   stopifnot(!any(w < 0))
   
   # Filter out weightless pairs
   if(filt){
-    to.pass = rowSums((w %*% t(w)) == 0) == 0
+    to.pass = rowSums((w %*% t(w)) < SD_EPSILON) == 0
     x = x[to.pass,]
     w = w[to.pass,]
   }

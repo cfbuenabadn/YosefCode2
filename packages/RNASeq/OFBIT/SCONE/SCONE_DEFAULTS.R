@@ -1,9 +1,9 @@
-library(DESeq)
-library(EDASeq)
-library(edgeR)
-library(sva)
-library(aroma.light)
-library(lme4)
+library(DESeq,quietly = TRUE)
+library(EDASeq,quietly = TRUE)
+library(edgeR,quietly = TRUE)
+library(sva,quietly = TRUE)
+library(aroma.light,quietly = TRUE)
+library(lme4,quietly = TRUE)
 
 
 #' Null function

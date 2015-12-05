@@ -47,7 +47,7 @@ load("/data/yosef/users/mbcole/WTP63/Second/expt4_gf405_tophatscone.rda") #gf402
 load("/data/yosef/users/mbcole/WTP63/Second/Expt4_WTp63_11115_metadata.Rda")
 
 cc = read.table("/data/yosef/users/mbcole/WTP63/First/FP/cell_cycle_Tirosh.txt")
-scone_out = SCONE(e = gf405,factor_free_only = F,
+scone_out = SCONE(e = gf405,factor_free_only = F,design = c("nested"), nested_model = c("fixed"),
                     condition = expt_condition,
                     batch = c1_run_id,
                     qual = PPQual(qualityScores),
@@ -55,7 +55,9 @@ scone_out = SCONE(e = gf405,factor_free_only = F,
                     is_HK = rownames(gf405) %in% as.matrix(HKlistE1),
                     is_DE = rownames(gf405) %in% as.matrix(OEdifferentiationGeneList),
                     is_CC = toupper(rownames(gf405)) %in% as.matrix(cc$V2),
-                    out_dir = "/data/yosef/users/mbcole/WTP63/Second/SCONE_test_405")
+                    out_dir = "/data/yosef/users/mbcole/WTP63/Second/SCONE_out_405")
+
+out_dir = "/data/yosef/users/mbcole/WTP63/Second/SCONE_out_405")
 
 pcx = prcomp(t(scone_out$factor_based_out$IMPUTE_TMM_NOWEIGHT_NOBIO_BATCH_Q_2),center = T,scale = T)
 evaluate_out = scone_out$factor_free_out

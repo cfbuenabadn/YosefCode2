@@ -1,56 +1,122 @@
 source("~/YosefCode/packages/RNASeq/OFBIT/SCONE/estimateFNR.R")
 source("~/YosefCode/packages/RNASeq/OFBIT/SCONE/SCONE_DEFAULTS.R")
 source("~/YosefCode/packages/RNASeq/OFBIT/SCONE/wPCA.R")
-require(BiocParallel)
-require(cluster)
-require(fpc)
+library(BiocParallel,quietly = TRUE)
+library(cluster,quietly = TRUE)
+library(fpc,quietly = TRUE)
 
-runAdjustTask = function(task,evaluate_material,design,nested_model){
-  norm_lout = ADJUST_FN(task$ei,batch = task$batch,
-                        bio = task$condition,
-                        uv = task$uv,
-                        w = task$w,
-                        design = design, 
-                        nested_model = nested_model)
-  norm_out = exp(norm_lout) - 1
-  score_out = scoreMethod(e = norm_out ,condition = evaluate_material$condition, batch = evaluate_material$batch,
-                          qual_scores = evaluate_material$qual_scores, HK_scores = evaluate_material$HK_scores, 
-                          DE_scores = evaluate_material$DE_scores, CC_scores = evaluate_material$CC_scores,
-                          dim_eval = evaluate_material$dim_eval, K_clust = evaluate_material$K_clust, K_NN = evaluate_material$K_NN,
-                          fnr_pi = evaluate_material$fnr_pi, nom = task$nom)
+runAdjustTask = function(task,evaluate_material,design,nested_model, to_store = FALSE){
   
-  scone_out = list(exp_mat = norm_out,evaluation = score_out,method = task$nom)
-  save(scone_out,file = paste(evaluate_material$out_dir,"/",task$nom,".Rdata",sep = "")) 
+  source("~/YosefCode/packages/RNASeq/OFBIT/SCONE/SCONE.R") # library(SCONE)
   
-  # Return values
-  if(!is.na(score_out)[1]){
-    scores = score_out$scores
-  }else{
-    scores = NA
-  }
+  result = try({
+    
+    if(file.exists(paste(evaluate_material$out_dir,"/",task$nom,".Rdata",sep = ""))){
+      if(to_store){
+        load(paste(evaluate_material$out_dir,"/",task$nom,".Rdata",sep = ""))
+        score_out = scone_out$evaluation
+      
+        # Return values
+        if(!is.na(score_out)[1]){
+          scores = score_out$scores
+        }else{
+          scores = NA
+        }
   
-  return(list(eo = norm_out,scores = scores))
+        print(task$nom)
+        return(list(scores = scores))
+      }else{
+        print(task$nom)
+        return()
+      }
+    
+    }else{
+    
+      norm_lout = ADJUST_FN(task$ei,batch = task$batch,
+                            bio = task$condition,
+                            uv = task$uv,
+                            w = task$w,
+                            design = design, 
+                            nested_model = nested_model)
+      norm_out = exp(norm_lout) - 1
+      score_out = scoreMethod(e = norm_out ,condition = evaluate_material$condition, batch = evaluate_material$batch,
+                            qual_scores = evaluate_material$qual_scores, HK_scores = evaluate_material$HK_scores, 
+                            DE_scores = evaluate_material$DE_scores, CC_scores = evaluate_material$CC_scores,
+                            dim_eval = evaluate_material$dim_eval, K_clust = evaluate_material$K_clust, K_NN = evaluate_material$K_NN,
+                            fnr_pi = evaluate_material$fnr_pi, nom = task$nom)
+    
+      scone_out = list(exp_mat = norm_out,evaluation = score_out,method = task$nom)
+      save(scone_out,file = paste(evaluate_material$out_dir,"/",task$nom,".Rdata",sep = "")) 
+      if(to_store){
+      
+        # Return values
+        if(!is.na(score_out)[1]){
+          scores = score_out$scores
+        }else{
+          scores = NA
+        }
+    
+        print(task$nom)
+        return(list(scores = scores))
+      }else{
+        print(task$nom)
+        return()
+      }
+    
+    }
+  
+  })
+  
+  return(NA)
+  
 }
 
 runFactorFreeTask = function(task,evaluate_material){
-  norm_out = task$FN(task$ei)
-  score_out = scoreMethod(e = norm_out ,condition = evaluate_material$condition, batch = evaluate_material$batch,
+  
+  source("~/YosefCode/packages/RNASeq/OFBIT/SCONE/SCONE.R") # library(SCONE)
+  
+  result = try({
+    if(file.exists(paste(evaluate_material$out_dir,"/",task$nom,".Rdata",sep = ""))){
+      load(paste(evaluate_material$out_dir,"/",task$nom,".Rdata",sep = ""))
+      norm_out = scone_out$exp_mat
+      score_out = scone_out$evaluation
+    
+      # Return values
+      if(!is.na(score_out)[1]){
+        scores = score_out$scores
+      }else{
+        scores = NA
+      }
+    
+      print(task$nom)
+      return(list(eo = norm_out, scores = scores))
+    
+      }else{
+        norm_out = task$FN(task$ei)
+        score_out = scoreMethod(e = norm_out ,condition = evaluate_material$condition, batch = evaluate_material$batch,
                           qual_scores = evaluate_material$qual_scores, HK_scores = evaluate_material$HK_scores, 
                           DE_scores = evaluate_material$DE_scores, CC_scores = evaluate_material$CC_scores,
                           dim_eval = evaluate_material$dim_eval, K_clust = evaluate_material$K_clust, K_NN = evaluate_material$K_NN,
                           fnr_pi = evaluate_material$fnr_pi, nom = task$nom)
   
-  scone_out = list(exp_mat = norm_out,evaluation = score_out,method = task$nom)
-  save(scone_out,file = paste(evaluate_material$out_dir,"/",task$nom,".Rdata",sep = "")) 
+      scone_out = list(exp_mat = norm_out,evaluation = score_out,method = task$nom)
+      save(scone_out,file = paste(evaluate_material$out_dir,"/",task$nom,".Rdata",sep = "")) 
   
-  # Return values
-  if(!is.na(score_out)[1]){
-    scores = score_out$scores
-  }else{
-    scores = NA
-  }
+      # Return values
+      if(!is.na(score_out)[1]){
+        scores = score_out$scores
+      }else{
+        scores = NA
+      }
   
-  return(list(eo = norm_out,scores = scores))
+      print(task$nom)
+      return(list(eo = norm_out, scores = scores))
+    }
+  
+  })
+  
+  return(NA)
+  
 }
 
 scoreMethod = function(e,condition = NULL, batch = NULL, 
@@ -122,26 +188,31 @@ scoreMethod = function(e,condition = NULL, batch = NULL,
   }
   
   # PAM Silh
-  pam_object = pam(pc_val,k = K_clust)
-  PAM_SIL = pam_object$silinfo$avg.width
+  if(K_clust > 1){
+    pam_object = pam(pc_val,k = K_clust)
+    PAM_SIL = pam_object$silinfo$avg.width
+    clusters = pam_object$clustering
+  }else{
+    PAM_SIL = NA
+    clusters = NA
+  }
   scores = c(EXP_QPC_COR,EXP_HK_COR,EXP_DE_COR,EXP_CC_COR,KNN_BIO,KNN_BATCH,PAM_SIL)
   names(scores) = c("EXP_QPC_COR","EXP_HK_COR","EXP_DE_COR","EXP_CC_COR","KNN_BIO","KNN_BATCH","PAM_SIL")
-  clusters = pam_object$clustering
   return(list(scores = scores, pc_val = pc_val, clusters = clusters))
 }
 
 ## ===== SCONE: Single-Cell Overview of Normalized Expression data =====
 SCONE = function(e,condition = NULL, batch = NULL, 
-                  design = c("factorial","nested"), 
-                  nested_model = c("fixed","random"),
-                  qual = NULL, is_HK = NULL,
-                  is_DE = NULL,is_CC = NULL,
-                  dim_UV = NULL, K_pseudobatch = NULL,
-                  dim_eval = 3, K_clust = NULL, K_NN = 10, 
-                  out_dir = NULL,
-                  K_clust_MAX = 10,K_pseudobatch_MAX = 10,
-                  factor_free_only = F){
-  
+                 design = c("factorial","nested"), 
+                 nested_model = c("fixed","random"),
+                 qual = NULL, is_HK = NULL,
+                 is_DE = NULL,is_CC = NULL,
+                 dim_UV = NULL, K_pseudobatch = NULL,
+                 dim_eval = 3, K_clust = NULL, K_NN = 10, 
+                 out_dir = NULL,
+                 K_clust_MAX = 10,K_pseudobatch_MAX = 10,
+                 factor_free_only = FALSE, to_store = FALSE, n_workers = 10){
+  param = SnowParam(workers = n_workers, type = "SOCK")
   ## ----- Set up output directory ----
   if (file.exists(out_dir)){
     #stop("Designated output directory already exists.")
@@ -157,14 +228,25 @@ SCONE = function(e,condition = NULL, batch = NULL,
     HK_default = T
     is_HK = rep(T,dim(e)[1])
   }
-  fnr_out = estimateFNR(e,bulk_model = T,is.expressed = is_HK)
+  if(file.exists(paste0(out_dir,"/fnr_out.Rdata"))){
+    load(paste0(out_dir,"/fnr_out.Rdata"))
+  }else{
+    fnr_out = estimateFNR(e,bulk_model = T,is.expressed = is_HK)
+    save(fnr_out,file = paste0(out_dir,"/fnr_out.Rdata"))
+  }
   fnr_mu = exp(fnr_out$Alpha[1,])
   fnr_pi = (e == 0) * fnr_out$Z 
-  save(fnr_out,file = paste0(out_dir,"/fnr_out.Rdata"))
   imputed_e = e + (fnr_mu * fnr_pi)
   print("Complete.")
   
   ## ----- Generate Unwanted Factors ----
+  print("Generating Unwanted Factors for Evaluation...")
+  if(file.exists(paste0(out_dir,"/evaluate_material.Rdata"))){
+    
+    load(paste0(out_dir,"/evaluate_material.Rdata"))
+    
+  }else{
+    
   # Factors of alignment quality metrics
   if(is.null(qual)){
     warning("No quality metrics specified. Total counts and efficiency used.")
@@ -229,6 +311,11 @@ SCONE = function(e,condition = NULL, batch = NULL,
   
   save(evaluate_material,file = paste0(out_dir,"/evaluate_material.Rdata"))
   
+  }
+  
+  print("Complete.")
+  
+  
   ## ----- Factor-Free Normalization
   
   task_list = list()
@@ -249,7 +336,7 @@ SCONE = function(e,condition = NULL, batch = NULL,
   }
   # Parallel Normalization + Evaluation
   print("Factor-Free Normalization and Evaluation...")
-  factor_free_out = bplapply(task_list,FUN = runFactorFreeTask, evaluate_material = evaluate_material)
+  factor_free_out = bplapply(task_list,FUN = runFactorFreeTask, evaluate_material = evaluate_material,BPPARAM = param)
   print("Complete.")
   
   ## ----- Selection Step (Optional)
@@ -261,9 +348,11 @@ SCONE = function(e,condition = NULL, batch = NULL,
   print("Selecting Base Tasks...")
   base_task_list = list()
   for( eval_out in names(factor_free_out)){
-    emat = factor_free_out[[eval_out]]$eo
-    if(!any(is.na(emat) | is.nan(emat) | is.infinite(emat))){
-      base_task_list[[eval_out]] = list(ei = factor_free_out[[eval_out]]$eo, nom =  eval_out) 
+    if(!is.na(factor_free_out[[eval_out]])){
+      emat = factor_free_out[[eval_out]]$eo
+      if(!any(is.na(emat) | is.nan(emat) | is.infinite(emat))){
+        base_task_list[[eval_out]] = list(ei = factor_free_out[[eval_out]]$eo, nom =  eval_out) 
+      }
     }
   }
   print("Complete.")
@@ -321,12 +410,12 @@ SCONE = function(e,condition = NULL, batch = NULL,
   # Generate General Factor Clusterings
   print("Generating General Factor-Based Clusters...")
   if(is.null(K_pseudobatch)){
-    pamk_object = pamk(qual_scores,krange = 1:K_pseudobatch_MAX)
+    pamk_object = pamk(evaluate_material$qual_scores,krange = 1:K_pseudobatch_MAX)
     qual_nc = pamk_object$nc
     qual_clustering =  as.factor(pamk_object$pamobject$clustering)
   }else{
     qual_nc = K_pseudobatch
-    qual_clustering = as.factor(pam(qual_scores,k = K_pseudobatch)$clustering)
+    qual_clustering = as.factor(pam(evaluate_material$qual_scores,k = K_pseudobatch)$clustering)
   }
   print("Complete.")
   
@@ -402,7 +491,7 @@ SCONE = function(e,condition = NULL, batch = NULL,
       ext_nom = paste(base_nom,paste("Q",j,sep = "_"),sep = "_")
       ext_task_list[[ext_nom]] = base_task_list[[base_nom]]
       ext_task_list[[ext_nom]]$nom = ext_nom 
-      ext_task_list[[ext_nom]]$uv = as.matrix(qual_scores[,1:j])
+      ext_task_list[[ext_nom]]$uv = as.matrix(evaluate_material$qual_scores[,1:j])
     }  
     #     if(qual_nc > 1){
     #       ext_nom = paste(base_nom,"QCLUST",sep = "_")
@@ -413,9 +502,13 @@ SCONE = function(e,condition = NULL, batch = NULL,
   }
   print("Complete.")
   ext_task_list = ext_task_list[!grepl("NOBATCH_NOUV",names(ext_task_list))]
-  
+  if(!to_store){
+    finished_tasks = gsub(".Rdata","",list.files(evaluate_material$out_dir))
+    ext_task_list = ext_task_list[! (names(ext_task_list) %in% finished_tasks)]
+  }
+  print(length(ext_task_list))
   print("Factor-Based Adjustment Normalization and Evaluation...")
-  factor_based_out = bplapply(ext_task_list,FUN = runAdjustTask, evaluate_material = evaluate_material,design = design,nested_model = nested_model)
+  factor_based_out = bplapply(ext_task_list,FUN = runAdjustTask, evaluate_material = evaluate_material,design = design,nested_model = nested_model,BPPARAM = param)
   print("Complete.")
   
   return(list(factor_free_out = factor_free_out, factor_based_out = factor_based_out))
