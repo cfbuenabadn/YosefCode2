@@ -19,6 +19,20 @@ UQ_FN = function(ei){
   return(eo)
 }
 
+# setMethod(f="UQ_FN",
+#          signature="SummarizedExperiment",
+#          definition=function(x) {
+#            exprs(x) <- UQ_FN(exprs(x))
+#            return(x)
+#          })
+# 
+# setMethod(f="UQ_FN",
+#           signature="matrix",
+#           definition= function(ei){
+#             eo = betweenLaneNormalization(ei, which="upper", round = FALSE)
+#             return(eo)
+#           })
+
 #' Upper-quartile normalization applied to positive data.
 #' @param ei = Numerical matrix. (rows = genes, cols = samples). Unique row.names are required.
 #' @return Upper-quartile (positive) normalized matrix (scaled by sample UQ)
