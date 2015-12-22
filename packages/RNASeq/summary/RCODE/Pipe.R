@@ -59,17 +59,30 @@ source(paste0(lib_dir,"/QuantileNormalization.R"))
 source(paste0(lib_dir,"/TechCorrect.R"))
 
 ## ----- Load Expression Set -----
-if(opt$multiple_collect != FALSE){
-  eSet = loadRSEMStudy(multiple_collect = opt$multiple_collect, qc_fields_file = qc_fields_file,gene_fields_file = gene_fields_file)
-}else{
-  eSet = loadRSEM(collect_dir = collect_dir,config_file = config_file,qc_fields_file = qc_fields_file,gene_fields_file = gene_fields_file)
+# if(opt$multiple_collect != FALSE){
+#   eSet = loadRSEMStudy(multiple_collect = opt$multiple_collect, qc_fields_file = qc_fields_file,gene_fields_file = gene_fields_file)
+# }else{
+#   eSet = loadRSEM(collect_dir = collect_dir,config_file = config_file,qc_fields_file = qc_fields_file,gene_fields_file = gene_fields_file)
+# }
+#load(file=file.path("/data/yosef/TFH/processed/collect", "collectedRNASeqStudy.RData"))
+#load(file=file.path("/data/yosef/BRAIN/processed_June2015_b/collect2", "collectedRNASeqStudy_olfactory.RData"))
+load(file=file.path("/data/yosef/BRAIN/processed_July2015/collect", "collectedRNASeqStudy_withRSEM.RData"))
+eSet = collectedRNASeqStudy$cuff_eSet
+#collect_dir = "/data/yosef/TFH/processed/collect"
+#collect_dir = "/data/yosef/BRAIN/processed_June2015_b/collect"
+collect_dir = "/data/yosef/BRAIN/processed_July2015/collect"
+out_dir = file.path(collect_dir, "pipe")
+## ----- Produce Output Directory
+if (file.exists(out_dir)){
+} else {
+  dir.create(out_dir)
 }
 
 ## ----- Pre-Filtering of Failed Samples -----
 # Remove all samples failing the preprocessing step, based on config file. 
 # Note: These should have all NA/0 TPM from collect OR all NaNs as their quality metrics
 
-is.failed = grepl("Failure",phenoData(eSet)$Preproc_Code) |
+is.failed = #grepl("Failure",phenoData(eSet)$Preproc_Code) |
               apply(is.na(exprs(eSet)) | (exprs(eSet) == 0), 2, all) |
               apply(is.na(pData(protocolData(eSet))), 1, all)
 print(paste(sum(is.failed),"samples failed pipeline:"),quote = F)
@@ -80,7 +93,7 @@ print(sprintf("Removed %d failed samples.", sum(is.failed)))
 
 ## ----- Pre-Filtering of Transcripts: Coding + Detected ----
 # Select only type 1 transcripts (Coding)
-type1.eSet = prefilt.eSet[featureData(eSet)$Transcript_Type == 1,]
+type1.eSet = prefilt.eSet[featureData(eSet)$Transcript_Type == "protein_coding",]
 # Select only detected transcripts
 is.expressed.sc = rowMeans(exprs(type1.eSet)) > 0
 
@@ -133,7 +146,9 @@ gf.vec = GeneFilter(sf.sc.eSet,
 
 if(save_intermediate_files) 
 {
-  write.table(exprs(tf.sc.eSet), file=paste0(out_dir,"/exprsAfterTechFilter.txt"), sep = "\t", col.names = NA)
+  write.table(exprs(tf.sc.eSet), file=paste0(out_dir,"/exprsAfterTechFilter.txt"), sep = "\t", col.names = NA, quote=F)
+  save(sf.sc.eSet, gf.vec, file=file.path(out_dir, "imageAfterFiltering.RData"))
+  
 }
 
 ##----- Normalization
@@ -155,7 +170,7 @@ tc.sc.eSet = sf.sc.eSet
 exprs(tc.sc.eSet) = tc.sc.matrix
 if(save_intermediate_files) 
 {
-  write.table(tc.sc.matrix, file=paste0(out_dir,"/exprsAfterTechCorrect.txt"), sep = "\t", col.names = NA)
+  write.table(tc.sc.matrix, file=paste0(out_dir,"/exprsAfterTechCorrect.txt"), sep = "\t", col.names = NA, quote=F)
 }
   
 ##----- Projections: Weighted PCA

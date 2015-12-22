@@ -4,6 +4,9 @@ source("OFBIT.R")
 
 housekeeping_list = "/data/yosef/CD8_effector_diff/src/SummaryPipeline/house_keeping_mouse_TitleCase.txt"
 
+EXPERIMENT = "olfa_experiment3"
+if(EXPERIMENT == "cortical") {
+
 collect_dir="/data/yosef/BRAIN/processed_July2015/collect"
 out_dir = file.path(collect_dir, "pipe")
 load(file=paste0(out_dir,"/imageAfterFiltering.RData"))
@@ -21,12 +24,29 @@ load(file=paste0(out_dir,"/imageAfterFiltering.RData"))
 cellType = as.character(phenoData(sf.sc.eSet)$MD_cell_type)
 cellType[cellType == "SCNN1A_(LAYER_IV)"] = "SCNN1A+_(LAYER_IV)"
 cellType[cellType == "RBP4_(LAYER_V)"] = "RBP4+_(LAYER_V)"
-c1_run = as.character(phenoData(sf.sc.eSet)$MD_c1_run_id)
+biobatch = cellType
 
+} else if (EXPERIMENT == "olfa_experiment3") {
+  collect_dir="/data/yosef/BRAIN/processed_June2015_b/collect/olfa_experiment3"
+  load(file=paste0(collect_dir,"/imageAfterFiltering.RData"))
+  
+  experimental_condition = as.character(phenoData(sf.sc.eSet)$MD_expt_condition)
+  biobatch = experimental_condition
+  
+} else if (EXPERIMENT == "olfa_experiment4") {
+  collect_dir="/data/yosef/BRAIN/processed_June2015_b/collect/olfa_experiment4"
+  load(file=paste0(collect_dir,"/imageAfterFiltering.RData"))
+  
+  experimental_condition = as.character(phenoData(sf.sc.eSet)$MD_expt_condition)
+  biobatch = experimental_condition
+} else {
+  stop("unrecognized experiment")
+}
 
 e = exprs(sf.sc.eSet)
 q = pData(protocolData(sf.sc.eSet))
-biobatch = cellType
+
+c1_run = as.character(phenoData(sf.sc.eSet)$MD_c1_run_id)
 techbatch = c1_run
 hk_names = as.character(as.matrix(read.table(housekeeping_list)))
 

@@ -36,7 +36,7 @@ if(args.reference == "mm10"):
 	GENOME_REFERENCE_FILE = "/data/yosef/index_files/mm10_4brain/index/GCF_000001635.23_GRCm38.p3_genomic_4brain.fna";
 	BOWTIE2_INDEX = "/data/yosef/index_files/mm10_4brain/index/GRCm38.p3_4brain";
 	TOPHAT2_TRANSCRIPTOME_INDEX = "/data/yosef/index_files/mm10_4brain/index/tophat_transcriptome_data/GRCm38.p3_refseq_annot";
-	TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/mm10_4brain/index/GRCm38.p3.gff";
+	TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/mm10_4brain/index/GRCm38.p3.gff"; #I should have used the 4BRAIN version! correct this to allow quantification of eGFP!
 	RSEM_TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/mm10_4brain/index/rsem_index/combinedGTF_4brain.gtf";
 	RSEM_INDEX = "/data/yosef/index_files/mm10_4brain/index/rsem_index/GRCm38.p3_4brain_rsem";
 	#REF_FLAT_INDEX = "/data/yosef/index_files/mm10_4brain/index/refFlat/GRCm38.p3.refFlat";
@@ -53,6 +53,26 @@ if(args.reference == "mm10"):
 	#TOPHAT2_TRANSCRIPTOME_INDEX = "/data/yosef/index_files/mm10_withERCC/tophat_transcriptome_data/GRCm38.p3_refseq_annot";
 	#TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/mm10_withERCC/GRCm38.p3.gff";
 	#RSEM_INDEX = "/data/yosef/index_files/mm10_withERCC/rsem_index/GRCm38.p3_withERCC_rsem";
+
+
+elif(args.reference == "z10"):
+	#zebrafish
+	KALLISTO_INDEX_FILE = ""
+
+	GENOME_REFERENCE_FILE = "/data/yosef/index_files/z10/index/GCF_000002035.5_GRCz10_genomic.fna";
+	BOWTIE2_INDEX = "/data/yosef/index_files/z10/index/GCF_000002035.5_GRCz10_genomic";
+	TOPHAT2_TRANSCRIPTOME_INDEX = "/data/yosef/index_files/z10/index/tophat_transcriptome_data/GRCz10.refseq_annot";
+	TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/z10/index/GCF_000002035.5_GRCz10_genomic.gff";
+
+	#in the conversion of gff3 to gtf in zebrafish I removed all lines for which there was no "gene_id" and caused problems (see the readme in the directory)
+	RSEM_TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/z10/index/rsem_index/GCF_000002035.5_GRCz10_genomic_noProblematicGenes.gtf";
+	RSEM_INDEX = "/data/yosef/index_files/z10/index/rsem_index/GCF_000002035.5_GRCz10_genomic_noProblematicGenes.rsem";
+	REF_FLAT_INDEX = "/data/yosef/index_files/z10/index/refFlat/refFlat_allonEdited.txt";
+	RIBOSOMAL_INTERVALS_INDEX = "null" #I didn't create it - no time and not that important...
+	RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM = "null" #I didn't create it - no time and not that important...
+
+	RSEM_DICTIONARY = "/data/yosef/index_files/z10/index/rsem_index/rsemDictionary/z10_rsemGeneMapping.txt";
+
 
 #hg19 was deprecated - then restored at Michael's request
 elif(args.reference == "hg19"):

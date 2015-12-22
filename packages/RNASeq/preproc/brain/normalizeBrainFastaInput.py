@@ -105,7 +105,7 @@ parser.add_argument("diretoryToProcess", action="store",
 parser.add_argument('-d', '--delete_originals', action="store_true",
                     help="delete the original split files that have just been merged");
 parser.add_argument('-n', '--new_format', action="store_true",
-                    help="Convert GSL's new format (all cells in one directory) to the old format (one directory per cell) before proceeding");
+                    help="***UPDATE (Oct 2015): this format is now obsolete, I worked with Shana how to return to the old format.*** Convert GSL's new format (all cells in one directory) to the old format (one directory per cell) before proceeding");
 
 args = parser.parse_args();
 
