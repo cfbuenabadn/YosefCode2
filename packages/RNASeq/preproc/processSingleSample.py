@@ -76,18 +76,27 @@ elif(args.reference == "z10"):
 
 #hg19 was deprecated - then restored at Michael's request
 elif(args.reference == "hg19"):
-	KALLISTO_INDEX_FILE = ""
-
+	KALLISTO_INDEX_FILE = "";
+        GENOME_REFERENCE_FILE = "/data/yosef/index_files/hg19_complete/index/GRCh37_p13.fna";
+        BOWTIE2_INDEX = "/data/yosef/index_files/hg19_complete/index/GRCh37_p13";
+        TOPHAT2_TRANSCRIPTOME_INDEX = "/data/yosef/index_files/hg19_complete/index/tophat_transcriptome_data/GRCh37_p13";
+        RSEM_TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/hg19_complete/index/rsem_index/GRCh37_p13.gtf";
+        TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/hg19_complete/index/GRCh37_p13.gtf";
+        RSEM_INDEX ="/data/yosef/index_files/hg19_complete/index/rsem_index/GRCh37_p13_rsem";
+        REF_FLAT_INDEX ="/data/yosef/index_files/hg19_complete/index/refFlat/refFlat.txt";
+        RIBOSOMAL_INTERVALS_INDEX ="/data/yosef/index_files/hg19_complete/index/gencode/GRCh37_p13.rRNA.interval";
+        RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM ="/data/yosef/index_files/hg19_complete/index/gencode/GRCh37_p13.rsem.rRNA.interval";
+        RSEM_DICTIONARY = "/data/yosef/index_files/hg19_complete/index/rsem_index/rsemDictionary/rsem_transcript.dict";
 
 	#settings for hg19 with and other additions required by the HIV project (tba)
 	#Compiled by Michael, Feb 2015
-	BOWTIE2_INDEX = "/data/yosef/index_files/hg19_HIV/index/GRCh37.p13";
-	TOPHAT2_TRANSCRIPTOME_INDEX = "";
-	TRANSCRIPT_ANNOTATION = "";
-	RSEM_INDEX = "/data/yosef/index_files/hg19_HIV/index/rsem_index/GRCh37.p13_rsem";
-	REF_FLAT_INDEX = "/data/yosef/index_files/hg19_HIV/index/refFlat/refFlat.txt";
-	RIBOSOMAL_INTERVALS_INDEX = "null";
-	RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM = "null";
+	#BOWTIE2_INDEX = "/data/yosef/index_files/hg19_HIV/index/GRCh37.p13";
+	#TOPHAT2_TRANSCRIPTOME_INDEX = "";
+	#TRANSCRIPT_ANNOTATION = "";
+	#RSEM_INDEX = "/data/yosef/index_files/hg19_HIV/index/rsem_index/GRCh37.p13_rsem";
+	#REF_FLAT_INDEX = "/data/yosef/index_files/hg19_HIV/index/refFlat/refFlat.txt";
+	#RIBOSOMAL_INTERVALS_INDEX = "null";
+	#RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM = "null";
 
 elif(args.reference == "hg38"):
 	#settings for hg38
