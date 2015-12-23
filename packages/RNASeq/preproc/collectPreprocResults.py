@@ -119,7 +119,7 @@ parser = argparse.ArgumentParser(description="Collect output from the preproc pi
 parser.add_argument("directoriesToProcess", action="store",
                     help="The folders to read (assumes each folder is a batch, with subdirectories for every cell). Folder are semi-colon (';') separated ")
 parser.add_argument("-r", "--reference", action="store", required=True,
-            choices=["mm10", "hg38","hg38_HIV", "z10"],
+            choices=["mm10","hg19", "hg38","hg38_HIV", "z10"],
                     help="The referernce genome against which to align. Currently supported: mm10 = mm10, with ERCC spike-ins, RefSeq annotations, compiled by Allon.\nhg38 = human, compiled by Michael")                
 parser.add_argument("-o", "--output_folder", action="store", required=True, default="",
                     help="The directory to which output is written (if not specified: add a '/rsem' folder to the input directory's name)")
@@ -146,8 +146,9 @@ elif(args.reference == "hg38"):
 elif(args.reference == "hg38_HIV"):
     rsemDictionaryFile="/data/yosef/index_files/hg38_HIV/index/rsem_dict.txt";
     cuffDictionaryFile = "/data/yosef/index_files/hg38_HIV/index/cuffDictionary/cuff_dict.txt"
-elif(args.reference == "hg38_HIV"):
-    pass
+elif(args.reference == "hg19"):
+    rsemDictionaryFile="/data/yosef/index_files/hg19_complete/index/rsem_index/rsemDictionary/rsem_transcript.dict";
+    cuffDictionaryFile = "/data/yosef/index_files/hg19_complete/index/cuffDictionary/cuff_genome.dict";
 elif(args.reference == "z10"):
     rsemDictionaryFile = "/data/yosef/index_files/z10/index/rsem_index/rsemDictionary/z10_rsemGeneMapping.txt"
     cuffDictionaryFile = "/data/yosef/index_files/z10/index/cuffDictionary/z10_cuffGeneMapping_noLoci.txt"
