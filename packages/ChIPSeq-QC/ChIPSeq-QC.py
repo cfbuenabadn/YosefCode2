@@ -57,6 +57,16 @@ args = parser.parse_args()
 dirSrc = os.path.dirname(os.path.realpath(__file__))  + os.sep + "src"
 sys.stderr.write("Testing src path: " + dirSrc + "\n")
 
+
+
+astrNames = [args.strFASTQ_1,args.strFASTQ_2,args.strPreAlignedBAM,args.strBAM]
+
+strFileName = ""
+for strName in astrNames:
+    if strName!="":
+        strFileName = strName
+
+
 if args.dirTmp =="":
     args.dirTmp = args.dirOut + os.sep + "tmp"
 ###############################################################################
@@ -76,7 +86,7 @@ if (args.strBAM!= "" and args.fPaired== False):
     strProjectStem = SeqQC.GetStem(os.path.basename(args.strBAM),"bam")
     strFASTQ_1 = args.dirOut + os.sep + strProjectStem + "_1.fastq"
     fPaired= False
-    sp.check_call(["java","-jar","-Xmx2g", args.dirPicard+os.sep+"SamToFastq.jar","I="+args.strBAM, "F="+strFASTQ_1, "VALIDATION_STRINGENCY="+c_strStringency],stderr=fileLog)
+    sp.check_call([args.dirPicard+os.sep+"SamToFastq","I="+args.strBAM, "F="+strFASTQ_1, "VALIDATION_STRINGENCY="+c_strStringency],stderr=fileLog)
 
 elif (args.strBAM!= "" and args.fPaired== True):
     print "Converting BAM to FASTQ for pipeline, treating it as paired end data."
@@ -87,7 +97,7 @@ elif (args.strBAM!= "" and args.fPaired== True):
    
     #sp.check_call(["java","-jar","-Xmx2g", args.dirPicard+os.sep+"SamToFastq.jar","I="+args.strBAM, "F="+strFASTQ_1, "F2="+strFASTQ_2, "VALIDATION_STRINGENCY="+c_strStringency],stderr=fileLog)    
  
-    sp.check_call([args.dirPicard+os.sep+"SamToFastq.jar","I="+args.strBAM, "F="+strFASTQ_1, "F2="+strFASTQ_2, "VALIDATION_STRINGENCY="+c_strStringency],stderr=fileLog)    
+    sp.check_call([args.dirPicard+os.sep+"SamToFastq","I="+args.strBAM, "F="+strFASTQ_1, "F2="+strFASTQ_2, "VALIDATION_STRINGENCY="+c_strStringency],stderr=fileLog)    
   
  
 elif (args.strFASTQ_1!="" and args.strFASTQ_2==""):
@@ -124,7 +134,7 @@ elif (args.strPreAlignedBAM!=""):
     
     else:
         print "Converting aligned BAM to FASTQ for QC downstream, treating it as single end data."
-        sp.check_call(["java","-jar","-Xmx2g", args.dirPicard+os.sep+"SamToFastq.jar","I="+args.strPreAlignedBAM,
+        sp.check_call([args.dirPicard+os.sep+"SamToFastq","I="+args.strPreAlignedBAM,
                        "F="+strFASTQ_1,  "VALIDATION_STRINGENCY"+c_strStringency],stderr=fileLog)    
     
     
@@ -269,7 +279,7 @@ sp.call(["perl",dirSrc + os.sep + "count_dup.pl",strSortedNoDupBam,dirFASTQC+os.
 
 
 strSummaryStats = args.dirOut+os.sep+"SummaryStats.tab"  
-SeqQC.ParseFlagStatOutput(strAlignBamStats,strSummaryStats)
+SeqQC.ParseFlagStatOutput(strAlignBamStats,strSummaryStats,strFileName)
 
 ###############################################################################
 # Step 7: Add the FASTQ check results and other info to SummaryStats.tab

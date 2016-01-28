@@ -22,7 +22,7 @@ def GetEffectiveGenome (strGenome):
 def AddStrings(strOne,strTwo):
     return str(float(strOne)+float(strTwo))
 
-def ParseFlagStatOutput (strSAMOutput,strFormattedOut):
+def ParseFlagStatOutput (strSAMOutput,strFormattedOut,strFileName):
     aaResults = []    
     
     with open(strSAMOutput, 'rb') as fileStats:
@@ -52,7 +52,7 @@ def ParseFlagStatOutput (strSAMOutput,strFormattedOut):
     astrNotQC = zipped[2]
  
     with open(strFormattedOut,'w') as fileOut:
-        fileOut.write('\t'.join(["   ","Total","\n"]))
+        fileOut.write('\t'.join([" ",strFileName,"\n"]))
         
         iIndex=0
         fileOut.write('\t'.join(["NumberOfReads",AddStrings(astrQC[iIndex],astrNotQC[iIndex]),"\n"]))
