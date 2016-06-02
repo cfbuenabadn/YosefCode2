@@ -34,21 +34,25 @@ grpParam = parser.add_argument_group('Analysis Options')
 grpParam.add_argument('--threads', dest='iThreads', default=1,help='Indicate number of threads for pipeline to use. As of 2-24-2015 this only affects bowtie.')
 grpParam.add_argument('--runmacs', dest='fRunMACS', action='store_true',help='Please add this argument if you want to run macs2. This is performed without a control.')
 grpParam.add_argument('--remove_dup', dest='fRemoveDup', action='store_true',help='By default, we mark duplicates using Picard. If you wish to remove duplicates, please add this flag.')
+grpParam.add_argument('--trim', dest='fTrim', action='store_true',help='By default, we do not trim the fastq reads. If you wish to trim low quality bases using Trimmomatic, please add this flag.')
 parser.set_defaults(fRunMACS=False)
+parser.set_defaults(fTrim=False)
 parser.set_defaults(fRemoveDup=False)
 
 
 grpParam = parser.add_argument_group('If you are not running this on the YosefLab system, please enter full paths to the \
 bioinformatics programs and directories below.')
 grpParam.add_argument('--picard_dir', type=str, dest='dirPicard', default="/opt/genomics/bin", help='Please enter the full path for where you have stored Picard tools, default is /opt/pkg/picard-tools-1.108/lib')
+grpParam.add_argument('--trimmomatic', type=str, dest='cmdTrimmomatic', default="/opt/pkg/Trimmomatic-0.32/trimmomatic-0.32.jar", help='Please enter the full path for where you have stored Trimmomatic, default is /opt/pkg/Trimmomatic-0.32/trimmomatic-0.32.jar')
 grpParam.add_argument('--samtools', type=str, dest='cmdSamtools', default="/opt/genomics/bin/samtools", help='Please enter the full path for where you have stored samtools, default is /opt/genomics/bin/samtools')
-grpParam.add_argument('--bowtie', type=str, dest='cmdBowtie', default="/data/yosef/CD8_effector_diff/programs/bowtie-1.1.1/bowtie", help='Please enter the full path for where you have stored bowtie, default is /data/yosef/CD8_effector_diff/programs/bowtie-1.1.1/bowtie')
+grpParam.add_argument('--bowtie', type=str, dest='cmdBowtie', default="bowtie2", help='Please enter the full path for where you have stored bowtie, default is bowtie2')
 grpParam.add_argument('--igvtools', type=str, dest='cmdIGV', default="/opt/pkg/IGVTools/igvtools", help='Please enter the full path for where you have stored igvtools, default is /opt/pkg/IGVTools/igvtools')
 grpParam.add_argument('--fastqc', type=str, dest='cmdFASTQC', default="/opt/genomics/bin/fastqc", help='Please enter the full path for where you have stored fastqc, default is to call \"fastqc\" ')
 grpParam.add_argument('--macs2', type=str, dest='cmdMACS2', default="macs2", help='Please enter the full path for where you have stored macs2, default is to call \"macs2\" ')
 parser.set_defaults(fPaired=False)
 parser.set_defaults(fRunMACS=False)
 args = parser.parse_args()
+
 
 
 # Choose index folder for mouse genome.
@@ -131,7 +135,34 @@ elif (args.strPreAlignedBAM!=""):
 else:
     print "\n No FASTQ files or bam files provided. Please load the help by typing \n \
     \'python ATAC-Seq_ChIP-Seq_Pipeline.py --help'."
-    
+
+
+###############################################################################
+# Step 0: Running Trimmomatic on the fastq files
+# Input: FASTQ files(s)
+# Output: Trimmed fq files
+
+if args.fTrim==True:
+    print "Step 0: Running trimmomatic on fastq files"
+    fTrimStdErr = open(args.dirOut+os.sep+"trimmomatic_stderr.txt",'w')
+    fTrimOut1 = args.dirOut + os.sep + strProjectStem + "_trim_R1.fastq"
+    if fPaired==True:
+        fTrimOut2 = args.dirOut + os.sep + strProjectStem + "_trim_R2.fastq"
+        fTrimUnOut1 = args.dirOut + os.sep + strProjectStem + "_trim_unpaired_R1.fastq"
+        fTrimUnOut2 = args.dirOut + os.sep + strProjectStem + "_trim_unpaired_R2.fastq"
+        sp.check_call(["java","-jar",args.cmdTrimmomatic,"PE", "-phred33" ,"-threads", str(args.iThreads) ,strFASTQ_1, strFASTQ_2, fTrimOut1, fTrimUnOut1, fTrimOut2, fTrimUnOut2,
+                       "LEADING:15", "TRAILING:15", "MINLEN:36"], stderr=fTrimStdErr)
+        strFASTQ_1 = fTrimOut1
+        strFASTQ_2 = fTrimOut2
+    else:
+        sp.check_call(["java","-jar",args.cmdTrimmomatic,"SE", "-phred33" ,"-threads", str(args.iThreads) ,strFASTQ_1, fTrimOut1,
+                       "LEADING:15", "TRAILING:15", "MINLEN:36"], stderr=fTrimStdErr)
+        strFASTQ_1 = fTrimOut1
+
+
+
+
+
 ###############################################################################
 # Step 1: Align to the reference genome using bowtie. 
 #(Skip if starting with a prealigned bam file.)
@@ -143,10 +174,10 @@ if bSkipAln==False:
     
     
     fBowtieStdErr = open(args.dirOut+os.sep+"bowtie_stderr.txt",'w')
-    
+
     if fPaired==True:
-        sp.check_call([args.cmdBowtie,"--sam",args.dirRefGenome, "-p", str(args.iThreads), "-1", 
-                       strFASTQ_1, "-2", strFASTQ_2, "--chunkmbs", "1500", "-X", "2500", "-m", "1", strSamInitAlignment],stderr=fBowtieStdErr)
+        sp.check_call([args.cmdBowtie,"-x",args.dirRefGenome, "-p", str(args.iThreads), "-1",
+                       strFASTQ_1, "-2", strFASTQ_2, "-X", "2000", "-S", strSamInitAlignment],stderr=fBowtieStdErr)
     else:
         sp.check_call([args.cmdBowtie,"--sam",args.dirRefGenome, "-p", str(args.iThreads), "--chunkmbs", "1500", strFASTQ_1,  
                        strSamInitAlignment],stderr=fBowtieStdErr)
@@ -154,14 +185,14 @@ if bSkipAln==False:
     # Note to Jim: Include support for bowtie2 here.
     
     ###############################################################################
-    # Step 2:Convert SAM to BAM. 
+    # Step 2:Convert SAM to BAM, and filter low quality (<=4) alignments.
         # Input: SAM file with alignment of reads to genome.[initial_bowtie_alignment.sam]
         # Output: BAM file with alignment of reads to genome, sorted, without duplicates. [aligned_sorted_noduplicates.bam]
     
     print "Step 2: Convert SAM to BAM."
     strAlignBam = args.dirOut + os.sep + "initial_bowtie_alignment.bam"
     fAlignBam = open(strAlignBam,'w')
-    sp.call([args.cmdSamtools,"view","-b", "-S", strSamInitAlignment],stdout=fAlignBam,stderr=fileLog)
+    sp.call([args.cmdSamtools,"view","-bS", "-q","4", strSamInitAlignment],stdout=fAlignBam,stderr=fileLog)
     fAlignBam.close()
     
     strAlignBamStats = args.dirOut + os.sep + "stats_for_initial_bowtie_alignment.txt"
