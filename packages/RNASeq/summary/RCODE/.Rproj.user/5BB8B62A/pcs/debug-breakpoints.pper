@@ -1,0 +1,66 @@
+{
+    "debugBreakpointsState" : {
+        "breakpoints" : [
+            {
+                "editor_line_number" : 20,
+                "editor_state" : 2,
+                "function_name" : "TechCorrect",
+                "function_steps" : "",
+                "id" : 42,
+                "is_package_breakpoint" : false,
+                "is_pending_debug_completion" : false,
+                "line_number" : 20,
+                "needs_updated_steps" : false,
+                "package_name" : "",
+                "path" : "~/data/users/allonwag/YosefCode/packages/RNASeq/summary/RCODE/TechCorrect.R",
+                "state" : 2,
+                "type" : 0
+            },
+            {
+                "editor_line_number" : 57,
+                "editor_state" : 1,
+                "function_name" : "loadCuff",
+                "function_steps" : "4",
+                "id" : 43,
+                "is_package_breakpoint" : false,
+                "is_pending_debug_completion" : true,
+                "line_number" : 57,
+                "needs_updated_steps" : false,
+                "package_name" : "",
+                "path" : "/data/yosef/users/allonwag/YosefCode/packages/RNASeq/summary/RCODE/loadProcessedRNASeq_NG.R",
+                "state" : 1,
+                "type" : 0
+            },
+            {
+                "editor_line_number" : 109,
+                "editor_state" : 1,
+                "function_name" : "SampleFilter",
+                "function_steps" : "2",
+                "id" : 44,
+                "is_package_breakpoint" : false,
+                "is_pending_debug_completion" : false,
+                "line_number" : 109,
+                "needs_updated_steps" : false,
+                "package_name" : "",
+                "path" : "/data/yosef/users/allonwag/YosefCode/packages/RNASeq/summary/RCODE/SampleFilter.R",
+                "state" : 1,
+                "type" : 0
+            },
+            {
+                "editor_line_number" : 213,
+                "editor_state" : 1,
+                "function_name" : "SampleFilter",
+                "function_steps" : "19",
+                "id" : 45,
+                "is_package_breakpoint" : false,
+                "is_pending_debug_completion" : true,
+                "line_number" : 213,
+                "needs_updated_steps" : false,
+                "package_name" : "",
+                "path" : "/data/yosef/users/allonwag/YosefCode/packages/RNASeq/summary/RCODE/SampleFilter.R",
+                "state" : 1,
+                "type" : 0
+            }
+        ]
+    }
+}

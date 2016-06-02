@@ -10,13 +10,13 @@ from collections import namedtuple
 
 SOURCES_DIR = "/data/yosef/BRAIN/sources"
 #PROCESSED_DIR = "/data/yosef/BRAIN/processed_June2015_b"
-#PROCESSED_DIR = "/data/yosef/BRAIN/processed_July2015"
+PROCESSED_DIR = "/data/yosef/BRAIN/processed_July2015"
 #PROCESSED_DIR = "/data/yosef/BRAIN/processed_Bateup_Aug2015"
 #PROCESSED_DIR = "/data/yosef/BRAIN/processed_Sep2015"
-PROCESSED_DIR = "/data/yosef/BRAIN/processed_Zebrafish_Oct2015/"
+#PROCESSED_DIR = "/data/yosef/BRAIN/processed_Zebrafish_Oct2015/"
 
 #Cortical / Olfactory / Bateup / SamIsrael
-PROJECT = "SamIsrael"
+PROJECT = "Cortical"
 if PROJECT == "Cortical":
     sourceFolders = cortical_sourceFolders
     METADATA_DIR = "/data/yosef/BRAIN/sources/metadata/cortical"

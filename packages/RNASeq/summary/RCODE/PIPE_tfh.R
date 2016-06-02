@@ -49,7 +49,8 @@ save_intermediate_files = opt$save_intermediate_files
 ## ---- Source Summary Library
 source(paste0(lib_dir,"/util.R"))
 #source(paste0(lib_dir,"/loadRSEM.R"))
-source(paste0(lib_dir,"/GeneFilter.R"))
+#source(paste0(lib_dir,"/GeneFilter.R")) -- Davide overrode my file?!
+source("/data/yosef/users/allonwag/YosefCode_eecsrepo/packages/RNASeq/summary/RCODE/GeneFilter.R")
 source(paste0(lib_dir,"/SampleFilter.R"))
 source(paste0(lib_dir,"/TechFilter.R"))
 source(paste0(lib_dir,"/QuantileNormalization.R"))
@@ -62,7 +63,8 @@ source(paste0(lib_dir,"/TechCorrect.R"))
 #collect_dir = "/data/yosef/BRAIN/processed_Bateup_Aug2015/collect"
 #collect_dir = "/data/yosef/BRAIN/processed_July2015/collect"
 #collect_dir = "/data/yosef/BRAIN/processed_Sep2015/collect"
-collect_dir = "/data/yosef/BRAIN/processed_Zebrafish_Oct2015/collect"
+#collect_dir = "/data/yosef/BRAIN/processed_Zebrafish_Oct2015/collect"
+collect_dir = "/data/yosef2/TFH/processed/collect"
 load(file=file.path(collect_dir, "collectedRNASeqStudy.RData"))
 #load(file=file.path(collect_dir, "collectedRNASeqStudy_withRSEM.RData"))
 eSet = collectedRNASeqStudy$cuff_eSet
@@ -118,53 +120,53 @@ if (file.exists(out_dir)){
 #   C1_run_id: Y01, Y04, P01, P02, P03, P03a, P03b, P04, P05, P06, P07, P08, P09, P10, P11, P12, P13.
 # Expt_condition: K5ERRY_UI_* and K5ERp63cKO_*
 save_intermediate_files = T
-
-#exclude bulk samples from the following analysis
-only_single_cell = phenoData(eSet)$MD_single_bulk_pool == "S"
-eSet = eSet[, only_single_cell]  
-
-excluded_samples_list = ""
-EXPERIMENT = "samisrael" #"cortical" #"olfa_experiment2" # #  "olfa_experiment3" # #"olfa_experiment4" #bateup" #
-if(EXPERIMENT == "cortical") {
-  
-} else if(startsWith(EXPERIMENT, "olfa_experiment")) {
-   out_dir = file.path(collect_dir, EXPERIMENT)#paste0(file.path(collect_dir, EXPERIMENT)  , "_relfilter")
-   if (!file.exists(out_dir)){
-     dir.create(out_dir)
-   }
-  
-  #Russell's HK list:
-  housekeeping_list = "/home/eecs/allonwag/data/BRAIN/sources/metadata/olfactory_housekeeping_lists/HKlistD1.txt"
-  
-  excluded_samples_list = "/home/eecs/allonwag/data/BRAIN/sources/metadata/excluded_cells/olfactory.txt"
-  
-  if(EXPERIMENT == "olfa_experiment1") {
-    desiredSamples = toupper(phenoData(eSet)$MD_expt_condition) == toupper("K5PRRY_UI")
-  } else if(EXPERIMENT == "olfa_experiment2") {
-    desiredSamples = startsWith(phenoData(eSet)$MD_expt_condition, "Sox2eGFP+ICAM-", ignore.case=T) 
-  }
-  else if(EXPERIMENT == "olfa_experiment3") {
-    desiredSamples = startsWith(phenoData(eSet)$MD_expt_condition, "K5ERRY_", ignore.case=T) | startsWith(phenoData(eSet)$MD_expt_condition, "K5ERSox2cKO_", ignore.case=T)
-  } else if(EXPERIMENT == "olfa_experiment4") {
-    desiredSamples = startsWith(phenoData(eSet)$MD_expt_condition, "K5ERRY_UI_", ignore.case=T) | startsWith(phenoData(eSet)$MD_expt_condition, "K5ERp63cKO_", ignore.case=T)
-  }else {
-    stop("code should never be reached")
-  }
-  
-  eSet = eSet[, desiredSamples]  
-} else if(EXPERIMENT == "bateup") {
-} else if(EXPERIMENT == "samisrael"){
-} else {
-  stop("unrecognized experiment")
-}
-
-## Exclude cells that a priori known to be bad
-if(excluded_samples_list != "")
-{
-  seqIDsToExclude <- scan(excluded_samples_list, what="character", sep="\n", comment.char = '#')
-  desiredSamples = !(toupper(phenoData(eSet)$sample_sequencing_id) %in% toupper(seqIDsToExclude))
-  eSet = eSet[, desiredSamples]
-}
+# 
+# #exclude bulk samples from the following analysis
+# only_single_cell = phenoData(eSet)$MD_single_bulk_pool == "S"
+# eSet = eSet[, only_single_cell]  
+# 
+# excluded_samples_list = ""
+# EXPERIMENT = "samisrael" #"cortical" #"olfa_experiment2" # #  "olfa_experiment3" # #"olfa_experiment4" #bateup" #
+# if(EXPERIMENT == "cortical") {
+#   
+# } else if(startsWith(EXPERIMENT, "olfa_experiment")) {
+#   out_dir = file.path(collect_dir, EXPERIMENT)#paste0(file.path(collect_dir, EXPERIMENT)  , "_relfilter")
+#   if (!file.exists(out_dir)){
+#     dir.create(out_dir)
+#   }
+#   
+#   #Russell's HK list:
+#   housekeeping_list = "/home/eecs/allonwag/data/BRAIN/sources/metadata/olfactory_housekeeping_lists/HKlistD1.txt"
+#   
+#   excluded_samples_list = "/home/eecs/allonwag/data/BRAIN/sources/metadata/excluded_cells/olfactory.txt"
+#   
+#   if(EXPERIMENT == "olfa_experiment1") {
+#     desiredSamples = toupper(phenoData(eSet)$MD_expt_condition) == toupper("K5PRRY_UI")
+#   } else if(EXPERIMENT == "olfa_experiment2") {
+#     desiredSamples = startsWith(phenoData(eSet)$MD_expt_condition, "Sox2eGFP+ICAM-", ignore.case=T) 
+#   }
+#   else if(EXPERIMENT == "olfa_experiment3") {
+#     desiredSamples = startsWith(phenoData(eSet)$MD_expt_condition, "K5ERRY_", ignore.case=T) | startsWith(phenoData(eSet)$MD_expt_condition, "K5ERSox2cKO_", ignore.case=T)
+#   } else if(EXPERIMENT == "olfa_experiment4") {
+#     desiredSamples = startsWith(phenoData(eSet)$MD_expt_condition, "K5ERRY_UI_", ignore.case=T) | startsWith(phenoData(eSet)$MD_expt_condition, "K5ERp63cKO_", ignore.case=T)
+#   }else {
+#     stop("code should never be reached")
+#   }
+#   
+#   eSet = eSet[, desiredSamples]  
+# } else if(EXPERIMENT == "bateup") {
+# } else if(EXPERIMENT == "samisrael"){
+# } else {
+#   stop("unrecognized experiment")
+# }
+# 
+# ## Exclude cells that a priori known to be bad
+# if(excluded_samples_list != "")
+# {
+#   seqIDsToExclude <- scan(excluded_samples_list, what="character", sep="\n", comment.char = '#')
+#   desiredSamples = !(toupper(phenoData(eSet)$sample_sequencing_id) %in% toupper(seqIDsToExclude))
+#   eSet = eSet[, desiredSamples]
+# }
 
 
 ## ----- Pre-Filtering of Failed Samples -----
@@ -181,14 +183,14 @@ prefilt.eSet = eSet[,!is.failed]
 print(sprintf("Removed %d failed samples.", sum(is.failed)))
 
 ## ----- Pre-Filtering of Transcripts: Coding + Detected ----
-KEEP_ONLY_PROTEIN_CODING = F
+KEEP_ONLY_PROTEIN_CODING = T
 if(KEEP_ONLY_PROTEIN_CODING) {
-# Select only type 1 transcripts (Coding)
-type1.eSet = prefilt.eSet[featureData(eSet)$Transcript_Type == "protein_coding",]
+  # Select only type 1 transcripts (Coding)
+  type1.eSet = prefilt.eSet[featureData(eSet)$Transcript_Type == "protein_coding",]
 } else {
   type1.eSet = prefilt.eSet
 }
-  
+
 # Select only detected transcripts
 is.expressed.sc = rowMeans(exprs(type1.eSet)) > 0
 
@@ -245,7 +247,7 @@ if(TURN_ON_ADAPTIVE_FILTERING) {
   gf.vec = hard.gf.vec
   tf.sc.eSet = hard.tf.sc.eSet
 }
-  
+
 
 # Update gf.vec
 gf.vec = GeneFilter(sf.sc.eSet,
@@ -263,52 +265,52 @@ if(save_intermediate_files)
 
 DO_NORMALIZATION = F
 if(DO_NORMALIZATION) {
-
-##----- Normalization
-if (!file.exists(paste0(out_dir,"/normalization/"))){dir.create(paste0(out_dir,"/normalization/"))}
-
-nrm.sc.matrix = QuantileNormalization(exprs(tf.sc.eSet), gf.vec = gf.vec, plot.dir = paste0(out_dir,"/normalization/qn_sc"))
-print("Working with quantile normalization!")
-
-#nrm.sc.matrix = QuartileNormalization(exprs(tf.sc.eSet), gf.vec = gf.vec, plot.dir = paste0(out_dir,"/normalization/qrn_sc"))
-#print("Working with upper quartile normalization!")
-
-nrm.sc.eSet = tf.sc.eSet
-exprs(nrm.sc.eSet) = nrm.sc.matrix
-gf.vec = gf.vec & (apply(exprs(nrm.sc.eSet),1,sd) > 10^(-6))
-
-if(save_intermediate_files) 
-{
-  write.table(exprs(nrm.sc.eSet), file=paste0(out_dir,"/exprsAfterScaling.txt"), sep = "\t", col.names = NA, quote=F)
-}
-
-## Now do RUV
-source(paste0(lib_dir,"/runRUVg.R"))
-RUV_K = 1
-hk_genes =  as.character(as.matrix(read.table(housekeeping_list)))
-# RUVg.nrm.sc.matrix = runRUVg(nrm.sc.matrix, rownames(nrm.sc.matrix) %in% hk_genes, K = RUV_K);
-# 
-# if(save_intermediate_files) 
-# {
-#   write.table(RUVg.nrm.sc.matrix, file=paste0(out_dir,"/exprsAfterRUVg.txt"), sep = "\t", col.names = NA, quote=F)
-# }
-# 
-# RUVg.nrm.sc.matrix.only.filtered.genes = runRUVg(nrm.sc.matrix[gf.vec,], rownames(nrm.sc.matrix[gf.vec,]) %in% hk_genes, K = RUV_K);
-# 
-# if(save_intermediate_files) 
-# {
-#   write.table(RUVg.nrm.sc.matrix.only.filtered.genes, file=paste0(out_dir,"/exprsAfterRUVg_onlyFilteredGenes.txt"), sep = "\t", col.names = NA, quote=F)
-# }
-# 
-RUVg.nrm.sc.matrix.only.hk.filtered.genes = runRUVg(nrm.sc.matrix, gf.vec & (rownames(nrm.sc.matrix) %in% hk_genes), K = RUV_K);
-
-if(save_intermediate_files) 
-{
-  write.table(RUVg.nrm.sc.matrix.only.hk.filtered.genes, file=paste0(out_dir,"/exprsAfterRUVg_onlyHKFilteredGenes.txt"), sep = "\t", col.names = NA, quote=F)
-  save(RUVg.nrm.sc.matrix.only.hk.filtered.genes, gf.vec, file=file.path(out_dir, "imageAfterNormalization.RData"))
   
-}
-
+  ##----- Normalization
+  if (!file.exists(paste0(out_dir,"/normalization/"))){dir.create(paste0(out_dir,"/normalization/"))}
+  
+  nrm.sc.matrix = QuantileNormalization(exprs(tf.sc.eSet), gf.vec = gf.vec, plot.dir = paste0(out_dir,"/normalization/qn_sc"))
+  print("Working with quantile normalization!")
+  
+  #nrm.sc.matrix = QuartileNormalization(exprs(tf.sc.eSet), gf.vec = gf.vec, plot.dir = paste0(out_dir,"/normalization/qrn_sc"))
+  #print("Working with upper quartile normalization!")
+  
+  nrm.sc.eSet = tf.sc.eSet
+  exprs(nrm.sc.eSet) = nrm.sc.matrix
+  gf.vec = gf.vec & (apply(exprs(nrm.sc.eSet),1,sd) > 10^(-6))
+  
+  if(save_intermediate_files) 
+  {
+    write.table(exprs(nrm.sc.eSet), file=paste0(out_dir,"/exprsAfterScaling.txt"), sep = "\t", col.names = NA, quote=F)
+  }
+  
+  ## Now do RUV
+  source(paste0(lib_dir,"/runRUVg.R"))
+  RUV_K = 1
+  hk_genes =  as.character(as.matrix(read.table(housekeeping_list)))
+  # RUVg.nrm.sc.matrix = runRUVg(nrm.sc.matrix, rownames(nrm.sc.matrix) %in% hk_genes, K = RUV_K);
+  # 
+  # if(save_intermediate_files) 
+  # {
+  #   write.table(RUVg.nrm.sc.matrix, file=paste0(out_dir,"/exprsAfterRUVg.txt"), sep = "\t", col.names = NA, quote=F)
+  # }
+  # 
+  # RUVg.nrm.sc.matrix.only.filtered.genes = runRUVg(nrm.sc.matrix[gf.vec,], rownames(nrm.sc.matrix[gf.vec,]) %in% hk_genes, K = RUV_K);
+  # 
+  # if(save_intermediate_files) 
+  # {
+  #   write.table(RUVg.nrm.sc.matrix.only.filtered.genes, file=paste0(out_dir,"/exprsAfterRUVg_onlyFilteredGenes.txt"), sep = "\t", col.names = NA, quote=F)
+  # }
+  # 
+  RUVg.nrm.sc.matrix.only.hk.filtered.genes = runRUVg(nrm.sc.matrix, gf.vec & (rownames(nrm.sc.matrix) %in% hk_genes), K = RUV_K);
+  
+  if(save_intermediate_files) 
+  {
+    write.table(RUVg.nrm.sc.matrix.only.hk.filtered.genes, file=paste0(out_dir,"/exprsAfterRUVg_onlyHKFilteredGenes.txt"), sep = "\t", col.names = NA, quote=F)
+    save(RUVg.nrm.sc.matrix.only.hk.filtered.genes, gf.vec, file=file.path(out_dir, "imageAfterNormalization.RData"))
+    
+  }
+  
 }
 # # as expected, RUVg computes the residuals for each gene separately (after deducing the W from the HK genes)
 # #so as long as the HK genes have only filtered genes it doesn't matter if the extrapolation is done on all the genes or only on the filtered subset

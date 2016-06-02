@@ -41,7 +41,7 @@ with open(SEND_SCRIPT_FILE_NAME, "wt") as fout:
         batchAlias = batchDir.replace("/", "-") #make a hierarchy of one batch folder and beneath it all the cell folders
         send_cmd = Template("python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/processFolder.py -N JuneBrain_b" +
                             (" --paired_end" if isPairedEnd else "") +
-                            " --rsem_bowtie_maxins 1000 --kallisto_fragment_length 540 -p 1 -r $REFERENCE_GENOME" +
+                            "--skip_kallisto --rsem_bowtie_maxins 1000 --kallisto_fragment_length 540 -p 1 -r $REFERENCE_GENOME" +
                             " -o $OUT_FOLDER $INPUT_FOLDER").substitute(
                             OUT_FOLDER=os.path.join(OUTPUT_FOLDER, batchAlias),
                             INPUT_FOLDER=os.path.join("/data/yosef/BRAIN/sources/", batchDir),

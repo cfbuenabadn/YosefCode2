@@ -4,7 +4,8 @@ cortical_sourceFolders = [
     ("150521_HS3A/1_mismatch_better/Project_Ngai", False),
     ("150702_JGI2/Lane1/Project_Ngai", False),
     ("151007_HS3B/Ngai_Dave", False),
-    ("151007_HS3B/Ngai_Dave_bulk", False)
+    ("151007_HS3B/Ngai_Dave_bulk", False),
+    ("151211_HS3A/Ngai_cortical", False)
 ]
 
 
@@ -18,7 +19,8 @@ olfactory_sourceFolders = [
     ("150515_HS3A/Project_Ngai8by8", False),
     ("150612_HS1A/UnalignedL34/Project_Ngai", False),
     ("150904_JGI1_Updated/Ngai", False),
-    ("151007_HS3B/Ngai_Russell", False)
+    ("151007_HS3B/Ngai_Russell", False),
+    ("151211_HS3A/Ngai_olfactory", False)
 ]
 
 bateup_sourceFolders = [

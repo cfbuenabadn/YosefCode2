@@ -7,14 +7,18 @@ import re
 from collections import namedtuple
 
 #folder name, isPairedEnd
-sourceFolders = [("FC_01481", True)
+#sourceFolders = [("FC_01481", True)
+#]
+sourceFolders = [("WS_TFH_28July2015", True)
 ]
 
 #The sourceFolders is a tuple of dir and bool (isPairedEnd) - get rid of the latter field which is not needed here
 sourceFolders = [x[0] for x in sourceFolders]
 
-SOURCES_DIR = "/data/yosef/TFH/sources"
-PROCESSED_DIR = "/data/yosef/TFH/processed"
+#SOURCES_DIR = "/data/yosef/TFH/sources"
+#PROCESSED_DIR = "/data/yosef/TFH/processed"
+SOURCES_DIR = "/data/yosef2/TFH/sources"
+PROCESSED_DIR = "/data/yosef2/TFH/processed"
 
 CONFIG_OUTPUT_FILE = os.path.join(PROCESSED_DIR, 'collect/config_tfh.xlsx')
 

@@ -64,9 +64,11 @@ elif(args.reference == "z10"):
 	TOPHAT2_TRANSCRIPTOME_INDEX = "/data/yosef/index_files/z10/index/tophat_transcriptome_data/GRCz10.refseq_annot";
 	TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/z10/index/GCF_000002035.5_GRCz10_genomic.gff";
 
-	#in the conversion of gff3 to gtf in zebrafish I removed all lines for which there was no "gene_id" and caused problems (see the readme in the directory)
-	RSEM_TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/z10/index/rsem_index/GCF_000002035.5_GRCz10_genomic_noProblematicGenes.gtf";
-	RSEM_INDEX = "/data/yosef/index_files/z10/index/rsem_index/GCF_000002035.5_GRCz10_genomic_noProblematicGenes.rsem";
+	#RSEM_TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/z10/index/rsem_index/GCF_000002035.5_GRCz10_genomic_noProblematicGenes.gtf";
+	#RSEM_INDEX = "/data/yosef/index_files/z10/index/rsem_index/GCF_000002035.5_GRCz10_genomic_noProblematicGenes.rsem";
+	#the  previous files didn't have the control sequences like the eGFP, tdTomatod etc.
+	RSEM_TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/z10/index/rsem_index/combinedGTF_4brain.gtf";
+	RSEM_INDEX = "/data/yosef/index_files/z10/index/rsem_index/GRCz10_4brain.rsem";
 	REF_FLAT_INDEX = "/data/yosef/index_files/z10/index/refFlat/refFlat_allonEdited.txt";
 	RIBOSOMAL_INTERVALS_INDEX = "null" #I didn't create it - no time and not that important...
 	RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM = "null" #I didn't create it - no time and not that important...
