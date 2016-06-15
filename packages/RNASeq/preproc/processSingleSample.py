@@ -46,6 +46,7 @@ if(args.reference == "mm10"):
 	#RIBOSOMAL_INTERVALS_INDEX = "/data/yosef/index_files/mm10_4brain/index/gencode/gencode.vM4.rRNA.interval_list_allonEdited";
 	RIBOSOMAL_INTERVALS_INDEX = "/data/yosef/index_files/mm10_4brain/index/gencode/mm10_4BRAIN_rRNA_interval_list_allonEdited.txt";
 	RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM = "/data/yosef/index_files/mm10_4brain/index/gencode/mm10_4BRAIN_rRNA_interval_list_allonEdited_forRSEM.txt";
+	RIBOSOMAL_INTERVALS_INDEX_FOR_KALLISTO = "null" #I didn't create it - no time and not that important...
 	RSEM_DICTIONARY = "/data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt";
 
 	#settings for mm10 with ERCC spike-ins
@@ -72,6 +73,7 @@ elif(args.reference == "z10"):
 	REF_FLAT_INDEX = "/data/yosef/index_files/z10/index/refFlat/refFlat_allonEdited.txt";
 	RIBOSOMAL_INTERVALS_INDEX = "null" #I didn't create it - no time and not that important...
 	RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM = "null" #I didn't create it - no time and not that important...
+	RIBOSOMAL_INTERVALS_INDEX_FOR_KALLISTO = "null" #I didn't create it - no time and not that important...
 
 	RSEM_DICTIONARY = "/data/yosef/index_files/z10/index/rsem_index/rsemDictionary/z10_rsemGeneMapping.txt";
 
@@ -203,43 +205,6 @@ if(args.paired_end):
 	filesToClear = filesToClear + [args.sampleFile2]
 
 
-if(not(KALLISTO_INDEX_FILE)):
-	print("Kallisto index has not been defined... skipping Kallisto");
-	args.skip_kallisto = True
-
-DO_KALLISTO = True;
-if(DO_KALLISTO and not(args.skip_kallisto)):
-	print("**********************************************************");
-	print("**********************************************************");
-	print("Running Kallisto")
-
-	#I decided to do Kallisto before trimmomatic because I was afraid that Kallisto's fragment length estimation will not work correctly
-	#if we start trimming reads (and anyhow, once you do not align but rather pseudo-align errors in BPs are less important
-
-	if not os.path.exists(args.output_folder + "/kallisto_output"):
-		os.makedirs(args.output_folder + "/kallisto_output");
-
-
-	kallistoCmd = Template("kallisto quant -i $KALLISTO_INDEX -o $OUTPUT_FOLDER -b $KALLISTO_BOOTSTRAP_SAMPLES").\
-		substitute(KALLISTO_INDEX=KALLISTO_INDEX_FILE, OUTPUT_FOLDER=args.output_folder + "/kallisto_output",
-				   KALLISTO_BOOTSTRAP_SAMPLES=args.kallisto_bootstrap_samples);
-
-	if(args.paired_end):
-		kallistoCmd += Template(" $SAMPLE_FILE1 $SAMPLE_FILE2").substitute(SAMPLE_FILE1=args.sampleFile1, SAMPLE_FILE2=args.sampleFile2)
-	else:
-		kallistoCmd += Template(" --single -l $KALLISTO_FRAGMENT_LENGTH $SAMPLE_FILE1").substitute(KALLISTO_FRAGMENT_LENGTH=args.kallisto_fragment_length, SAMPLE_FILE1=args.sampleFile1)
-
-	print(kallistoCmd)
-	sys.stdout.flush();
-	returnCode = subprocess.call(kallistoCmd, shell=True);
-	if(returnCode != 0):
-		raise Exception("Kallisto failed");
-
-	print("**********************************************************");
-	print("**********************************************************");
-	print("Kallisto done")
-
-
 DO_TRIMMOMATIC = True;
 #enter only if the user didn't select --skip_trimmomatic OR he did, but he did not mark the --do_not_rely_on_previous_trimmomatic (which means he does want to rely on previous output)
 if(DO_TRIMMOMATIC and not(args.skip_trimmomatic and args.do_not_rely_on_previous_trimmomatic)):
@@ -352,6 +317,113 @@ if(DO_TRIMMOMATIC and not(args.skip_trimmomatic and args.do_not_rely_on_previous
 	print("trimmomatic done!");
 
 
+if(not(KALLISTO_INDEX_FILE)):
+	print("Kallisto index has not been defined... skipping Kallisto");
+	args.skip_kallisto = True
+
+DO_KALLISTO = True;
+if(DO_KALLISTO and not(args.skip_kallisto)):
+	print("**********************************************************");
+	print("**********************************************************");
+	print("Running Kallisto")
+
+	#I decided to do Kallisto before trimmomatic because I was afraid that Kallisto's fragment length estimation will not work correctly
+	#if we start trimming reads (and anyhow, once you do not align but rather pseudo-align errors in BPs are less important
+	#Allon 15 Jun 2016: cufflinks also does its own estimation in paired-end, so I reconsidered this and moved Kallisto to after trimming
+
+	if not os.path.exists(args.output_folder + "/kallisto_output"):
+		os.makedirs(args.output_folder + "/kallisto_output");
+
+	#I do not use multithreaded pseudoalignment because it is not supported with creation of pseudobam
+	kallistoCmd = Template("kallisto quant --plaintext --pseudobam -i $KALLISTO_INDEX -o $OUTPUT_FOLDER -b $KALLISTO_BOOTSTRAP_SAMPLES -t 1").\
+		substitute(KALLISTO_INDEX=KALLISTO_INDEX_FILE, OUTPUT_FOLDER=args.output_folder + "/kallisto_output",
+				   KALLISTO_BOOTSTRAP_SAMPLES=args.kallisto_bootstrap_samples);
+
+	if(args.paired_end):
+		kallistoCmd += Template(" $SAMPLE_FILE1 $SAMPLE_FILE2").substitute(SAMPLE_FILE1=args.sampleFile1, SAMPLE_FILE2=args.sampleFile2)
+	else:
+		kallistoCmd += Template(" --single -l $MEAN_FRAGMENT_LENGTH -s $STD_FRAGMENT_LENGTH $SAMPLE_FILE1").substitute(MEAN_FRAGMENT_LENGTH=args.mean_fragment_length, STD_FRAGMENT_LENGTH=args.std_fragment_length, SAMPLE_FILE1=args.sampleFile1)
+
+	#Kallisto outputs the pseudobam to stdout
+	kallistoCmd += Template(" | samtools view -Sb - > $OUTPUT_FILE").substitute(OUTPUT_FILE=os.path.join(args.output_folder, "kallisto_output", "kallisto_out.bam"))
+
+	print(kallistoCmd)
+	sys.stdout.flush();
+	returnCode = subprocess.call(kallistoCmd, shell=True);
+	if(returnCode != 0):
+		raise Exception("Kallisto failed");
+
+	print("**********************************************************");
+	print("**********************************************************");
+	print("Kallisto quantification done")
+
+
+
+	print("**********************************************************");
+	print("**********************************************************");
+	picardDir = Template("$OUTPUT_FOLDER/kallisto_output/picard_output").substitute(OUTPUT_FOLDER=args.output_folder);
+	if not(os.path.exists(picardDir)):
+		os.makedirs(picardDir);
+
+	print("Sort SAM");
+	sortSamCommand = Template("picard SortSam TMP_DIR=$OUTPUT_FOLDER/temp I=$OUTPUT_FOLDER/kallisto_output/kallisto_out.bam O=$OUTPUT_FOLDER/kallisto_output/picard_output/kallisto_out.sorted.bam SO=coordinate").substitute(OUTPUT_FOLDER=args.output_folder);
+	print(sortSamCommand)
+	sys.stdout.flush();
+	returnCode = subprocess.call(sortSamCommand, shell=True);
+	if(returnCode != 0):
+		raise Exception("sortSam failed");
+
+
+
+	print("**********************************************************");
+	print("**********************************************************");
+	print("Index SAM");
+	indexSamCommand = Template("/opt/genomics/bin/samtools index $OUTPUT_FOLDER/kallisto_output/picard_output/kallisto_out.sorted.bam").substitute(OUTPUT_FOLDER=args.output_folder);
+	print(indexSamCommand)
+	sys.stdout.flush();
+	returnCode = subprocess.call(indexSamCommand, shell=True);
+	if(returnCode != 0):
+		raise Exception("indexSam failed");
+
+	
+	print("**********************************************************");
+	print("**********************************************************");
+	#to conform with the tophat pipeline, I split the reads into aligned and unaligned, and the QC will run only on the aligned ones.
+
+	print("splitting kallisto's output to aligned and unaligned reads...");
+	splitCmd1 = Template("samtools view -b -F 4 $OUTPUT_FOLDER/kallisto_output/picard_output/kallisto_out.sorted.bam > $OUTPUT_FOLDER/kallisto_output/accepted_hits.bam").substitute(OUTPUT_FOLDER=args.output_folder);
+	print(splitCmd1)
+	sys.stdout.flush();
+	returnCode = subprocess.call(splitCmd1, shell=True);
+	if(returnCode != 0):
+		raise Exception("split failed");
+
+
+	splitCmd2 = Template("samtools view -b -f 4 $OUTPUT_FOLDER/kallisto_output/picard_output/kallisto_out.sorted.bam > $OUTPUT_FOLDER/kallisto_output/unmapped.bam").substitute(OUTPUT_FOLDER=args.output_folder);
+	print(splitCmd2)
+	sys.stdout.flush();
+	returnCode = subprocess.call(splitCmd2, shell=True);
+	if(returnCode != 0):
+		raise Exception("split failed");
+
+
+	print("**********************************************************");
+	print("**********************************************************");
+	print("WARNING: In this step multiple alignments per read should be collapsed into one, but this is not implemented yet for kallisto (only for rsem)");
+	print("As a result, the number of reads and the number of aligned reads in the QC will be wrong");
+	shutil.copyfile(os.path.join(args.output_folder, "kallisto_output/accepted_hits.bam"),
+					os.path.join(args.output_folder, "kallisto_output/accepted_hits_noMultiple.bam"));
+
+
+
+
+
+	print("**********************************************************");
+	print("**********************************************************");
+	print("Kallisto pipeline done!");
+
+#here don't forget to delete temporary files + QC
+
 #I use the terms "cufflinks pipeline" and "tophat pipeline" interchangeably
 RUN_CUFFLINKS_PIPELINE = True;
 if(RUN_CUFFLINKS_PIPELINE and not(args.skip_tophat)):
@@ -417,7 +489,17 @@ if(RUN_CUFFLINKS_PIPELINE and not(args.skip_tophat)):
 	print("**********************************************************");
 	print("**********************************************************");
 	print("Running Cufflinks");
-	cufflinksComand = Template("/opt/genomics/bin/cufflinks --num-threads $NUM_THREADS -G $TRANSCRIPT_ANNOTATION -o $OUTPUT_FOLDER/tophat_output/cuff_output/ $OUTPUT_FOLDER/tophat_output/picard_output/sorted.bam").substitute(OUTPUT_FOLDER=args.output_folder, TRANSCRIPT_ANNOTATION=TRANSCRIPT_ANNOTATION, NUM_THREADS=args.num_threads);
+
+	#in cufflinks, -m/-frag-len-mean is the expected (mean) fragment length - learned automatically for paired-end so I use it only for single end
+	if(args.paired_end):
+		cufflinksSingleEndArgs = ""
+	else:
+		#STD_FRAG_LEN should be args.std_fragment_length BUT I found too large values (as in the brain project) lead to core dumps, so I use the cufflinks default which is 80
+		cufflinksSingleEndArgs = Template("--frag-len-mean $MEAN_FRAG_LEN --frag-len-std-dev $STD_FRAG_LEN").substitute(MEAN_FRAG_LEN=args.mean_fragment_length, STD_FRAG_LEN=80)
+
+
+	cufflinksComand = Template("/opt/genomics/bin/cufflinks $SINGLE_END_ARGS --num-threads $NUM_THREADS -G $TRANSCRIPT_ANNOTATION -o $OUTPUT_FOLDER/tophat_output/cuff_output/ $OUTPUT_FOLDER/tophat_output/picard_output/sorted.bam").substitute(OUTPUT_FOLDER=args.output_folder, TRANSCRIPT_ANNOTATION=TRANSCRIPT_ANNOTATION, NUM_THREADS=args.num_threads, SINGLE_END_ARGS=cufflinksSingleEndArgs);
+	cufflinksComand = " ".join(cufflinksComand.split()) #replace multiple whitespaces with one
 	print(cufflinksComand)
 	sys.stdout.flush();
 	returnCode = subprocess.call(cufflinksComand, shell=True);
@@ -637,6 +719,14 @@ if(RUN_QC and not(args.skip_qc)):
 	commonMetrics = doQC.CollectFastQcData(args.output_folder, args.paired_end);
 	#commonMetrics - common to both the rsem and tophat pipelines
 
+	RUN_QC_KALLISTO = True;
+	if(RUN_QC_KALLISTO and not(args.skip_kallisto_qc)):
+		sortedBamFile = args.output_folder + "/kallisto_output/accepted_hits.bam";
+		kallistoOutputFolder = args.output_folder + "/kallisto_output";
+		print "Warning: the kallisto pipleline still doesn't have the two dictionary required for the collect dup perl... this part will be skipped..."
+		#weird, the "picard CollectAlignmentSummaryMetrics" didn't work with the genome reference, but works without it contrary to what I had long ago in cufflinks...
+		kallisto_qc_metrics = doQC.CollectData(sortedBamFile, kallistoOutputFolder, REF_FLAT_INDEX, RIBOSOMAL_INTERVALS_INDEX_FOR_KALLISTO, args.paired_end, RSEM_TRANSCRIPT_ANNOTATION, RSEM_DICTIONARY, "null"); #patch - use the same dictionaries for tophat and rsem for Nir's count dups
+		doQC.WriteQCMetrics(kallistoOutputFolder, commonMetrics, kallisto_qc_metrics);
 
 	RUN_QC_TOPHAT = True;
 	if(RUN_QC_TOPHAT and not(args.skip_tophat_qc)):

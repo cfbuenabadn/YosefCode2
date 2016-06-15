@@ -43,9 +43,12 @@ common_rnaseq_parser.add_argument('--trimmomatic_window', action='store', defaul
                    help="The trimmomatic sliding window argument. Format: '<windowSize>:<requiredQuality>' ")
 common_rnaseq_parser.add_argument('--kallisto_bootstrap_samples', action='store', default='0',
                    help="The number of bootstraps done by Kallisto (default: 0)")
-common_rnaseq_parser.add_argument('--kallisto_fragment_length', action='store', default='180',
-                   help="The fragment length paramter that Kallisto requires (applies only to single-end; this parameter will be ignored and the fragment length estimated from the data if the --paired_end flag is set (default: 180)")
+common_rnaseq_parser.add_argument('--mean_fragment_length', action='store', default='200',
+                   help="The mean fragment length paramter that Kallisto requires; applies only to single-end; this parameter will be ignored and the fragment length estimated from the data if the --paired_end flag is set (default: 200, as in cufflinks). If given, will be used also in cufflinks (again, used only in SE and ignored in PE).")
+common_rnaseq_parser.add_argument('--std_fragment_length', action='store', default='80',
+                   help="The standard deviation of fragment length paramter that Kallisto requires; applies only to single-end; this parameter will be ignored and the fragment length estimated from the data if the --paired_end flag is set (default: 80, as in cufflinks). If given, should have been used also in cufflinks (again, used only in SE and ignored in PE), but since it leads to core dumps it is ignored in cufflinks. The std of fragment length in cufflinks is always 80, which is cufflink's default")
 
+#For insert size vs. fragment length see https://www.biostars.org/p/95803/
 
 def GetFirstReadInFastqFile(fastqFilename):
     #a very simple implementation that does not rely on biopython and therefore supports only fastq files and not fasta file
