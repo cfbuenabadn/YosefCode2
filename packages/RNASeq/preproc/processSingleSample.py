@@ -36,7 +36,7 @@ if(args.reference == "mm10"):
 	GENOME_REFERENCE_FILE = "/data/yosef/index_files/mm10_4brain/index/GCF_000001635.23_GRCm38.p3_genomic_4brain.fna";
 	BOWTIE2_INDEX = "/data/yosef/index_files/mm10_4brain/index/GRCm38.p3_4brain";
 	TOPHAT2_TRANSCRIPTOME_INDEX = "/data/yosef/index_files/mm10_4brain/index/tophat_transcriptome_data/GRCm38.p3_refseq_annot";
-	TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/mm10_4brain/index/GRCm38.p3.gff"; #I should have used the 4BRAIN version! correct this to allow quantification of eGFP!
+	TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/mm10_4brain/index/combinedGFF_4brain.gff";
 	RSEM_TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/mm10_4brain/index/rsem_index/combinedGTF_4brain.gtf";
 	RSEM_INDEX = "/data/yosef/index_files/mm10_4brain/index/rsem_index/GRCm38.p3_4brain_rsem";
 	#REF_FLAT_INDEX = "/data/yosef/index_files/mm10_4brain/index/refFlat/GRCm38.p3.refFlat";
