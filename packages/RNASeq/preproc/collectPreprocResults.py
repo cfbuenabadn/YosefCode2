@@ -140,7 +140,7 @@ args = parser.parse_args();
 
 if(args.reference == "mm10"):
     rsemDictionaryFile = "/data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt"
-    cuffDictionaryFile = "/home/eecs/allonwag/data/index_files/mm10_4brain/index/cuffDictionary/mm10_4brain_cuffGeneMapping_noLoci.txt"
+    cuffDictionaryFile = "/home/eecs/allonwag/data/index_files/mm10_4brain/index/cuffDictionary/mm10_4brain_cuffGeneMapping.txt"
 elif(args.reference == "hg38"):	
     rsemDictionaryFile="/data/yosef/index_files/hg38/index/rsem_dict.txt"
 elif(args.reference == "hg38_HIV"):
@@ -331,6 +331,11 @@ if (COLLECT_GENE_EXPRESSION and not(args.skip_collecting_expression)):
 ############################
 
 print "writing cell list..."
+# it is the same list of cells between the cufflinks and the rsem pipelines - for convenience I write it twice even if only one is collected
+
+#make sure that the rsem directory exists in case it was not collected
+if not os.path.exists(os.path.join(args.output_folder, 'rsem')):
+    os.makedirs(os.path.join(args.output_folder, 'rsem'))
 
 #write the ordered cell list file...
 #identify each cell by the last two dirs in the directory path, which are the batch name (parent dir) and the cell name (son dir)
@@ -347,7 +352,7 @@ with open(os.path.join(args.output_folder, 'rsem/cell_list.txt'), 'wt') as fout:
 
         fout.write(cellName + '\n')
 
-#it is the same list of cells between the cufflinks and the rsem pipelines - for convenience I write it twice...
+
 shutil.copyfile(os.path.join(args.output_folder, 'rsem/cell_list.txt'), os.path.join(args.output_folder, 'cuff/cell_list.txt'),);
 
 ############################
@@ -462,9 +467,12 @@ if(COLLECT_FEATURE_COUNTS and not(args.skip_collecting_feature_counts)):
                     #see comment above. This else is never reached when using the rsem dictionary, but can be reached when using the cufflinks dictionary,
                     #IMPORTANT: I decided to throw counts data for genes that cufflinks does not quantify
                     #THESE are MOSTLY genes with 0 counts but NOT always!
-                    indInRsemMatrix = rsem_mapGeneIDToInd[record.geneID];
-                    geneSymbol = rsemAnnotations[indInRsemMatrix].geneName
-                    print "gene %s = %s appears in featureCounts but not in the cufflinks dictionary (count = %f)\n" % (record.geneID, geneSymbol, float(record.count))
+
+                    if not(args.skip_collecting_rsem):
+                        #I cannot do this if the user skipped collecting rsem because then rsem_mapGeneIDToInd is not defined...
+                        indInRsemMatrix = rsem_mapGeneIDToInd[record.geneID];
+                        geneSymbol = rsemAnnotations[indInRsemMatrix].geneName
+                        print "gene %s = %s appears in featureCounts but not in the cufflinks dictionary (count = %f)\n" % (record.geneID, geneSymbol, float(record.count))
 
         else:
             #the featureCounts results for this folder do not exist for some reason

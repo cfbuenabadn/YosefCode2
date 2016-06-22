@@ -12,10 +12,12 @@ COLLECT_SCRIPT_FILE_NAME = "/project/eecs/yosef-archive/users/allonwag/temp/coll
 #OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_Sep2015/"
 #OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_July2015/"
 #OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_Bateup_Aug2015/"
-OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_Zebrafish_Oct2015/"
+#OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_Zebrafish_Oct2015/"
+OUTPUT_FOLDER = "/data/yosef2/BRAIN/processed_olfactory_Jun2016/"
+
 
 #Cortical / Olfactory / Bateup / SamIsrael
-PROJECT = "SamIsrael"
+PROJECT = "Olfactory"
 if PROJECT == "Cortical":
     sourceFolders = cortical_sourceFolders
     reference_genome = "mm10"
@@ -41,7 +43,7 @@ with open(SEND_SCRIPT_FILE_NAME, "wt") as fout:
         batchAlias = batchDir.replace("/", "-") #make a hierarchy of one batch folder and beneath it all the cell folders
         send_cmd = Template("python /data/yosef/users/allonwag/YosefCode/packages/RNASeq/preproc/processFolder.py -N JuneBrain_b" +
                             (" --paired_end" if isPairedEnd else "") +
-                            "--skip_kallisto --rsem_bowtie_maxins 1000 --mean_fragment_length 540 --std_fragment_length 250 -p 1 -r $REFERENCE_GENOME" +
+                            " --skip_rsem --skip_kallisto --skip_rsem_qc --skip_kallisto_qc --rsem_bowtie_maxins 1000 --mean_fragment_length 540 --std_fragment_length 250 -p 1 -r $REFERENCE_GENOME" +
                             " -o $OUT_FOLDER $INPUT_FOLDER").substitute(
                             OUT_FOLDER=os.path.join(OUTPUT_FOLDER, batchAlias),
                             INPUT_FOLDER=os.path.join("/data/yosef/BRAIN/sources/", batchDir),

@@ -35,7 +35,7 @@ if(args.reference == "mm10"):
 
 	GENOME_REFERENCE_FILE = "/data/yosef/index_files/mm10_4brain/index/GCF_000001635.23_GRCm38.p3_genomic_4brain.fna";
 	BOWTIE2_INDEX = "/data/yosef/index_files/mm10_4brain/index/GRCm38.p3_4brain";
-	TOPHAT2_TRANSCRIPTOME_INDEX = "/data/yosef/index_files/mm10_4brain/index/tophat_transcriptome_data/GRCm38.p3_refseq_annot";
+	TOPHAT2_TRANSCRIPTOME_INDEX = "/data/yosef/index_files/mm10_4brain/index/tophat_transcriptome_data/GRCm38.p3_4brain_refseq_annot";
 	TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/mm10_4brain/index/combinedGFF_4brain.gff";
 	RSEM_TRANSCRIPT_ANNOTATION = "/data/yosef/index_files/mm10_4brain/index/rsem_index/combinedGTF_4brain.gtf";
 	RSEM_INDEX = "/data/yosef/index_files/mm10_4brain/index/rsem_index/GRCm38.p3_4brain_rsem";
@@ -514,6 +514,19 @@ if(RUN_CUFFLINKS_PIPELINE and not(args.skip_tophat)):
 
 	#IMPORTANT: I give the gtf file that was converted from the GFF3 with cufflink's gffread utilitiy (at least for the mm10_4brain),
 	# even though tophat itself used the gff3 annotation. This is because featureCounts wants a gtf file...
+
+	#I don't count reads mapping to multiple meta-features which the manual does not recommend for RNA-Seq for the following reason:
+	#A multi-overlap read or fragment is one that overlaps more than one feature, or more than
+	#one meta-feature when summarizing at the meta-feature level. featureCounts provides users
+	#with the option to either exclude multi-overlap reads or to count them for each feature that
+	#is overlapped. The decision whether or not to counting these reads is often determined by the
+	#experiment type. We recommend that reads or fragments overlapping more than one gene
+	#are not counted for RNA-seq experiments, because any single fragment must originate from
+	#only one of the target genes but the identity of the true target gene cannot be confidently
+	#determined. On the other hand, we recommend that multi-overlap reads or fragments are
+	#counted for most ChIP-seq experiments because epigenetic modifications inferred from these
+	#reads may regulate the biological functions of all their overlapping genes.
+
 
 	#-C: exclude chimeric fragments from the count (those fragments that have their two ends aligned to different chromosomes)
 	pairedEndFeatureCountArgs = "-p -C" if(args.paired_end) else ''
