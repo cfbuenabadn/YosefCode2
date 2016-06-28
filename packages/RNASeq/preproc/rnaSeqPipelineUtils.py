@@ -36,9 +36,9 @@ common_rnaseq_parser.add_argument('--skip_kallisto_qc', action='store_true',
 common_rnaseq_parser.add_argument('--do_not_clean_intermediary_files', action='store_true',
                    help="If set, do not clean intermediary files that are produced in the course of running (default: off, i.e. clean the intermediary files)")
 common_rnaseq_parser.add_argument('--rsem_bowtie_maxins', action='store', default=1000,
-                   help="For paired-end data only (ignored if --paired_end is not set): the maximum fragment length (this is the value of the --fragment-length-max in rsem and -X/--maxins in bowtie2). Defaults to 1000, which is the rsem default")
+                   help="Deprecated (since 28 Jun 2016). Kept for legacy reasons but has no effect. For paired-end data only (ignored if --paired_end is not set): the maximum fragment length (this is the value of the --fragment-length-max in rsem and -X/--maxins in bowtie2). Defaults to 1000, which is the rsem default")
 common_rnaseq_parser.add_argument('--rsem_samtools_sort_mem', action='store', default="1G",
-                   help="This is rsem's samtools-sort-mem argument. It controls the memory allocated per thread when samtools sort is run through rsem. Defaults to 1G, which is the rsem default")
+                   help="This is rsem's samtools-sort-mem argument. It controls the memory allocated *per thread* when samtools sort is run through rsem. Defaults to 1G, which is the rsem default")
 common_rnaseq_parser.add_argument('--trimmomatic_window', action='store', default='',
                    help="The trimmomatic sliding window argument. Format: '<windowSize>:<requiredQuality>' ")
 common_rnaseq_parser.add_argument('--kallisto_bootstrap_samples', action='store', default='0',
@@ -47,6 +47,13 @@ common_rnaseq_parser.add_argument('--mean_fragment_length', action='store', defa
                    help="The mean fragment length paramter that Kallisto requires; applies only to single-end; this parameter will be ignored and the fragment length estimated from the data if the --paired_end flag is set (default: 200, as in cufflinks). If given, will be used also in cufflinks (again, used only in SE and ignored in PE).")
 common_rnaseq_parser.add_argument('--std_fragment_length', action='store', default='80',
                    help="The standard deviation of fragment length paramter that Kallisto requires; applies only to single-end; this parameter will be ignored and the fragment length estimated from the data if the --paired_end flag is set (default: 80, as in cufflinks). If given, should have been used also in cufflinks (again, used only in SE and ignored in PE), but since it leads to core dumps it is ignored in cufflinks. The std of fragment length in cufflinks is always 80, which is cufflink's default")
+common_rnaseq_parser.add_argument('--single_cell_prior', dest="single_cell_prior", action='store_true',
+                   help="Currently affects only RSEM; if neither --single_cell_prior nor --bulk_prior are specified, then a single-cell prior is assumed; if both are specified, then the behavior is undefined. RSEM introduced a param that tells it whether it's handling single-cell data or bulk, and affects the prior it uses (see rsem's documentation). Default: True")
+common_rnaseq_parser.add_argument('--bulk_prior', dest="single_cell_prior", action='store_false',
+                   help="Currently affects only RSEM; if neither --single_cell_prior nor --bulk_prior are specified, then a single-cell prior is assumed; if both are specified, then the behavior is undefined. RSEM introduced a param that tells it whether it's handling single-cell data or bulk, and affects the prior it uses (see rsem's documentation). Default: True")
+common_rnaseq_parser.set_defaults(single_cell_prior=True)
+
+
 
 #For insert size vs. fragment length see https://www.biostars.org/p/95803/
 

@@ -12,7 +12,7 @@ import os;
 import glob;
 
 def RunFastQC(sampleFile, outputFolder):
-	cmd = Template("/opt/genomics/bin/fastqc $f -o  $OUTPUT_FOLDER/fastqc_output").substitute(f=sampleFile, OUTPUT_FOLDER=outputFolder);
+	cmd = Template("/opt/genomics/bin/fastqc $f --extract -o  $OUTPUT_FOLDER/fastqc_output").substitute(f=sampleFile, OUTPUT_FOLDER=outputFolder);
 			
 	print(cmd)
 	returnCode = subprocess.call(cmd, shell=True);
@@ -170,8 +170,8 @@ def CollectData(bamFile, outputFolder, refFlatAnnotationsFile, ribosomalInterval
 			#if this is a paired-end sample, take only the first of the pair (so as not to count all reads twice and get a number twice as large as you should)
 			forPairedEnd = ("-f 64" if isPairedEnd else "");
 		
-			nalign = float(subprocess.check_output([Template("samtools view -c $FOR_PAIRED_END $OUTPUT_FOLDER/accepted_hits_noMultiple.bam").substitute(OUTPUT_FOLDER=outputFolder, FOR_PAIRED_END=forPairedEnd)], shell=True));
-			n_unalign = float(subprocess.check_output([Template("samtools view -c $FOR_PAIRED_END $OUTPUT_FOLDER/unmapped.bam").substitute(OUTPUT_FOLDER=outputFolder, FOR_PAIRED_END=forPairedEnd)], shell=True));
+			nalign = float(subprocess.check_output([Template("/opt/pkg/samtools-1.3.1/bin/samtools view -c $FOR_PAIRED_END $OUTPUT_FOLDER/accepted_hits_noMultiple.bam").substitute(OUTPUT_FOLDER=outputFolder, FOR_PAIRED_END=forPairedEnd)], shell=True));
+			n_unalign = float(subprocess.check_output([Template("/opt/pkg/samtools-1.3.1/bin/samtools view -c $FOR_PAIRED_END $OUTPUT_FOLDER/unmapped.bam").substitute(OUTPUT_FOLDER=outputFolder, FOR_PAIRED_END=forPairedEnd)], shell=True));
 			nreads = nalign + n_unalign;
 			r_align = 100 * float(nalign) / nreads;
 			

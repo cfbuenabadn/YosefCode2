@@ -45,7 +45,7 @@ if(args.reference == "mm10"):
 	#RIBOSOMAL_INTERVALS_INDEX = "/data/yosef/index_files/mm10_4brain/index/gencode/gencode.vM4.rRNA.interval_list";
 	#RIBOSOMAL_INTERVALS_INDEX = "/data/yosef/index_files/mm10_4brain/index/gencode/gencode.vM4.rRNA.interval_list_allonEdited";
 	RIBOSOMAL_INTERVALS_INDEX = "/data/yosef/index_files/mm10_4brain/index/gencode/mm10_4BRAIN_rRNA_interval_list_allonEdited.txt";
-	RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM = "/data/yosef/index_files/mm10_4brain/index/gencode/mm10_4BRAIN_rRNA_interval_list_allonEdited_forRSEM.txt";
+	RIBOSOMAL_INTERVALS_INDEX_FOR_RSEM = "null" # Originally I produced this file, but when I updated the rsem dictionary I didn't think it was important enough to update also the ribosomal file. The path in which I had the original ribosomal reference:"/data/yosef/index_files/mm10_4brain/index/gencode/mm10_4BRAIN_rRNA_interval_list_allonEdited_forRSEM.txt";
 	RIBOSOMAL_INTERVALS_INDEX_FOR_KALLISTO = "null" #I didn't create it - no time and not that important...
 	RSEM_DICTIONARY = "/data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt";
 
@@ -164,6 +164,7 @@ args.sampleFile1 = os.path.expanduser(args.sampleFile1);
 if(args.paired_end):
 	args.sampleFile2 = os.path.expanduser(args.sampleFile2);
 
+
 #debug code:
 #subprocess.call("rm aaa*", shell=True);
 #subprocess.call("rm bbb*", shell=True);
@@ -258,7 +259,7 @@ if(DO_TRIMMOMATIC and not(args.skip_trimmomatic and args.do_not_rely_on_previous
 			read_length_otherSide = len(rnaSeqPipelineUtils.GetFirstReadInFastqFile(args.sampleFile2));
 			print "Inferred read length of the other end in the paired-end sample is: " + str(read_length_otherSide);
 			if read_length != read_length_otherSide:
-				raise Exception("Trimmomatic step failed: it seems that the two ends of the paired-end experiment have different read lengths?");
+				print("---> Warning: Trimmomatic step warning: it seems that the two ends of the paired-end experiment have different read lengths.");
 
 
 		trimMinLen = min(50, int(0.8 * read_length));#16; #36
@@ -345,7 +346,7 @@ if(DO_KALLISTO and not(args.skip_kallisto)):
 		kallistoCmd += Template(" --single -l $MEAN_FRAGMENT_LENGTH -s $STD_FRAGMENT_LENGTH $SAMPLE_FILE1").substitute(MEAN_FRAGMENT_LENGTH=args.mean_fragment_length, STD_FRAGMENT_LENGTH=args.std_fragment_length, SAMPLE_FILE1=args.sampleFile1)
 
 	#Kallisto outputs the pseudobam to stdout
-	kallistoCmd += Template(" | samtools view -Sb - > $OUTPUT_FILE").substitute(OUTPUT_FILE=os.path.join(args.output_folder, "kallisto_output", "kallisto_out.bam"))
+	kallistoCmd += Template(" | /opt/pkg/samtools-1.3.1/bin/samtools view -Sb - > $OUTPUT_FILE").substitute(OUTPUT_FILE=os.path.join(args.output_folder, "kallisto_output", "kallisto_out.bam"))
 
 	print(kallistoCmd)
 	sys.stdout.flush();
@@ -378,7 +379,7 @@ if(DO_KALLISTO and not(args.skip_kallisto)):
 	print("**********************************************************");
 	print("**********************************************************");
 	print("Index SAM");
-	indexSamCommand = Template("/opt/genomics/bin/samtools index $OUTPUT_FOLDER/kallisto_output/picard_output/kallisto_out.sorted.bam").substitute(OUTPUT_FOLDER=args.output_folder);
+	indexSamCommand = Template("/opt/pkg/samtools-1.3.1/bin/samtools index $OUTPUT_FOLDER/kallisto_output/picard_output/kallisto_out.sorted.bam").substitute(OUTPUT_FOLDER=args.output_folder);
 	print(indexSamCommand)
 	sys.stdout.flush();
 	returnCode = subprocess.call(indexSamCommand, shell=True);
@@ -391,7 +392,7 @@ if(DO_KALLISTO and not(args.skip_kallisto)):
 	#to conform with the tophat pipeline, I split the reads into aligned and unaligned, and the QC will run only on the aligned ones.
 
 	print("splitting kallisto's output to aligned and unaligned reads...");
-	splitCmd1 = Template("samtools view -b -F 4 $OUTPUT_FOLDER/kallisto_output/picard_output/kallisto_out.sorted.bam > $OUTPUT_FOLDER/kallisto_output/accepted_hits.bam").substitute(OUTPUT_FOLDER=args.output_folder);
+	splitCmd1 = Template("/opt/pkg/samtools-1.3.1/bin/samtools view -b -F 4 $OUTPUT_FOLDER/kallisto_output/picard_output/kallisto_out.sorted.bam > $OUTPUT_FOLDER/kallisto_output/accepted_hits.bam").substitute(OUTPUT_FOLDER=args.output_folder);
 	print(splitCmd1)
 	sys.stdout.flush();
 	returnCode = subprocess.call(splitCmd1, shell=True);
@@ -399,7 +400,7 @@ if(DO_KALLISTO and not(args.skip_kallisto)):
 		raise Exception("split failed");
 
 
-	splitCmd2 = Template("samtools view -b -f 4 $OUTPUT_FOLDER/kallisto_output/picard_output/kallisto_out.sorted.bam > $OUTPUT_FOLDER/kallisto_output/unmapped.bam").substitute(OUTPUT_FOLDER=args.output_folder);
+	splitCmd2 = Template("/opt/pkg/samtools-1.3.1/bin/samtools view -b -f 4 $OUTPUT_FOLDER/kallisto_output/picard_output/kallisto_out.sorted.bam > $OUTPUT_FOLDER/kallisto_output/unmapped.bam").substitute(OUTPUT_FOLDER=args.output_folder);
 	print(splitCmd2)
 	sys.stdout.flush();
 	returnCode = subprocess.call(splitCmd2, shell=True);
@@ -479,7 +480,7 @@ if(RUN_CUFFLINKS_PIPELINE and not(args.skip_tophat)):
 	print("**********************************************************");
 	print("**********************************************************");
 	print("Index SAM");
-	indexSamCommand = Template("/opt/genomics/bin/samtools index $OUTPUT_FOLDER/tophat_output/picard_output/sorted.bam").substitute(OUTPUT_FOLDER=args.output_folder);
+	indexSamCommand = Template("/opt/pkg/samtools-1.3.1/bin/samtools index $OUTPUT_FOLDER/tophat_output/picard_output/sorted.bam").substitute(OUTPUT_FOLDER=args.output_folder);
 	print(indexSamCommand)
 	sys.stdout.flush();
 	returnCode = subprocess.call(indexSamCommand, shell=True);
@@ -560,16 +561,21 @@ if(RUN_RSEM_PIPELINE and not(args.skip_rsem)):
 	print("**********************************************************");
 	print("**********************************************************");
 
-	RUN_DIRECT_RSEM = False #Run RSEM directly or run manually bowtie2 and then rsem
+	RUN_DIRECT_RSEM = True #Run RSEM directly or run manually bowtie2 and then rsem
 	if(RUN_DIRECT_RSEM):
 		# previous code: since then I have chosen to run bowtie2 manually
 		print("Running rsem");
 		#Note that in rsem I use the --output-genome-bam flag to generate a genome bam (in addition to the transcriptome bam that is always created) - rsem will also sort this bam. This is necessary for the QC later.
+		#the --append-names is useful but I don't use it because it's incompatible with the dictionaries I've produced in the past
+		rsemCommand = Template("/opt/pkg/rsem-1.2.31/bin/rsem-calculate-expression --num-threads $NUM_THREADS --bowtie2 $SINGLE_CELL_OR_BULK_PRIOR --sampling-for-bam --output-genome-bam --sort-bam-by-coordinate --sort-bam-memory-per-thread $RSEM_SAMTOOLS_SORT_MEM --estimate-rspd ").substitute(SINGLE_CELL_OR_BULK_PRIOR="--single-cell-prior" if args.single_cell_prior else "", NUM_THREADS=args.num_threads, RSEM_SAMTOOLS_SORT_MEM=args.rsem_samtools_sort_mem);
 		if(args.paired_end):
-			rsemCommand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --bowtie2 --estimate-rspd --output-genome-bam --sampling-for-bam --samtools-sort-mem $RSEM_SAMTOOLS_SORT_MEM --paired-end --fragment-length-max $RSEM_BOWTIE_MAXINS $SAMPLE_FILE1 $SAMPLE_FILE2 $RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder, RSEM_INDEX=RSEM_INDEX, SAMPLE_FILE1=args.sampleFile1, SAMPLE_FILE2=args.sampleFile2, NUM_THREADS=args.num_threads, RSEM_BOWTIE_MAXINS=args.rsem_bowtie_maxins, RSEM_SAMTOOLS_SORT_MEM=args.rsem_samtools_sort_mem);
+			rsemCommand += Template(" --paired-end $SAMPLE_FILE1 $SAMPLE_FILE2 ").substitute(SAMPLE_FILE1=args.sampleFile1, SAMPLE_FILE2=args.sampleFile2);
 		else:
-			rsemCommand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --bowtie2 --estimate-rspd --output-genome-bam --sampling-for-bam --samtools-sort-mem $RSEM_SAMTOOLS_SORT_MEM $SAMPLE_FILE1 $RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder, RSEM_INDEX=RSEM_INDEX, SAMPLE_FILE1=args.sampleFile1, NUM_THREADS=args.num_threads, RSEM_SAMTOOLS_SORT_MEM=args.rsem_samtools_sort_mem);
+			#the fragment length distribution is used only in single-end
+			rsemCommand += Template(" --fragment-length-mean $MEAN_FRAGMENT_LENGTH --fragment-length-sd $STD_FRAGMENT_LENGTH $SAMPLE_FILE1").substitute(SAMPLE_FILE1=args.sampleFile1, MEAN_FRAGMENT_LENGTH=args.mean_fragment_length, STD_FRAGMENT_LENGTH=args.std_fragment_length)
 
+ 		rsemCommand += Template(" $RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(RSEM_INDEX=RSEM_INDEX, OUTPUT_FOLDER=args.output_folder)
+		rsemCommand = ' '.join(rsemCommand.split()) #replace double whitespaces with one whitespace
 		print(rsemCommand)
 		sys.stdout.flush();
 		returnCode = subprocess.call(rsemCommand, shell=True);
@@ -578,6 +584,8 @@ if(RUN_RSEM_PIPELINE and not(args.skip_rsem)):
 
 
 	else:
+		raise Exception("Reached deprecated code. At first I ran bowtie2 directly because rsem didn't allow configuring bowtie's fine paramteres. But since then they've added support, and since rsem configures the bowtie2 params to avoid indels etc. it's best to let rsme run as usual (in case, for example, the documentation on how they set the bowtie2 params is incomplete")
+
 		#I am running bowtie manually and then giving the output to rsem because sometimes the bowtie parameters need to be tweaked and rsem does not support changes of many of the parameters at present
 		print("Running bowtie for rsem")
 		#this are the params that rsem delivers to bowtie2 by default
@@ -591,7 +599,7 @@ if(RUN_RSEM_PIPELINE and not(args.skip_rsem)):
 		else:
 				bowtieInput = Template("-U $SAMPLE_FILE1").substitute(SAMPLE_FILE1=args.sampleFile1)
 
-		bowtieForRsemCmd = Template("/opt/genomics/bin/bowtie2 $BOWTIE_PARAMS $BOWTIE_INPUT | samtools view -S -b -o $OUTPUT_FOLDER/rsem_output/aligned_by_bowtie2.bam -").substitute(BOWTIE_INPUT=bowtieInput, BOWTIE_PARAMS=bowtieParams, OUTPUT_FOLDER=args.output_folder)
+		bowtieForRsemCmd = Template("/opt/genomics/bin/bowtie2 $BOWTIE_PARAMS $BOWTIE_INPUT | /opt/pkg/samtools-1.3.1/bin/samtools view -S -b -o $OUTPUT_FOLDER/rsem_output/aligned_by_bowtie2.bam -").substitute(BOWTIE_INPUT=bowtieInput, BOWTIE_PARAMS=bowtieParams, OUTPUT_FOLDER=args.output_folder)
 		print(bowtieForRsemCmd)
 		sys.stdout.flush();
 		returnCode = subprocess.call(bowtieForRsemCmd, shell=True);
@@ -605,7 +613,7 @@ if(RUN_RSEM_PIPELINE and not(args.skip_rsem)):
 		#params that are relevant only in paired_end run
 		rsemParamsOnlyForPairedEnd = Template("--fragment-length-max $RSEM_BOWTIE_MAXINS").substitute(RSEM_BOWTIE_MAXINS=args.rsem_bowtie_maxins) if args.paired_end else ""
 		#Note that in rsem I use the --output-genome-bam flag to generate a genome bam (in addition to the transcriptome bam that is always created) - rsem will also sort this bam. This is necessary for the QC later.
-		rsemCommand = Template("/opt/pkg/rsem-1.2.19/bin/rsem-calculate-expression --num-threads $NUM_THREADS --estimate-rspd " +
+		rsemCommand = Template("/opt/pkg/rsem-1.2.31/bin/rsem-calculate-expression --num-threads $NUM_THREADS --estimate-rspd " +
 								"--samtools-sort-mem $RSEM_SAMTOOLS_SORT_MEM " +
 								"$RSEM_PARAMS_ONLY_FOR_PAIRED_END --output-genome-bam --sampling-for-bam --bam $IS_PAIRED_END $OUTPUT_FOLDER/rsem_output/aligned_by_bowtie2.bam " +
 								"$RSEM_INDEX $OUTPUT_FOLDER/rsem_output/rsem_output").substitute(OUTPUT_FOLDER=args.output_folder,
@@ -657,7 +665,7 @@ if(RUN_RSEM_PIPELINE and not(args.skip_rsem)):
 	#to conform with the tophat pipeline, I split the reads into aligned and unaligned, and the QC will run only on the aligned ones.
 
 	print("splitting rsem's output to aligned and unaligned reads...");
-	splitCmd1 = Template("samtools view -b -F 4 $OUTPUT_FOLDER/rsem_output/rsem_output.genome.sorted.bam > $OUTPUT_FOLDER/rsem_output/accepted_hits.bam").substitute(OUTPUT_FOLDER=args.output_folder);
+	splitCmd1 = Template("/opt/pkg/samtools-1.3.1/bin/samtools view -b -F 4 $OUTPUT_FOLDER/rsem_output/rsem_output.genome.sorted.bam > $OUTPUT_FOLDER/rsem_output/accepted_hits.bam").substitute(OUTPUT_FOLDER=args.output_folder);
 	print(splitCmd1)
 	sys.stdout.flush();
 	returnCode = subprocess.call(splitCmd1, shell=True);
@@ -665,7 +673,7 @@ if(RUN_RSEM_PIPELINE and not(args.skip_rsem)):
 		raise Exception("split failed");
 
 
-	splitCmd2 = Template("samtools view -b -f 4 $OUTPUT_FOLDER/rsem_output/rsem_output.genome.sorted.bam > $OUTPUT_FOLDER/rsem_output/unmapped.bam").substitute(OUTPUT_FOLDER=args.output_folder);
+	splitCmd2 = Template("/opt/pkg/samtools-1.3.1/bin/samtools view -b -f 4 $OUTPUT_FOLDER/rsem_output/rsem_output.genome.sorted.bam > $OUTPUT_FOLDER/rsem_output/unmapped.bam").substitute(OUTPUT_FOLDER=args.output_folder);
 	print(splitCmd2)
 	sys.stdout.flush();
 	returnCode = subprocess.call(splitCmd2, shell=True);
@@ -676,7 +684,7 @@ if(RUN_RSEM_PIPELINE and not(args.skip_rsem)):
 
 	print("removing the multiple-posterior alignments from rsem's aligned output reads...");
 	#with the --output-genome-bam flag set, rsem outputs a bam in which the MAPQ are either 1 (chosen) or 0 (not chosen)
-	filterCmd = Template("samtools view -b -q 100 $OUTPUT_FOLDER/rsem_output/accepted_hits.bam > $OUTPUT_FOLDER/rsem_output/accepted_hits_noMultiple.bam").substitute(OUTPUT_FOLDER=args.output_folder);
+	filterCmd = Template("/opt/pkg/samtools-1.3.1/bin/samtools view -b -q 100 $OUTPUT_FOLDER/rsem_output/accepted_hits.bam > $OUTPUT_FOLDER/rsem_output/accepted_hits_noMultiple.bam").substitute(OUTPUT_FOLDER=args.output_folder);
 	print(filterCmd)
 	sys.stdout.flush();
 	returnCode = subprocess.call(filterCmd, shell=True);
@@ -695,7 +703,7 @@ if(RUN_RSEM_PIPELINE and not(args.skip_rsem)):
 	print("**********************************************************");
 	print("**********************************************************");
 	print("Index SAM");
-	indexSamCommand = Template("/opt/genomics/bin/samtools index $OUTPUT_FOLDER/rsem_output/picard_output/sorted.bam").substitute(OUTPUT_FOLDER=args.output_folder);
+	indexSamCommand = Template("/opt/pkg/samtools-1.3.1/bin/samtools index $OUTPUT_FOLDER/rsem_output/picard_output/sorted.bam").substitute(OUTPUT_FOLDER=args.output_folder);
 	print(indexSamCommand)
 	sys.stdout.flush();
 	returnCode = subprocess.call(indexSamCommand, shell=True);
