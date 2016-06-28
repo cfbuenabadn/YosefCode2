@@ -12,7 +12,7 @@ import os;
 import glob;
 
 def RunFastQC(sampleFile, outputFolder):
-	cmd = Template("/opt/genomics/bin/fastqc $f -o  $OUTPUT_FOLDER/fastqc_output").substitute(f=sampleFile, OUTPUT_FOLDER=outputFolder);
+	cmd = Template("/opt/genomics/bin/fastqc $f --extract -o  $OUTPUT_FOLDER/fastqc_output").substitute(f=sampleFile, OUTPUT_FOLDER=outputFolder);
 			
 	print(cmd)
 	returnCode = subprocess.call(cmd, shell=True);
