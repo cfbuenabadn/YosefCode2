@@ -1,3 +1,17 @@
+#for debug
+rm(list=ls())
+setwd("/data/yosef/users/allonwag//YosefCode//packages//RNASeq//summary//RCODE")
+source("loadProcessedRNASeq_NG.R")
+collect_dir="~/archive/users/allonwag/temp/big_pipe_out/collect"
+collectedRNASeqStudy = loadProcessedRNASeq_NG(collect_dir=collect_dir,
+                                              config_file=file.path(collect_dir, "config_file.xlsx"),
+                                              qc_fields_file="/data/yosef/CD8_effector_diff/src/YosefCode/packages/RNASeq/summary/TEXT/qc_fields.txt",
+                                              gene_fields_file="/data/yosef/CD8_effector_diff/src/YosefCode/packages/RNASeq/summary/TEXT/gene_fields.txt",
+                                              LOAD_RSEM=F, LOAD_CUFF=T, LOAD_KALLISTO=T)
+save(collectedRNASeqStudy, file=file.path(collect_dir, "collectedRNASeqStudy.RData"))
+
+
+
 rm(list=ls())
 setwd("/data/yosef/users/allonwag//YosefCode//packages//RNASeq//summary//RCODE")
 source("loadProcessedRNASeq_NG.R")

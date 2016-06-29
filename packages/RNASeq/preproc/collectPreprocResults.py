@@ -135,23 +135,31 @@ parser.add_argument('--skip_collecting_rsem', action='store_true',
     help="don't collect any of the data produced by the rsem pipeline")
 parser.add_argument('--skip_collecting_tophat', action='store_true',
     help="don't collect any of the data produced by the tophat pipeline")
+parser.add_argument('--skip_collecting_kallisto', action='store_true',
+    help="don't collect any of the data produced by the Kallisto pipeline")
 args = parser.parse_args();
 
 
 if(args.reference == "mm10"):
     rsemDictionaryFile = "/data/yosef/index_files/mm10_4brain/index/rsem_index/rsemDictionary/mm10_4brain_rsemGeneMapping.txt"
-    cuffDictionaryFile = "/home/eecs/allonwag/data/index_files/mm10_4brain/index/cuffDictionary/mm10_4brain_cuffGeneMapping.txt"
+    cuffDictionaryFile = "/data/yosef/index_files/mm10_4brain/index/cuffDictionary/mm10_4brain_cuffGeneMapping.txt"
+    kallistoDictionaryFile = "/data/yosef/index_files/mm10_4brain/index/kallisto_index/kallistoDictionary/mm10_4brain_kallistoGeneMapping.txt"
 elif(args.reference == "hg38"):	
     rsemDictionaryFile="/data/yosef/index_files/hg38/index/rsem_dict.txt"
+    cuffDictionaryFile = ""
+    kallistoDictionaryFile = ""
 elif(args.reference == "hg38_HIV"):
     rsemDictionaryFile="/data/yosef/index_files/hg38_HIV/index/rsem_dict.txt";
     cuffDictionaryFile = "/data/yosef/index_files/hg38_HIV/index/cuffDictionary/cuff_dict.txt"
+    kallistoDictionaryFile = ""
 elif(args.reference == "hg19"):
     rsemDictionaryFile="/data/yosef/index_files/hg19_complete/index/rsem_index/rsemDictionary/rsem_transcript.dict";
     cuffDictionaryFile = "/data/yosef/index_files/hg19_complete/index/cuffDictionary/cuff_genome.dict";
+    kallistoDictionaryFile = ""
 elif(args.reference == "z10"):
     rsemDictionaryFile = "/data/yosef/index_files/z10/index/rsem_index/rsemDictionary/z10_rsemGeneMapping.txt"
     cuffDictionaryFile = "/data/yosef/index_files/z10/index/cuffDictionary/z10_cuffGeneMapping_noLoci.txt"
+    kallistoDictionaryFile = ""
 else:
     raise Exception("should not happen - unsupported reference genome");
 
@@ -162,6 +170,41 @@ else:
 args.output_folder = os.path.expanduser(args.output_folder);
 if not os.path.exists(args.output_folder):
     os.makedirs(args.output_folder);
+
+
+if(not kallistoDictionaryFile):
+    #variable is undefined
+    args.skip_collecting_kallisto = True
+
+if(not rsemDictionaryFile):
+    #variable is undefined
+    args.skip_collecting_rsem = True
+
+if(not cuffDictionaryFile):
+    #variable is undefined
+    args.skip_collecting_tophat = True
+
+if not(args.skip_collecting_kallisto):
+    if not os.path.exists(os.path.join(args.output_folder, 'kallisto')):
+        os.makedirs(os.path.join(args.output_folder, 'kallisto'))
+
+    #read the mapping I prepared from gene ID to gene name and gene biotype
+    kallistoGeneRecord = namedtuple('kallistoGeneRecord', 'geneID, geneName, geneBiotype')
+
+    with open(kallistoDictionaryFile) as fin:
+        # skip the 3 header lines
+        for i in xrange(3):
+            next(fin)
+
+        rows = ( line.strip().split('\t') for line in fin )
+        kallistoAnnotations = map(kallistoGeneRecord._make, rows)
+
+    kallistoGeneList = [record.geneID for record in kallistoAnnotations];
+    NUM_KALLISTO_GENES = len(kallistoGeneList);
+
+    #a dictionary from a geneID to the index in the list (which is also the index in the matrix I'm going  to create) - to be used when reading the individual files
+    kallisto_mapGeneIDToInd = {kallistoGeneList[i]:i for i in xrange(NUM_KALLISTO_GENES)};
+
 
 if not(args.skip_collecting_rsem):
     if not os.path.exists(os.path.join(args.output_folder, 'rsem')):
@@ -212,6 +255,7 @@ if not(args.skip_collecting_tophat):
 
 rsemGeneResultRecord = namedtuple('rsemGeneResultRecord', 'geneID, transcriptIDs, length,  effective_length, expected_count, TPM, FPKM');
 cuffGeneResultRecord = namedtuple('cuffGeneResultRecord', 'geneID, class_code, nearest_ref_id, gene_id, gene_short_name, tss_id, locus, length, coverage, FPKM, FPKM_conf_lo, FPKM_conf_hi, FPKM_status');
+kallistoGeneResultRecord = namedtuple('kallistoGeneResultRecord', 'geneID, length, eff_length, est_counts, tpm')
 
 #strip leading and trailing semicolons if they're present in the semicolon separated string so as not to confuse the split
 args.directoriesToProcess = args.directoriesToProcess.strip(';')
@@ -223,7 +267,7 @@ for d in directoriesToProcess:
     #os.listdir lists files and directories, but not the '.' and '..' entries
     #for compatability with Nir's previous structure, I do not allow the cell directory name to be "cuff" or "rsem" (this is where Nir used to save the collect results of the folder)
     curSubDirectoryList = [os.path.join(d, x) for x in os.listdir(d) \
-        if (os.path.isdir(os.path.join(d, x))) and (x != "cuff") and (x != "rsem") and (x != "collect")];
+        if (os.path.isdir(os.path.join(d, x))) and (x != "cuff") and (x != "rsem") and (x != "kallisto") and (x != "collect")];
 
     subDirectoryList += curSubDirectoryList
 
@@ -237,8 +281,49 @@ NUM_CELLS = len(subDirectoryList);
 
 COLLECT_GENE_EXPRESSION = True;
 if (COLLECT_GENE_EXPRESSION and not(args.skip_collecting_expression)):
+    kallisto_cellsWithGeneExpressionErrors = [];
     rsem_cellsWithGeneExpressionErrors = [];
     tophat_cellsWithGeneExpressionErrors = [];
+
+    if not(args.skip_collecting_kallisto):
+        readCountsTable = numpy.empty((NUM_KALLISTO_GENES, NUM_CELLS));
+        tpmTable = numpy.empty((NUM_KALLISTO_GENES, NUM_CELLS));
+
+        print "starting to collect kallisto gene expression data..."
+        for cell_ind in xrange(NUM_CELLS):
+            fullDirPath = subDirectoryList[cell_ind];
+            print "Operating on single cell (%d / %d) directory: %s" % (cell_ind+1, NUM_CELLS, fullDirPath);
+
+            kallistoOutputGenes = os.path.join(fullDirPath, 'kallisto_output/abundance.tsv');
+
+            if(os.path.exists(kallistoOutputGenes)):
+                with open(kallistoOutputGenes) as fin:
+                    next(fin); #skip the first (header) line
+                    rows = ( line.split('\t') for line in fin )
+                    cellGeneExpressionTable = map(kallistoGeneResultRecord._make, rows)
+
+                #cellGeneList = [record.geneID for record in cellGeneExpressionTable];
+
+                for record in cellGeneExpressionTable:
+                    #In Kallisto's dictionary I stored the IDs such as tdTomato as uppercase, so I convert record.geneID to uppercase
+                    indInMatrix = kallisto_mapGeneIDToInd[record.geneID.upper()];
+                    readCountsTable[indInMatrix, cell_ind] = float(record.est_counts)
+                    tpmTable[indInMatrix, cell_ind] = float(record.tpm);
+            else:
+                #the kallisto gene results for this folder does not exist for some reason
+
+                #the values were initialized to NaN so seemingly no reason to overwrite again, but I do this just to be on the safe side
+                readCountsTable[:, cell_ind] = numpy.NAN;
+                tpmTable[:, cell_ind] = numpy.NAN;
+
+                kallisto_cellsWithGeneExpressionErrors.append(kallistoOutputGenes);
+
+
+        print "finished collecting kallisto data... writing results..."
+        numpy.savetxt(os.path.join(args.output_folder, 'kallisto/kallisto_readCountsTable.txt'), readCountsTable, delimiter="\t", fmt="%g");
+        numpy.savetxt(os.path.join(args.output_folder, 'kallisto/kallisto_tpmTable.txt'), tpmTable, delimiter="\t", fmt="%g");
+
+
 
     if not(args.skip_collecting_rsem):
         readCountsTable = numpy.empty((NUM_RSEM_GENES, NUM_CELLS));
@@ -352,8 +437,11 @@ with open(os.path.join(args.output_folder, 'rsem/cell_list.txt'), 'wt') as fout:
 
         fout.write(cellName + '\n')
 
+if(not args.skip_collecting_tophat):
+    shutil.copyfile(os.path.join(args.output_folder, 'rsem/cell_list.txt'), os.path.join(args.output_folder, 'cuff/cell_list.txt'));
 
-shutil.copyfile(os.path.join(args.output_folder, 'rsem/cell_list.txt'), os.path.join(args.output_folder, 'cuff/cell_list.txt'),);
+if(not args.skip_collecting_kallisto):
+    shutil.copyfile(os.path.join(args.output_folder, 'rsem/cell_list.txt'), os.path.join(args.output_folder, 'kallisto/cell_list.txt'));
 
 ############################
 ### Write gene lists
@@ -364,10 +452,16 @@ print "writing gene dictionary..."
 #now just copy the gene list that I used, that is actually rsem's dictionary that I prepared in advance from the index
 #-- for consistency I simply use the same gene list, in the same order, which is based on the dictionary I built from the annotation file rsem got
 
-shutil.copyfile(rsemDictionaryFile, os.path.join(args.output_folder, 'rsem/gene_list.txt'));
+if(not args.skip_collecting_rsem):
+    shutil.copyfile(rsemDictionaryFile, os.path.join(args.output_folder, 'rsem/gene_list.txt'));
 
 #same deal for the cufflinks pipeline...
-shutil.copyfile(cuffDictionaryFile, os.path.join(args.output_folder, 'cuff/gene_list.txt'));
+if(not args.skip_collecting_tophat):
+    shutil.copyfile(cuffDictionaryFile, os.path.join(args.output_folder, 'cuff/gene_list.txt'));
+
+#same deal for kallisto pipeline...
+if(not args.skip_collecting_kallisto):
+    shutil.copyfile(kallistoDictionaryFile, os.path.join(args.output_folder, 'kallisto/gene_list.txt'));
 
 
 ############################
@@ -377,6 +471,11 @@ shutil.copyfile(cuffDictionaryFile, os.path.join(args.output_folder, 'cuff/gene_
 
 COLLECT_QC_SUMMARIES = True;
 if (COLLECT_QC_SUMMARIES and not(args.skip_collecting_qc)):
+
+    if(not(args.skip_collecting_kallisto)):
+        kallisto_qcTable, kallisto_cellsWithQCErrors = CollectQcTable('kallisto_output/summary.txt', NUM_CELLS, subDirectoryList)
+        print "finished collecting kallisto qc summaries... writing kallisto qc table..."
+        numpy.savetxt(os.path.join(args.output_folder, 'kallisto/qc_table.txt'), kallisto_qcTable, delimiter="\t", fmt="%g");
 
     if(not(args.skip_collecting_rsem)):
         rsem_qcTable, rsem_cellsWithQCErrors = CollectQcTable('rsem_output/summary.txt', NUM_CELLS, subDirectoryList)
@@ -398,6 +497,18 @@ if (COLLECT_QC_SUMMARIES and not(args.skip_collecting_qc)):
 #Added 3/9/2015 for the BRAIN project qc assessment:
 COLLECT_DUP_GENES = True;
 if (COLLECT_DUP_GENES and not(args.skip_collecting_dup_genes)):
+
+    if not(args.skip_collecting_kallisto):
+        kallisto_dupTable, kallisto_cellsWithDupGenesErrors = CollectDupGenesTable('kallisto_output/picard_output/dup.txt.genes.txt', NUM_KALLISTO_GENES, NUM_CELLS, subDirectoryList)
+        kallisto_dupUniqueTable, kallisto_cellsWithUniqueDupGenesErrors = CollectDupGenesTable('kallisto_output/picard_output/dup_unique.txt.genes.txt', NUM_KALLISTO_GENES, NUM_CELLS, subDirectoryList)
+
+        #now, write the collected QC results into a file
+        print "finished collecting duplicate reads per gene files in kallistopipeline... writing summary table..."
+        numpy.savetxt(os.path.join(args.output_folder, 'kallisto/dup_reads_per_gene_table.txt'), kallisto_dupTable, delimiter="\t", fmt="%s");
+        numpy.savetxt(os.path.join(args.output_folder, 'kallisto/dup_reads_per_gene_onlyUnique_table.txt'), kallisto_dupUniqueTable, delimiter="\t", fmt="%s");
+    else:
+        kallisto_cellsWithDupGenesErrors = []
+        kallisto_cellsWithUniqueDupGenesErrors = []
 
     if not(args.skip_collecting_rsem):
         rsem_dupTable, rsem_cellsWithDupGenesErrors = CollectDupGenesTable('rsem_output/picard_output/dup.txt.genes.txt', NUM_RSEM_GENES, NUM_CELLS, subDirectoryList)
@@ -490,6 +601,14 @@ if(COLLECT_FEATURE_COUNTS and not(args.skip_collecting_feature_counts)):
 print "done collecting all data!"
 
 if (COLLECT_GENE_EXPRESSION and not(args.skip_collecting_expression)):
+
+    if(not(kallisto_cellsWithGeneExpressionErrors)):
+        print "no cells had errors while collecting their kallisto gene expression";
+    else:
+        print "the following cells had errors while collecting their kallisto gene expression:";
+        for x in kallisto_cellsWithGeneExpressionErrors:
+            print x;
+
     if(not(rsem_cellsWithGeneExpressionErrors)):
         print "no cells had errors while collecting their rsem gene expression";
     else:
@@ -506,6 +625,14 @@ if (COLLECT_GENE_EXPRESSION and not(args.skip_collecting_expression)):
 
 
 if (COLLECT_QC_SUMMARIES and not(args.skip_collecting_qc)):
+
+    if(not(args.skip_collecting_kallisto)):
+        if(not(kallisto_cellsWithQCErrors)):
+            print "no cells had errors while collecting their kallisto qc";
+        else:
+            print "the following cells had errors while collecting their kallisto qc:";
+            for x in kallisto_cellsWithQCErrors:
+                print x;
 
     if(not(args.skip_collecting_rsem)):
         if(not(rsem_cellsWithQCErrors)):
@@ -525,6 +652,18 @@ if (COLLECT_QC_SUMMARIES and not(args.skip_collecting_qc)):
                 print x;
 
 if (COLLECT_DUP_GENES and not(args.skip_collecting_dup_genes)):
+    if(not(args.skip_collecting_kallisto)):
+        if(not(kallisto_cellsWithDupGenesErrors) and not(kallisto_cellsWithUniqueDupGenesErrors)):
+            print "no cells had errors while collecting their dup genes (kallisto pipeline)";
+        else:
+            print "the following cells had errors while collecting their dup gene (kallisto pipeline)s:";
+            for x in kallisto_cellsWithDupGenesErrors:
+                print x;
+
+            print "the following cells had errors while collecting their dup genes (only unique reads) (kallisto pipeline):";
+            for x in kallisto_cellsWithUniqueDupGenesErrors:
+                print x;
+
     if(not(args.skip_collecting_rsem)):
         if(not(rsem_cellsWithDupGenesErrors) and not(rsem_cellsWithUniqueDupGenesErrors)):
             print "no cells had errors while collecting their dup genes (rsem pipeline)";

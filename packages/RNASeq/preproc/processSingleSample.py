@@ -366,15 +366,37 @@ if(DO_KALLISTO and not(args.skip_kallisto)):
 	if not(os.path.exists(picardDir)):
 		os.makedirs(picardDir);
 
+	#turns out that Kallisto outputs unmapped reads with non-zero MAPQ (mappying qualities) and Picard doesn't like that and throws an error on unmapped reads with non-zero MAPQ
+	#At first I tried to run first Picard's CleanSam utility on kallisto's output that should overwrite the MAPQ of any unmappped reads to 0 but then it also threw errors.
+	#so instead, I just switched to using samtools sort utility which is actually preferable because it supports multiple threads (not that it will matter much when running through the cluster which sets the number of threads to 1 per process anyhow)
+
+	# print("Clean SAM (required to set MAPQ to 0 in unaligned reads. Turns out Kallisto generated unmapped reads with non-zero MAPQ")
+	# cleanSamCommand = Template("picard CleanSam INPUT=$OUTPUT_FOLDER/kallisto_output/kallisto_out.bam OUTPUT=$OUTPUT_FOLDER/kallisto_output/picard_output/kallisto_out.cleaned.bam").substitute(OUTPUT_FOLDER=args.output_folder);
+	# print(cleanSamCommand)
+	# sys.stdout.flush();
+	# returnCode = subprocess.call(cleanSamCommand, shell=True);
+	# if(returnCode != 0):
+	# 	raise Exception("CleanSam failed");
+    #
+    #
+	# print("Sort SAM");
+	# sortSamCommand = Template("picard SortSam TMP_DIR=$OUTPUT_FOLDER/temp I=$OUTPUT_FOLDER/kallisto_output/picard_output/kallisto_out.cleaned.bam O=$OUTPUT_FOLDER/kallisto_output/picard_output/kallisto_out.sorted.bam SO=coordinate").substitute(OUTPUT_FOLDER=args.output_folder);
+	# print(sortSamCommand)
+	# sys.stdout.flush();
+	# returnCode = subprocess.call(sortSamCommand, shell=True);
+	# if(returnCode != 0):
+	# 	raise Exception("sortSam failed");
+
+
+	print("**********************************************************");
+	print("**********************************************************");
 	print("Sort SAM");
-	sortSamCommand = Template("picard SortSam TMP_DIR=$OUTPUT_FOLDER/temp I=$OUTPUT_FOLDER/kallisto_output/kallisto_out.bam O=$OUTPUT_FOLDER/kallisto_output/picard_output/kallisto_out.sorted.bam SO=coordinate").substitute(OUTPUT_FOLDER=args.output_folder);
+	sortSamCommand = Template("/opt/pkg/samtools-1.3.1/bin/samtools sort -@ $NUM_THREADS -T $OUTPUT_FOLDER/temp -o $OUTPUT_FOLDER/kallisto_output/picard_output/kallisto_out.sorted.bam $OUTPUT_FOLDER/kallisto_output/kallisto_out.bam").substitute(OUTPUT_FOLDER=args.output_folder, NUM_THREADS=args.num_threads);
 	print(sortSamCommand)
 	sys.stdout.flush();
 	returnCode = subprocess.call(sortSamCommand, shell=True);
 	if(returnCode != 0):
 		raise Exception("sortSam failed");
-
-
 
 	print("**********************************************************");
 	print("**********************************************************");

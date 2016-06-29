@@ -109,7 +109,7 @@ for sample1 in sampleList:
 		SKIP_RSEM_QC="--skip_rsem_qc" if args.skip_rsem_qc else "",
 		SKIP_KALLISTO_QC="--skip_kallisto_qc" if args.skip_kallisto_qc else "",
 		DO_NOT_CLEAN_INTERMEDIARY_FILES="--do_not_clean_intermediary_files" if args.do_not_clean_intermediary_files else "",
-		#RSEM_BOWTIE_MAXINS=("--rsem_bowtie_maxins %s" % args.rsem_bowtie_maxins) if args.paired_end else "", #28 Jun 2016: I deprecated this parameter
+		RSEM_BOWTIE_MAXINS="", #("--rsem_bowtie_maxins %s" % args.rsem_bowtie_maxins) if args.paired_end else "", #28 Jun 2016: I deprecated this parameter
 		RSEM_SAMTOOLS_SORT_MEM=("--rsem_samtools_sort_mem %s" % args.rsem_samtools_sort_mem) if args.rsem_samtools_sort_mem else "",
 		TRIMMOMATIC_WINDOW=("--trimmomatic_window %s" % args.trimmomatic_window) if args.trimmomatic_window else "",
 		KALLISTO_BOOTSTRAP_SAMPLES=("--kallisto_bootstrap_samples %s" % args.kallisto_bootstrap_samples) if args.kallisto_bootstrap_samples else "",

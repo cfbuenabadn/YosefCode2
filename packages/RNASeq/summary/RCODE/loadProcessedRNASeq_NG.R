@@ -9,7 +9,7 @@ library(xlsx)
 
 loadProcessedRNASeq_NG = function(collect_dir, config_file=file.path(collect_dir, "config_brain.xlsx"), 
                                   qc_fields_file, gene_fields_file, 
-                                  LOAD_RSEM=T, LOAD_CUFF=T, LOAD_KALLISTO=F)
+                                  LOAD_RSEM=T, LOAD_CUFF=T, LOAD_KALLISTO=T)
 {
   if(LOAD_RSEM)
   {
@@ -36,8 +36,9 @@ loadProcessedRNASeq_NG = function(collect_dir, config_file=file.path(collect_dir
   #Kallisto pipeline is not implemented yet
   if(LOAD_KALLISTO)
   {
-    print("Kallisto loading is not implemented yet!")
-    kallisto_eSet = NULL
+    print("Loading Kallisto results...")
+    kallisto_eSet = loadKallisto(file.path(collect_dir, "kallisto"), config_file, qc_fields_file, gene_fields_file);
+    print("Kallisto results loaded successfully")
   }
   else
   {
@@ -46,6 +47,33 @@ loadProcessedRNASeq_NG = function(collect_dir, config_file=file.path(collect_dir
   
   print("All data loaded successfully")
   return(list("rsem_eSet"=rsem_eSet, "cuff_eSet"=cuff_eSet, "kallisto_eSet"=kallisto_eSet))
+}
+
+loadKallisto = function(collect_dir ,config_file, qc_fields_file, gene_fields_file)
+{
+  commonOutput = loadCommonPreprocOutput(collect_dir ,config_file, qc_fields_file, gene_fields_file)
+  
+  ##----- Loading TPM Data
+  tpm_table = loadExpressionMatrix(file.path(collect_dir, "kallisto_tpmTable.txt"), commonOutput)
+  print("Kallisto TPM table loaded successfully")
+  
+  ##----- Loading estimated counts Data
+  estimatedCounts_table = loadExpressionMatrix(file.path(collect_dir, "kallisto_readCountsTable.txt"), commonOutput)
+  print("Kallisto expected counts table loaded successfully")
+  
+  
+  ##----- Generate ExpressionSet
+  protoDat = new("AnnotatedDataFrame", data = commonOutput$qc_table)
+  featureDat = new("AnnotatedDataFrame", data = commonOutput$gene_info)
+  phenoData = new("AnnotatedDataFrame", commonOutput$config_table)
+  assayData <- new.env(parent = emptyenv())
+  assayData$tpm_table = data.matrix(tpm_table)
+  assayData$estimatedCounts_table = data.matrix(estimatedCounts_table)
+  #by default in Kallisto: use TPMs for the expression
+  assayData$exprs = assayData$tpm_table
+  eSet = ExpressionSet(assayData, featureData = featureDat, protocolData = protoDat, phenoData = phenoData)
+  
+  return(eSet) 
 }
 
 loadCuff = function(collect_dir ,config_file, qc_fields_file, gene_fields_file)
