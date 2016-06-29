@@ -32,27 +32,30 @@ def CheckContam(sampleFile, outputFolder, sample_end):
 
 
 def CollectData(bamFile, outputFolder, refFlatAnnotationsFile, ribosomalIntervalsFile, isPairedEnd, transcriptAnnotationFile, transcriptDictionaryFile, genomeReferenceFile):
+	#when running Picard QC metrics I set VALIDATION_STRINGENCY=LENIENT because Kallisto's pseudobam generated many errors (which is why I replaced Picard's sortsam with samtools sort in Kallisto previously)
+	#I never encountered a case where the bam produced an error in the rsem or tophat pipelines
+
 	rnaMetricsFileName = outputFolder + '/picard_output/rna_metrics.txt';
-	cmd = Template("picard CollectRnaSeqMetrics TMP_DIR=$OUTPUT_FOLDER/temp INPUT=$BAM_FILE OUTPUT=$OUTPUT_FILE CHART=$OUTPUT_FOLDER/picard_output/rna_coverage.pdf REF_FLAT=$refFlatFile STRAND=NONE RIBOSOMAL_INTERVALS=$ribosomalIntervalsFile").substitute(BAM_FILE=bamFile, OUTPUT_FOLDER=outputFolder, OUTPUT_FILE=rnaMetricsFileName, refFlatFile=refFlatAnnotationsFile, ribosomalIntervalsFile=ribosomalIntervalsFile);
+	cmd = Template("picard CollectRnaSeqMetrics VALIDATION_STRINGENCY=LENIENT TMP_DIR=$OUTPUT_FOLDER/temp INPUT=$BAM_FILE OUTPUT=$OUTPUT_FILE CHART=$OUTPUT_FOLDER/picard_output/rna_coverage.pdf REF_FLAT=$refFlatFile STRAND=NONE RIBOSOMAL_INTERVALS=$ribosomalIntervalsFile").substitute(BAM_FILE=bamFile, OUTPUT_FOLDER=outputFolder, OUTPUT_FILE=rnaMetricsFileName, refFlatFile=refFlatAnnotationsFile, ribosomalIntervalsFile=ribosomalIntervalsFile);
 	print(cmd)
 	returnCode = subprocess.call(cmd, shell=True);
 	if(returnCode != 0):
-		raise Exception("CollectData failed");
+		raise Exception("CollectRnaSeqMetrics failed");
 
 	alnMetricsFileName = outputFolder + '/picard_output/aln_metrics.txt';
 	#I found in an online forum (http://sourceforge.net/p/samtools/mailman/message/32772099/) that you have to give the genome reference file for this command to work, even though all the data it needs may already be contained in the bam file...
-	cmd = Template("picard CollectAlignmentSummaryMetrics INPUT=$BAM_FILE OUTPUT=$OUTPUT_FILE REFERENCE_SEQUENCE=$GENOME_REFERENCE_FILE\n").substitute(BAM_FILE=bamFile, OUTPUT_FILE=alnMetricsFileName, GENOME_REFERENCE_FILE=genomeReferenceFile);
+	cmd = Template("picard CollectAlignmentSummaryMetrics VALIDATION_STRINGENCY=LENIENT INPUT=$BAM_FILE OUTPUT=$OUTPUT_FILE REFERENCE_SEQUENCE=$GENOME_REFERENCE_FILE\n").substitute(BAM_FILE=bamFile, OUTPUT_FILE=alnMetricsFileName, GENOME_REFERENCE_FILE=genomeReferenceFile);
 	print(cmd)
 	returnCode = subprocess.call(cmd, shell=True);
 	if(returnCode != 0):
-		raise Exception("CollectData failed");
+		raise Exception("CollectAlignmentSummaryMetrics failed");
 
 	insertMetricsFileName = outputFolder + '/picard_output/aln_metrics1.txt';
-	cmd = Template("picard CollectInsertSizeMetrics INPUT=$BAM_FILE OUTPUT=$OUTPUT_FILE H=$OUTPUT_FOLDER/picard_output/ins_metrics.histogram.pdf").substitute(BAM_FILE=bamFile, OUTPUT_FILE=insertMetricsFileName, OUTPUT_FOLDER=outputFolder);
+	cmd = Template("picard CollectInsertSizeMetrics VALIDATION_STRINGENCY=LENIENT INPUT=$BAM_FILE OUTPUT=$OUTPUT_FILE H=$OUTPUT_FOLDER/picard_output/ins_metrics.histogram.pdf").substitute(BAM_FILE=bamFile, OUTPUT_FILE=insertMetricsFileName, OUTPUT_FOLDER=outputFolder);
 	print(cmd)
 	returnCode = subprocess.call(cmd, shell=True);
 	if(returnCode != 0):
-		raise Exception("CollectData failed");
+		raise Exception("CollectInsertSizeMetrics failed");
 
 	if(not(transcriptAnnotationFile) or not(transcriptDictionaryFile)):
 		print "the index file required to run the count dup logic were not supplied... skipping this part and not creating dup.txt and dup.txt.genes.txt"

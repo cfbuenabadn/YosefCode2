@@ -9,11 +9,13 @@ import os
 import shutil
 import gzip
 
-FILES_TO_REMOVE = [os.path.join('fastqc_output', '1.Ptrim_fastqc'),
+FILES_TO_REMOVE = ['temp',
+                   os.path.join('fastqc_output', '1.Ptrim_fastqc'),
                    os.path.join('fastqc_output', '1.Utrim_fastqc'),
                    os.path.join('fastqc_output', '2.Ptrim_fastqc'),
                    os.path.join('fastqc_output', '2.Utrim_fastqc'),
 
+                   os.path.join('rsem_output', 'temp'),
                    os.path.join('rsem_output', 'aligned_by_bowtie2.bam'),
                    os.path.join('rsem_output', 'accepted_hits_noMultiple.bam'),
                    os.path.join('rsem_output', 'accepted_hits.bam'),
@@ -27,6 +29,10 @@ FILES_TO_REMOVE = [os.path.join('fastqc_output', '1.Ptrim_fastqc'),
                    os.path.join('rsem_output', 'picard_output', 'sorted.bam'),
                    os.path.join('rsem_output', 'picard_output', 'sorted.bam.bai'),
 
+
+                   os.path.join('tophat_output', 'prep_reads.info'),
+                   os.path.join('tophat_output', 'logs'),
+                   os.path.join('tophat_output', 'temp'),
                    os.path.join('tophat_output', 'accepted_hits.bam'),
                    os.path.join('tophat_output', 'accepted_hits_noMultiple.bam'),
                    os.path.join('tophat_output', 'unmapped.bam'),
@@ -35,12 +41,13 @@ FILES_TO_REMOVE = [os.path.join('fastqc_output', '1.Ptrim_fastqc'),
                    os.path.join('tophat_output', 'junctions.bed'),
                    os.path.join('tophat_output', 'picard_output', 'sorted.bam'),
                    os.path.join('tophat_output', 'picard_output', 'sorted.bam.bai'),
-                   os.path.join('tophat_output', 'picard_output', 'sorted.bam.featureCounts'),
+                   os.path.join('tophat_output', 'sorted.bam.featureCounts'),
                    os.path.join('tophat_output', 'cuff_output', 'transcripts.gtf'),
                    os.path.join('tophat_output', 'cuff_output', 'transcripts.gtf.gz'), #a previous version of the script compressed it, delete the compressed file in case the script is now run on such a directory
                    os.path.join('tophat_output', 'cuff_output', 'skipped.gtf'),
 
 
+                   os.path.join('kallisto_output', 'temp'),
                    os.path.join('kallisto_output', 'kallisto_out.bam'),
                    os.path.join('kallisto_output', 'accepted_hits.bam'),
                    os.path.join('kallisto_output', 'accepted_hits_noMultiple.bam'),  
@@ -49,7 +56,9 @@ FILES_TO_REMOVE = [os.path.join('fastqc_output', '1.Ptrim_fastqc'),
                    os.path.join('kallisto_output', 'unmapped.bam')
                    ]
 
-FILES_TO_COMPRESS = [os.path.join('trimmomatic_output', 'trimmomatic_log.txt') ]
+FILES_TO_COMPRESS = [os.path.join('trimmomatic_output', 'trimmomatic_log.txt'),
+                     'queueErr.txt',
+                     'queueLog.txt']
 
 
 def cleanTemporaryFiles(folder):
