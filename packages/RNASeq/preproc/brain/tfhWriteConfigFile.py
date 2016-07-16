@@ -1,4 +1,4 @@
-from brainSources import sourceFolders
+#from brainSources import sourceFolders
 import os
 import os.path
 import glob
@@ -9,7 +9,8 @@ from collections import namedtuple
 #folder name, isPairedEnd
 #sourceFolders = [("FC_01481", True)
 #]
-sourceFolders = [("WS_TFH_28July2015", True)
+sourceFolders = [("WS_TFH_28July2015", True),
+    ("WS_TFH_28July2015_2ndgroup", True)
 ]
 
 #The sourceFolders is a tuple of dir and bool (isPairedEnd) - get rid of the latter field which is not needed here
@@ -18,7 +19,7 @@ sourceFolders = [x[0] for x in sourceFolders]
 #SOURCES_DIR = "/data/yosef/TFH/sources"
 #PROCESSED_DIR = "/data/yosef/TFH/processed"
 SOURCES_DIR = "/data/yosef2/TFH/sources"
-PROCESSED_DIR = "/data/yosef2/TFH/processed"
+PROCESSED_DIR = "/data/yosef2/TFH/processed_20160628"
 
 CONFIG_OUTPUT_FILE = os.path.join(PROCESSED_DIR, 'collect/config_tfh.xlsx')
 
@@ -32,7 +33,7 @@ def ProcessOutputCellList(outputCellListFileName):
     outputCellList = [row.strip() for row in open(outputCellListFileName).readlines()]
 
     #make the output cell list into a dictionary where the cells unique id points to its dir structure
-    extractUniqueIDFromCellName = re.compile(r"^(?P<path>[\d\w_\-]+)/(?P<uniqueID>[\w_]+)_[ACGT]+\-[ACGT]+_L\d\d\d$")
+    extractUniqueIDFromCellName = re.compile(r"^(?P<path>[\d\w_\-]+)/(?P<uniqueID>WS_[\w_]+)$")
     for cell in outputCellList:
         #print cell
         m = re.match(extractUniqueIDFromCellName, cell)
@@ -82,7 +83,10 @@ allCellsInAllFolders = [] #elementsToWrite.keys() is not equivalent to the list 
 for sourceFolder in [os.path.join(SOURCES_DIR, folder) for folder in sourceFolders]:
     print "reading sources folder: %s" % sourceFolder
     cellsInFolder = sorted([d for d in os.listdir(sourceFolder) \
-                     if os.path.isdir(os.path.join(sourceFolder, d)) and d.lower().startswith("sample_lib") and d.lower() != "Undetermined_indices".lower() and d.lower() != "home".lower()])
+                     if os.path.isdir(os.path.join(sourceFolder, d)) and \
+                            d.startswith("WS_") and \
+                            not(d.lower().startswith("undetermined")) and
+                            not(d.lower() in ["home", "intensities", "stats", "reports"])])
 
     #remove the prefix "Sample_" from the cell name if it is there
     cellsInFolder = [cellName[len("Sample_"):] if cellName.startswith("Sample_") else cellName for cellName in cellsInFolder]

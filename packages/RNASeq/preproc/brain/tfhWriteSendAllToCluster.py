@@ -13,7 +13,9 @@ OUTPUT_FOLDER = "/data/yosef2/TFH/processed_20160615/"
 tfh_sourceFolders = [
     ("WS_TFH_28July2015", True),
     ("WS_TFH_28July2015_2ndgroup", True),
-
+    ("160602_NB501164_0204_AHCWN7BGXY_2ndRetrival/Data", True),
+    ("160606_NB501337_0022_AHCWLJBGXY_2ndRetrival/Data", True)
+    
 ]
 
 

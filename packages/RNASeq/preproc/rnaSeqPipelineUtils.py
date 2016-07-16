@@ -32,7 +32,7 @@ common_rnaseq_parser.add_argument('--skip_tophat_qc', action='store_true',
 common_rnaseq_parser.add_argument('--skip_rsem_qc', action='store_true',
                    help="skip the qc part of the pipeline only for rsem (ignored if the --skip_qc flag is given, in which case qc is not run in the first place)")
 common_rnaseq_parser.add_argument('--skip_kallisto_qc', action='store_true',
-                   help="skip the qc part of the pipeline only for Kallisto (ignored if the --skip_qc flag is given, in which case qc is not run in the first place)")
+                   help="THIS ARGUMENT CURRENTLY HAS NO EFFECT. Kallisto QC is currently always disabled because Kallisto produces BAM files that throw exceptions in Picard, even when Picard's stringency is set to low. skip the qc part of the pipeline only for Kallisto (ignored if the --skip_qc flag is given, in which case qc is not run in the first place)")
 common_rnaseq_parser.add_argument('--do_not_clean_intermediary_files', action='store_true',
                    help="If set, do not clean intermediary files that are produced in the course of running (default: off, i.e. clean the intermediary files)")
 common_rnaseq_parser.add_argument('--rsem_bowtie_maxins', action='store', default=1000,
@@ -52,7 +52,6 @@ common_rnaseq_parser.add_argument('--single_cell_prior', dest="single_cell_prior
 common_rnaseq_parser.add_argument('--bulk_prior', dest="single_cell_prior", action='store_false',
                    help="Currently affects only RSEM; if neither --single_cell_prior nor --bulk_prior are specified, then a single-cell prior is assumed; if both are specified, then the behavior is undefined. RSEM introduced a param that tells it whether it's handling single-cell data or bulk, and affects the prior it uses (see rsem's documentation). Default: True")
 common_rnaseq_parser.set_defaults(single_cell_prior=True)
-
 
 
 #For insert size vs. fragment length see https://www.biostars.org/p/95803/

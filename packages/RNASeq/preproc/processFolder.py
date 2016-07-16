@@ -25,6 +25,11 @@ parser.add_argument("-N", "--job_name", action="store", default='RnaSeq_preproc_
                     help="A name for the job submitted to the cluster.")
 parser.add_argument('-d', '--do_not_send_to_cluster', action='store_true',
 	help="just write the directory structure, but do not call the cluster to execute the jobs (used for debug)")
+parser.add_argument('-q', '--queue', action="store", default='yosef',
+	help="The queue to which send jobs (defaults to yosef)")
+#I changed the time limit from 10h to 36h because of the very long zebrafish runs
+parser.add_argument('--job_time_limit', action="store", default='36:00:00',
+	help="Time limit for each job (both wall time and cpu time), defaults to 36:00:00")
 
 args = parser.parse_args();
 
@@ -148,7 +153,7 @@ for sample1 in sampleList:
 		fout.write("#PBS -o localhost:/dev/null\n");
 		
 		fout.write("### Set the queue to which to send\n");
-		fout.write("#PBS -q yosef\n");
+		fout.write(Template("#PBS -q $QUEUE_NAME\n").substitute(QUEUE_NAME=args.queue));
 		
 		fout.write("### Limit the resources used\n");
 		fout.write(Template("#PBS -l nodes=1:ppn=$NUM_THREADS\n").substitute(NUM_THREADS=args.num_threads));
@@ -157,8 +162,8 @@ for sample1 in sampleList:
 		fout.write("### The format is:\n");
 		fout.write("### #PBS -l walltime=HH:MM:SS\n");
 		fout.write("### #PBS -l cput=HH:MM:SS\n");
-		fout.write("#PBS -l walltime=36:00:00\n"); #changed from 10h to 36h because of the very long zebrafish runs
-		fout.write("#PBS -l cput=36:00:00\n"); #changed from 10h to 36h because of the very long zebrafish runs
+		fout.write(Template("#PBS -l walltime=$JOB_TIME_LIMIT\n").substitute(JOB_TIME_LIMIT=args.job_time_limit));
+		fout.write(Template("#PBS -l cput=$JOB_TIME_LIMIT\n").substitute(JOB_TIME_LIMIT=args.job_time_limit));
 		
 		fout.write("### Move all your environment variables to the job\n");
 		fout.write("#PBS -V\n");
@@ -198,22 +203,24 @@ for sample1 in sampleList:
 		fout.write(cmd + '\n');
 
 
-	print(Template("PBS script $RUN_FILE written\n").substitute(RUN_FILE=queueScriptFileName));
+	print(Template("PBS script $RUN_FILE written").substitute(RUN_FILE=queueScriptFileName));
 
 	st = os.stat(queueScriptFileName);
 	os.chmod(queueScriptFileName, st.st_mode | stat.S_IEXEC);
-	print("added run permissions to PBS script\n");
+	print("added run permissions to PBS script");
 
+	print("sending PBS script to queue\n");
+	queueCmd = Template("qsub $RUN_FILE").substitute(RUN_FILE=queueScriptFileName);
+	print(queueCmd);
 	if(not(args.do_not_send_to_cluster)):
 		#actually execute the job by sending to cluster
-		print("sending PBS script to queue\n");
-		queueCmd = Template("qsub $RUN_FILE").substitute(RUN_FILE=queueScriptFileName);
-		print(queueCmd);
 		returnCode = subprocess.call(queueCmd, shell=True);
 		if(returnCode != 0):
 			raise Exception("invoking qsub failed")
 	
-	
+	print("**********************************************************");
+	print("**********************************************************\n\n");
+
 		#queueCmd = Template("qsub -o $OUTPUT_DIR/queueLog.txt -e $OUTPUT_DIR/queueErr.txt \
 	#	-d $OUTPUT_DIR -N $JOB_NAME \
 	#	'$CMD'").substitute(CMD=cmd, OUTPUT_DIR=sampleOutputFolder, JOB_NAME=args.job_name);

@@ -56,9 +56,7 @@ FILES_TO_REMOVE = ['temp',
                    os.path.join('kallisto_output', 'unmapped.bam')
                    ]
 
-FILES_TO_COMPRESS = [os.path.join('trimmomatic_output', 'trimmomatic_log.txt'),
-                     'queueErr.txt',
-                     'queueLog.txt']
+FILES_TO_COMPRESS = [os.path.join('trimmomatic_output', 'trimmomatic_log.txt')]
 
 
 def cleanTemporaryFiles(folder):

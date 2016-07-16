@@ -762,7 +762,8 @@ if(RUN_QC and not(args.skip_qc)):
 	commonMetrics = doQC.CollectFastQcData(args.output_folder, args.paired_end);
 	#commonMetrics - common to both the rsem and tophat pipelines
 
-	RUN_QC_KALLISTO = True;
+	#Kallisto QC is currently disabled because Kallisto produces BAM files that throw exceptions in Picard, even when Picard's stringency is set to low
+	RUN_QC_KALLISTO = False;
 	if(RUN_QC_KALLISTO and not(args.skip_kallisto_qc)):
 		sortedBamFile = args.output_folder + "/kallisto_output/accepted_hits.bam";
 		kallistoOutputFolder = args.output_folder + "/kallisto_output";
@@ -826,6 +827,14 @@ for remFile in filesToClear:
 
 if(not(args.do_not_clean_intermediary_files)):
 	cleanup_after_preproc.cleanTemporaryFiles(args.output_folder)
+
+
+print("**********************************************************");
+print("**********************************************************");
+print("creating success token file");
+tokenFileName = os.path.join(args.output_folder, "success_token.txt")
+with open(tokenFileName, "wt") as fout:
+	fout.write("I finished successfully!\n")
 
 #print("**********************************************************");
 #print("**********************************************************");

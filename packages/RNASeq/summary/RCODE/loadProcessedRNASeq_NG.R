@@ -33,7 +33,6 @@ loadProcessedRNASeq_NG = function(collect_dir, config_file=file.path(collect_dir
     cuff_eSet = NULL
   }
     
-  #Kallisto pipeline is not implemented yet
   if(LOAD_KALLISTO)
   {
     print("Loading Kallisto results...")
@@ -61,11 +60,10 @@ loadKallisto = function(collect_dir ,config_file, qc_fields_file, gene_fields_fi
   estimatedCounts_table = loadExpressionMatrix(file.path(collect_dir, "kallisto_readCountsTable.txt"), commonOutput)
   print("Kallisto expected counts table loaded successfully")
   
-  
   ##----- Generate ExpressionSet
   protoDat = new("AnnotatedDataFrame", data = commonOutput$qc_table)
   featureDat = new("AnnotatedDataFrame", data = commonOutput$gene_info)
-  phenoData = new("AnnotatedDataFrame", commonOutput$config_table)
+  phenoData = new("AnnotatedDataFrame", data = commonOutput$config_table)
   assayData <- new.env(parent = emptyenv())
   assayData$tpm_table = data.matrix(tpm_table)
   assayData$estimatedCounts_table = data.matrix(estimatedCounts_table)
@@ -96,7 +94,7 @@ loadCuff = function(collect_dir ,config_file, qc_fields_file, gene_fields_file)
   ##----- Generate ExpressionSet
   protoDat = new("AnnotatedDataFrame", data = commonOutput$qc_table)
   featureDat = new("AnnotatedDataFrame", data = commonOutput$gene_info)
-  phenoData = new("AnnotatedDataFrame", commonOutput$config_table)
+  phenoData = new("AnnotatedDataFrame", data = commonOutput$config_table)
   assayData <- new.env(parent = emptyenv())
   assayData$fpkm_table = data.matrix(fpkm_table)
   assayData$tpm_table = data.matrix(tpm_table)
@@ -129,13 +127,13 @@ loadRSEM = function(collect_dir ,config_file, qc_fields_file, gene_fields_file)
   ##----- Generate ExpressionSet
   protoDat = new("AnnotatedDataFrame", data = commonOutput$qc_table)
   featureDat = new("AnnotatedDataFrame", data = commonOutput$gene_info)
-  phenoData = new("AnnotatedDataFrame", commonOutput$config_table)
+  phenoData = new("AnnotatedDataFrame", data = commonOutput$config_table)
   assayData <- new.env(parent = emptyenv())
   assayData$tpm_table = data.matrix(tpm_table)
   assayData$fpkm_table = data.matrix(fpkm_table)
   assayData$expectedCounts_table = data.matrix(expectedCounts_table)
   #by default in RSEM: use TPMs for the expression
-  assayData$exprs = assayData$tpm_table
+  assayData$exprs = assayData$tpm_table;
   eSet = ExpressionSet(assayData, featureData = featureDat, protocolData = protoDat, phenoData = phenoData)
   
   return(eSet)
