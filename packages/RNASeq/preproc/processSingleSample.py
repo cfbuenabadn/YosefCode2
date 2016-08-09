@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Allon Wagner
 # Nir Yosef's lab, UC Berkeley
