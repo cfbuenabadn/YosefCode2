@@ -186,8 +186,10 @@ loadCommonPreprocOutput = function(collect_dir ,config_file, qc_fields_file, gen
   }else if (suff == "xlsx"){
     #Allon: I use read.xlsx2 instead of read.xlsx because read.xlsx may be  more general but it's soooooo slow
     config_table = read.xlsx2(config_file, sheetIndex=1)
-  } else{
-    stop("Configuration file must be .xls or .xlsx.")
+  } else if (suff == "txt"){
+    config_table = read.delim(config_file)
+  } else {
+    stop("Configuration file must be .txt or .xls or .xlsx.")
   }
   
   #name the rows after the sequencing ID of each sample

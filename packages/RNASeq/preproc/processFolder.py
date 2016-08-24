@@ -30,6 +30,8 @@ parser.add_argument('-q', '--queue', action="store", default='yosef',
 #I changed the time limit from 10h to 36h because of the very long zebrafish runs
 parser.add_argument('--job_time_limit', action="store", default='36:00:00',
 	help="Time limit for each job (both wall time and cpu time), defaults to 36:00:00")
+parser.add_argument('--folder_format', action="store", default="$BASE_FOLDER/*/*_R1_combined.fastq.gz",
+	help="Glob format to pick the sample files. \"$BASE_FOLDER\" is a valid symbol for the folder argument. Defaults to \"$BASE_FOLDER/*/*_R1_combined.fastq.gz\". Note that if entering the string in bash, you need to escape the $ sign as \$")
 
 args = parser.parse_args();
 
@@ -69,10 +71,10 @@ print "Folder is: " + args.folder;
 
 #folder_format = Template("$BASE_FOLDER/*/*_R1_001.fastq.gz").substitute(BASE_FOLDER=args.folder);
 #folder_format = Template("$BASE_FOLDER/*/*.R1_L001.fastq.gz").substitute(BASE_FOLDER=args.folder);
-folder_format = Template("$BASE_FOLDER/*/*_R1_combined.fastq.gz").substitute(BASE_FOLDER=args.folder);
+folder_format = Template(args.folder_format).substitute(BASE_FOLDER=args.folder);
 #to take the other end
 #folder_format = Template("$BASE_FOLDER/*/*_R2_combined.fastq.gz").substitute(BASE_FOLDER=args.folder);
-
+#print(folder_format)
 sampleList = glob.iglob(folder_format);
 
 for sample1 in sampleList:
