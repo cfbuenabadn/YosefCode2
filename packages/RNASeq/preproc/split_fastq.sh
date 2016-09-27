@@ -18,3 +18,16 @@ grep -A 3 \ 2:N S0${CELL}.fastq | sed '/^--$/d' > /data/yosef2/users/xiuwei/fast
 done         
 
 
+for CELL in {97..99} 
+do
+mkdir S00${CELL}
+mv S00${CELL}_1.fastq S00${CELL}/S00${CELL}_1_R1_combined.fastq
+mv S00${CELL}_2.fastq S00${CELL}/S00${CELL}_2_R1_combined.fastq
+done
+
+for CELL in {100..384} 
+do
+mkdir S0${CELL}
+mv S0${CELL}_1.fastq S0${CELL}/S0${CELL}_1_R1_combined.fastq
+mv S0${CELL}_2.fastq S0${CELL}/S0${CELL}_2_R1_combined.fastq
+done
