@@ -41,6 +41,8 @@ common_rnaseq_parser.add_argument('--rsem_samtools_sort_mem', action='store', de
                    help="This is rsem's samtools-sort-mem argument. It controls the memory allocated *per thread* when samtools sort is run through rsem. Defaults to 1G, which is the rsem default")
 common_rnaseq_parser.add_argument('--trimmomatic_window', action='store', default='',
                    help="The trimmomatic sliding window argument. Format: '<windowSize>:<requiredQuality>' ")
+common_rnaseq_parser.add_argument('--kallisto_write_hdf5', action='store_true',
+                   help="Tells Kallisto to write HDF5 instead of plaintext (required for sleuth)")
 common_rnaseq_parser.add_argument('--kallisto_bootstrap_samples', action='store', default='0',
                    help="The number of bootstraps done by Kallisto (default: 0)")
 common_rnaseq_parser.add_argument('--mean_fragment_length', action='store', default='200',

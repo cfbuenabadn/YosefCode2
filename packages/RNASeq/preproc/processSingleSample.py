@@ -336,9 +336,10 @@ if(DO_KALLISTO and not(args.skip_kallisto)):
 		os.makedirs(args.output_folder + "/kallisto_output");
 
 	#I do not use multithreaded pseudoalignment because it is not supported with creation of pseudobam
-	kallistoCmd = Template("kallisto quant --plaintext --pseudobam -i $KALLISTO_INDEX -o $OUTPUT_FOLDER -b $KALLISTO_BOOTSTRAP_SAMPLES -t 1").\
+	kallistoDesiredOutputType = "" if args.kallisto_write_hdf5 else "--plaintext" #hdf5 is the default
+	kallistoCmd = Template("kallisto quant $KALLISTO_OUTPUT_TYPE --pseudobam -i $KALLISTO_INDEX -o $OUTPUT_FOLDER -b $KALLISTO_BOOTSTRAP_SAMPLES -t 1").\
 		substitute(KALLISTO_INDEX=KALLISTO_INDEX_FILE, OUTPUT_FOLDER=args.output_folder + "/kallisto_output",
-				   KALLISTO_BOOTSTRAP_SAMPLES=args.kallisto_bootstrap_samples);
+				   KALLISTO_BOOTSTRAP_SAMPLES=args.kallisto_bootstrap_samples, KALLISTO_OUTPUT_TYPE=kallistoDesiredOutputType);
 
 	if(args.paired_end):
 		kallistoCmd += Template(" $SAMPLE_FILE1 $SAMPLE_FILE2").substitute(SAMPLE_FILE1=args.sampleFile1, SAMPLE_FILE2=args.sampleFile2)
@@ -763,7 +764,7 @@ if(RUN_QC and not(args.skip_qc)):
 	#commonMetrics - common to both the rsem and tophat pipelines
 
 	#Kallisto QC is currently disabled because Kallisto produces BAM files that throw exceptions in Picard, even when Picard's stringency is set to low
-	RUN_QC_KALLISTO = False;
+	RUN_QC_KALLISTO = True;
 	if(RUN_QC_KALLISTO and not(args.skip_kallisto_qc)):
 		sortedBamFile = args.output_folder + "/kallisto_output/accepted_hits.bam";
 		kallistoOutputFolder = args.output_folder + "/kallisto_output";

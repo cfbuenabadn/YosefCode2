@@ -155,7 +155,7 @@ loadExpressionMatrix = function(fileName, commonOutput)
 #Loads QC and gene info that have the same format in all branches of the pipeline
 loadCommonPreprocOutput = function(collect_dir ,config_file, qc_fields_file, gene_fields_file)
 {
-  
+
   #Load list of cells in the collected data
   cell_list = as.character(unlist(read.table(file.path(collect_dir, "cell_list.txt"), header = F)))
   
@@ -188,8 +188,10 @@ loadCommonPreprocOutput = function(collect_dir ,config_file, qc_fields_file, gen
     config_table = read.xlsx2(config_file, sheetIndex=1)
   } else if (suff == "txt"){
     config_table = read.delim(config_file)
+  } else if (suff == "csv") {
+    config_table = read.csv(config_file)
   } else {
-    stop("Configuration file must be .txt or .xls or .xlsx.")
+    stop("Configuration file must be .txt or .csv or .xls or .xlsx.")
   }
   
   #name the rows after the sequencing ID of each sample
