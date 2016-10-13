@@ -119,7 +119,7 @@ for sample1 in sampleList:
 		RSEM_BOWTIE_MAXINS="", #("--rsem_bowtie_maxins %s" % args.rsem_bowtie_maxins) if args.paired_end else "", #28 Jun 2016: I deprecated this parameter
 		RSEM_SAMTOOLS_SORT_MEM=("--rsem_samtools_sort_mem %s" % args.rsem_samtools_sort_mem) if args.rsem_samtools_sort_mem else "",
 		TRIMMOMATIC_WINDOW=("--trimmomatic_window %s" % args.trimmomatic_window) if args.trimmomatic_window else "",
-		KALLISTO_WRITE_HDF5=("--kallisto_write_hdf5" if args.kallisto_write_hdf5 else "")
+		KALLISTO_WRITE_HDF5=("--kallisto_write_hdf5" if args.kallisto_write_hdf5 else ""),
 		KALLISTO_BOOTSTRAP_SAMPLES=("--kallisto_bootstrap_samples %s" % args.kallisto_bootstrap_samples) if args.kallisto_bootstrap_samples else "",
 		MEAN_FRAGMENT_LENGTH=("--mean_fragment_length %s" % args.mean_fragment_length) if args.mean_fragment_length else "",
 		STD_FRAGMENT_LENGTH=("--std_fragment_length %s" % args.std_fragment_length) if args.std_fragment_length else "",
