@@ -13,7 +13,7 @@ common_rnaseq_parser.add_argument("-r", "--reference", action="store", required=
                     help="The referernce genome against which to align. Currently supported: mm10 = mm10, with ERCC spike-ins, RefSeq annotations, compiled by Allon.\nhg38 = human, compiled by Michael\nz10 = Zebrafish, GRCz10, compiled by Allon")
 common_rnaseq_parser.add_argument("-o", "--output_folder", action="store", required=True,
                     help="The directory to which output is written.")
-common_rnaseq_parser.add_argument("-p", "--num_threads", action="store", required=False, default=1,
+common_rnaseq_parser.add_argument("-p", "--num_threads", action="store", required=False, default=4,
                     help="The number of allocated threads, to be passed to trimmomatic, tophat, cufflinks, and rsem.")
 common_rnaseq_parser.add_argument('--skip_trimmomatic', action='store_true',
                    help="don't run trimmomatic before running on the samples")

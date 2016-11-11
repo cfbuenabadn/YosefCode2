@@ -36,6 +36,17 @@ collectedRNASeqStudy = loadProcessedRNASeq_NG(collect_dir=collect_dir,
                                               LOAD_RSEM=T, LOAD_CUFF=T)
 save(collectedRNASeqStudy, file=file.path(collect_dir, "collectedRNASeqStudy.RData"))
 
+rm(list=ls())
+setwd("/data/yosef/users/allonwag//YosefCode//packages//RNASeq//summary//RCODE")
+source("loadProcessedRNASeq_NG.R")
+collect_dir="/data/yosef2/BRAIN/processed_cortical_Oct2016/collect"
+collectedRNASeqStudy = loadProcessedRNASeq_NG(collect_dir=collect_dir,
+                                              config_file=file.path(collect_dir, "config_cortical.xlsx"),
+                                              qc_fields_file="/data/yosef/CD8_effector_diff/src/YosefCode/packages/RNASeq/summary/TEXT/qc_fields.txt",
+                                              gene_fields_file="/data/yosef/CD8_effector_diff/src/YosefCode/packages/RNASeq/summary/TEXT/gene_fields.txt",
+                                              LOAD_RSEM=TRUE, LOAD_CUFF=TRUE, LOAD_KALLISTO=TRUE)
+save(collectedRNASeqStudy, file=file.path(collect_dir, "collectedRNASeqStudy.RData"))
+
 
 setwd("/data/yosef/users/allonwag//YosefCode//packages//RNASeq//summary//RCODE")
 source("loadProcessedRNASeq_NG.R")

@@ -13,11 +13,11 @@ COLLECT_SCRIPT_FILE_NAME = "/project/eecs/yosef-archive/users/allonwag/temp/coll
 #OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_July2015/"
 #OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_Bateup_Aug2015/"
 #OUTPUT_FOLDER = "/data/yosef/BRAIN/processed_Zebrafish_Oct2015/"
-OUTPUT_FOLDER = "/data/yosef2/BRAIN/processed_olfactory_Jun2016/"
-
+#OUTPUT_FOLDER = "/data/yosef2/BRAIN/processed_olfactory_Jun2016/"
+OUTPUT_FOLDER = "/data/yosef2/BRAIN/processed_cortical_Oct2016/"
 
 #Cortical / Olfactory / Bateup / SamIsrael
-PROJECT = "Olfactory"
+PROJECT = "Cortical"
 if PROJECT == "Cortical":
     sourceFolders = cortical_sourceFolders
     reference_genome = "mm10"
