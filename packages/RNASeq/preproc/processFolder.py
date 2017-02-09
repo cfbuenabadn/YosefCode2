@@ -36,8 +36,8 @@ parser.add_argument('--folder_format', action="store", default="$BASE_FOLDER/*/*
 args = parser.parse_args();
 
 #if the path begins with a tilde - expand it to the user's homedir
-args.folder = os.path.expanduser(args.folder);
-args.output_folder = os.path.expanduser(args.output_folder);
+args.folder = os.path.abspath(os.path.expanduser(args.folder))
+args.output_folder = os.path.abspath(os.path.expanduser(args.output_folder))
 
 if(args.folder[-1] == '/'):
 	#I assume the folder does not end with the '/' sign - if this is the last char  in the  folder string, then remove it
