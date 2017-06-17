@@ -80,7 +80,7 @@ args.diretoryToProcess = os.path.expanduser(args.diretoryToProcess);
 DATA_ALREADY_SPLIT_TO_DIRECTORIES = False
 if(DATA_ALREADY_SPLIT_TO_DIRECTORIES):
 
-    #get only top level directories in pyton:
+    #get only top level directories in python:
     #[ name for name in os.listdir(thedir) if os.path.isdir(os.path.join(thedir, name)) ]
     #os.walk('.').next()[1]
     #See: http://stackoverflow.com/questions/141291/how-to-list-only-top-level-directories-in-python
@@ -105,7 +105,8 @@ else:
     pattern = re.compile(r"_R[12](_001)?\.fastq\.(indexCount\.tab|bz2|gz)$")
     samplePrefixes =  set([re.sub(pattern, "", f) for f in filenames])
     #make sure the "undetermined reads" are not interpreted as a sample
-    samplePrefixes = [x for x in samplePrefixes if not re.search("undetermined", x, re.IGNORECASE)]
+    #also exclude filenames starting with "." (i.e., hidden files) because I've found ftp transfers tend to leave them
+    samplePrefixes = [x for x in samplePrefixes if not re.search("undetermined", x, re.IGNORECASE) and not x.startswith(".")]
 
     for prefix in samplePrefixes:
         #the  bz2 files:
@@ -113,7 +114,7 @@ else:
         relevantFiles = [prefix + s for s in ["_R1_001.fastq.gz", "_R2_001.fastq.gz"]]
         if(not(set(relevantFiles).issubset(filenames))):
             #I decided to turn off that check when I added gz support (wheas previously I had a different format with bz2)
-            raise Exception("unexpected files in directory - not all required files are present")
+            raise Exception("unexpected files in directory - not all required files are present for prefix " + prefix)
 
 
         newDirName = os.path.join(args.diretoryToProcess, prefix)

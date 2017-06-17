@@ -160,3 +160,39 @@ collectedRNASeqStudy = loadProcessedRNASeq_NG(collect_dir=collect_dir,
                                               gene_fields_file="/data/yosef/CD8_effector_diff/src/YosefCode/packages/RNASeq/summary/TEXT/gene_fields.txt",
                                               LOAD_RSEM=TRUE, LOAD_CUFF=TRUE, LOAD_KALLISTO=TRUE)
 save(collectedRNASeqStudy, file=file.path(collect_dir, "collectedRNASeqStudy.RData"))
+
+
+rm(list=ls())
+setwd("/data/yosef/users/allonwag//YosefCode//packages//RNASeq//summary//RCODE")
+source("loadProcessedRNASeq_NG.R")
+collect_dir="~/data2/BASF/Nutraceuticals/processed_RNASeq_20160826/collect/"
+collectedRNASeqStudy = loadProcessedRNASeq_NG(collect_dir=collect_dir,
+                                              config_file=file.path(collect_dir, "config_basf.xlsx"),
+                                              qc_fields_file="/data/yosef/CD8_effector_diff/src/YosefCode/packages/RNASeq/summary/TEXT/qc_fields.txt",
+                                              gene_fields_file="/data/yosef/CD8_effector_diff/src/YosefCode/packages/RNASeq/summary/TEXT/gene_fields.txt",
+                                              LOAD_RSEM=TRUE, LOAD_CUFF=TRUE, LOAD_KALLISTO=TRUE)
+save(collectedRNASeqStudy, file=file.path(collect_dir, "collectedRNASeqStudy.RData"))
+
+
+rm(list=ls())
+setwd("/data/yosef/users/allonwag//YosefCode//packages//RNASeq//summary//RCODE")
+source("loadProcessedRNASeq_NG.R")
+collect_dir="/data/yosef2/th17_RNA_Seq_Out/collect_both_pools"
+collectedRNASeqStudy = loadProcessedRNASeq_NG(collect_dir=collect_dir,
+                                              config_file=file.path(collect_dir, "config_ChaoWang_Th17Meta_RNAseq_Sep20_2016.csv"),
+                                              qc_fields_file="/data/yosef/CD8_effector_diff/src/YosefCode/packages/RNASeq/summary/TEXT/qc_fields.txt",
+                                              gene_fields_file="/data/yosef/CD8_effector_diff/src/YosefCode/packages/RNASeq/summary/TEXT/gene_fields.txt",
+                                              LOAD_RSEM=TRUE, LOAD_CUFF=FALSE, LOAD_KALLISTO=FALSE)
+save(collectedRNASeqStudy, file=file.path(collect_dir, "collectedRNASeqStudy.RData"))
+
+
+rm(list=ls())
+setwd("/data/yosef/users/allonwag//YosefCode//packages//RNASeq//summary//RCODE")
+source("loadProcessedRNASeq_NG.R")
+collect_dir="/data/yosef2/users/allonwag/Th17Metabolic/processed_1/collect/"
+collectedRNASeqStudy = loadProcessedRNASeq_NG(collect_dir=collect_dir,
+                                              config_file=file.path(collect_dir, "../../sources/all_configs.csv"),
+                                              qc_fields_file="/data/yosef/CD8_effector_diff/src/YosefCode/packages/RNASeq/summary/TEXT/qc_fields.txt",
+                                              gene_fields_file="/data/yosef/CD8_effector_diff/src/YosefCode/packages/RNASeq/summary/TEXT/gene_fields.txt",
+                                              LOAD_RSEM=TRUE, LOAD_CUFF=FALSE, LOAD_KALLISTO=FALSE)
+save(collectedRNASeqStudy, file=file.path(collect_dir, "collectedRNASeqStudy.RData"))
