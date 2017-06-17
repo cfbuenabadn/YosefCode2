@@ -282,7 +282,7 @@ def CollectFastQcData(output_folder, isPairedEnd):
 	for fileName in fastQcFiles:
 		with open(fileName) as fin:
 			for line in fin:
-				if line.startswith("#Total Duplicate Percentage"):
+				if line.startswith("#Total Deduplicated Percentage"):
 					totalDup += float(line.partition('\t')[2]);
 	if(isPairedEnd):
 		#in paired-end we added total-dup from two fastqc results, so we average them
