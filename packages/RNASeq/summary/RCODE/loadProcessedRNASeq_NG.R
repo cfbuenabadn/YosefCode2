@@ -5,7 +5,7 @@
 
 library(Biobase)
 library(gdata)
-library(xlsx)
+
 
 loadProcessedRNASeq_NG = function(collect_dir, config_file=file.path(collect_dir, "config_brain.xlsx"),
                                   qc_fields_file, gene_fields_file,
@@ -184,6 +184,8 @@ loadCommonPreprocOutput = function(collect_dir ,config_file, qc_fields_file, gen
   if (suff == "xls"){
     config_table = read.xls(config_file, sheet=1)
   }else if (suff == "xlsx"){
+    library(xlsx) #Allon 17 Jun 2017: done only here because the dependency of this package on rJava caused a problem soon after the upgrade to R 3.4 (hoping this will be fixed...)
+    
     #Allon: I use read.xlsx2 instead of read.xlsx because read.xlsx may be  more general but it's soooooo slow
     config_table = read.xlsx2(config_file, sheetIndex=1)
   } else if (suff == "txt"){
